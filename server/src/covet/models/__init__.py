@@ -9,6 +9,7 @@ from covet.models.collection import Collection
 from covet.models.contact import Contact
 from covet.models.invitation import Invitation
 from covet.models.item import Item, ItemType
+from covet.models.item_template import ItemTemplate
 from covet.models.loan import Loan
 from covet.models.metadata_cache import MetadataCacheEntry
 from covet.models.photo import Photo
@@ -34,6 +35,7 @@ __all__ = [
     "Invitation",
     "Item",
     "ItemTag",
+    "ItemTemplate",
     "ItemType",
     "Loan",
     "MetadataCacheEntry",

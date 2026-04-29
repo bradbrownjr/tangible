@@ -51,7 +51,11 @@
 {#if collection}
     <h1>{collection.name}</h1>
     {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-    <p><a href="/collections/{cid}/members">Manage members →</a></p>
+    <p>
+        <a href="/collections/{cid}/members">Manage members →</a>
+        &nbsp;·&nbsp;
+        <a href="/collections/{cid}/templates">Item templates →</a>
+    </p>
 
     <form onsubmit={addItem} class="card" style="margin: 1rem 0">
         <div style="display: grid; grid-template-columns: 140px 1fr auto; gap: .5rem">

@@ -8,6 +8,7 @@ from covet.api import collections as collections_router
 from covet.api import contacts as contacts_router
 from covet.api import imports as imports_router
 from covet.api import invitations as invitations_router
+from covet.api import item_templates as item_templates_router
 from covet.api import items as items_router
 from covet.api import loans as loans_router
 from covet.api import meta as meta_router
@@ -20,6 +21,7 @@ api_router.include_router(meta_router.router)
 api_router.include_router(auth_router.router)
 api_router.include_router(collections_router.router)
 api_router.include_router(items_router.router)
+api_router.include_router(item_templates_router.router)
 api_router.include_router(tags_router.router)
 api_router.include_router(contacts_router.router)
 api_router.include_router(loans_router.router)

@@ -6,6 +6,19 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Item templates / per-type custom fields** — collections gain
+  reusable `ItemTemplate` schemas (`name`, `item_type`, `fields[]`).
+  Each field declares `key`, `label`, `type`
+  (`text|number|boolean|date|url|select`), optional `required`,
+  `default` and `options`. Items can attach `template_id`; on
+  create/update the server validates and coerces `attrs` against the
+  template's fields (rejects missing required, applies defaults,
+  enforces `select` options). New endpoints
+  `/collections/{id}/templates` (CRUD) and `/templates/{id}` plus a web
+  Templates page linked from the collection.
+
 ## [0.10.0] — 2026-04-29 — Make it shareable
 
 ### Added

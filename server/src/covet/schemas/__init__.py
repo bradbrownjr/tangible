@@ -27,6 +27,12 @@ from covet.schemas.invitation import (
     InvitationRead,
 )
 from covet.schemas.item import ItemCreate, ItemRead, ItemUpdate
+from covet.schemas.item_template import (
+    ItemTemplateCreate,
+    ItemTemplateRead,
+    ItemTemplateUpdate,
+    TemplateField,
+)
 from covet.schemas.loan import LoanCreate, LoanRead, LoanUpdate
 from covet.schemas.sync import (
     SyncChange,
@@ -55,6 +61,9 @@ __all__ = [
     "InvitationRead",
     "ItemCreate",
     "ItemRead",
+    "ItemTemplateCreate",
+    "ItemTemplateRead",
+    "ItemTemplateUpdate",
     "ItemUpdate",
     "LoanCreate",
     "LoanRead",
@@ -80,6 +89,7 @@ __all__ = [
     "TagCreate",
     "TagRead",
     "TagUpdate",
+    "TemplateField",
     "TokenInfo",
     "UserCreate",
     "UserRead",

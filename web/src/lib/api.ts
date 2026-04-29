@@ -152,6 +152,30 @@ export interface AuditLogEntry {
     created_at: string;
 }
 
+export type TemplateFieldType = 'text' | 'number' | 'boolean' | 'date' | 'url' | 'select';
+
+export interface TemplateField {
+    key: string;
+    label: string;
+    type: TemplateFieldType;
+    required?: boolean;
+    default?: unknown;
+    options?: string[] | null;
+    help?: string | null;
+}
+
+export interface ItemTemplate {
+    id: string;
+    collection_id: string;
+    name: string;
+    item_type: string;
+    description: string | null;
+    fields: TemplateField[];
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface PublicConfig {
     public_url: string;
     registration_enabled: boolean;

@@ -65,6 +65,11 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
         String(26), ForeignKey("automerge_docs.id", ondelete="SET NULL"), nullable=True
     )
 
+    # Optional template the item inherits its custom field schema from.
+    template_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("item_templates.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
     collection: Mapped[Collection] = relationship(back_populates="items")
     photos: Mapped[list[Photo]] = relationship(
         back_populates="item", cascade="all, delete-orphan"

@@ -6,13 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 
+from covet.api.item_templates import validate_attrs
 from covet.auth.deps import (
     AuthContext,
     collection_role,
     require_user,
 )
 from covet.db import get_session
-from covet.models import Item
+from covet.models import Item, ItemTemplate
 from covet.models.item import ItemType
 from covet.schemas import ItemCreate, ItemRead, ItemUpdate
 
@@ -57,6 +58,14 @@ def create_item(
 ) -> ItemRead:
     _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
     data = payload.model_dump()
+    if data.get("template_id"):
+        tmpl = db.get(ItemTemplate, data["template_id"])
+        if tmpl is None or tmpl.collection_id != payload.collection_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Unknown template",
+            )
+        data["attrs"] = validate_attrs(tmpl, data.get("attrs") or {})
     item = Item(**data)
     db.add(item)
     db.commit()
@@ -88,7 +97,18 @@ def update_item(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    new_template_id = updates.get("template_id", item.template_id)
+    if ("attrs" in updates or ("template_id" in updates and new_template_id)) and new_template_id:
+        tmpl = db.get(ItemTemplate, new_template_id)
+        if tmpl is None or tmpl.collection_id != item.collection_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Unknown template",
+            )
+        base_attrs = updates.get("attrs") if "attrs" in updates else item.attrs
+        updates["attrs"] = validate_attrs(tmpl, base_attrs or {})
+    for key, value in updates.items():
         setattr(item, key, value)
     db.commit()
     db.refresh(item)

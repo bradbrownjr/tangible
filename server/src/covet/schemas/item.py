@@ -25,6 +25,7 @@ class ItemBase(BaseModel):
     location: str | None = None
     identifiers: dict[str, Any] = Field(default_factory=dict)
     attrs: dict[str, Any] = Field(default_factory=dict)
+    template_id: str | None = None
 
 
 class ItemCreate(ItemBase):
@@ -45,6 +46,7 @@ class ItemUpdate(BaseModel):
     location: str | None = None
     identifiers: dict[str, Any] | None = None
     attrs: dict[str, Any] | None = None
+    template_id: str | None = None
 
 
 class ItemRead(ItemBase):
