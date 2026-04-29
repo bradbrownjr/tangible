@@ -54,6 +54,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     current_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     acquired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     location: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
     # JSON blobs for type-specific fields and external identifiers

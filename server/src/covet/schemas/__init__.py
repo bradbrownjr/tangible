@@ -20,6 +20,7 @@ from covet.schemas.collection import (
     ShareLinkRead,
 )
 from covet.schemas.contact import ContactCreate, ContactRead, ContactUpdate
+from covet.schemas.document import DocumentRead, DocumentUpdate
 from covet.schemas.invitation import (
     InvitationCreate,
     InvitationCreated,
@@ -55,6 +56,8 @@ __all__ = [
     "ContactCreate",
     "ContactRead",
     "ContactUpdate",
+    "DocumentRead",
+    "DocumentUpdate",
     "InvitationCreate",
     "InvitationCreated",
     "InvitationPreview",

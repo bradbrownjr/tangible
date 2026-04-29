@@ -8,6 +8,18 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Document attachments + expiry tracking** — items can now hold
+  arbitrary file attachments (manuals, receipts, warranties). New
+  endpoints `POST/GET /items/{id}/documents`, `GET /documents/{id}/download`,
+  `PATCH/DELETE /documents/{id}`. Files are content-addressed by SHA-256
+  under `documents_dir` (default `data/documents`), de-duplicated across
+  items, and capped at 50 MB by default. Each document carries
+  `label`, `category` (`manual`/`receipt`/`warranty`/...), and an
+  optional `expires_at`. Items themselves also gain `expires_at`. New
+  `GET /expiring?within_days=N` dashboard endpoint surfaces all items
+  and documents whose expiry falls within the window, scoped to
+  collections the user can read.
+
 - **URL metadata scraper** — new `POST /metadata/scrape {url}` endpoint
   fetches a URL through a pluggable adapter registry and returns
   suggested item fields (`title`, `description`, `image_url`,

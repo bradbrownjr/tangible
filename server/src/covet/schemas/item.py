@@ -22,6 +22,7 @@ class ItemBase(BaseModel):
     current_value: Decimal | None = None
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     acquired_at: datetime | None = None
+    expires_at: datetime | None = None
     location: str | None = None
     identifiers: dict[str, Any] = Field(default_factory=dict)
     attrs: dict[str, Any] = Field(default_factory=dict)
@@ -43,6 +44,7 @@ class ItemUpdate(BaseModel):
     current_value: Decimal | None = None
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     acquired_at: datetime | None = None
+    expires_at: datetime | None = None
     location: str | None = None
     identifiers: dict[str, Any] | None = None
     attrs: dict[str, Any] | None = None

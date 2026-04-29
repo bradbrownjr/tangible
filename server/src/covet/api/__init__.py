@@ -6,6 +6,7 @@ from covet.api import audit as audit_router
 from covet.api import auth as auth_router
 from covet.api import collections as collections_router
 from covet.api import contacts as contacts_router
+from covet.api import documents as documents_router
 from covet.api import imports as imports_router
 from covet.api import invitations as invitations_router
 from covet.api import item_templates as item_templates_router
@@ -32,5 +33,6 @@ api_router.include_router(share_router.router)
 api_router.include_router(invitations_router.router)
 api_router.include_router(audit_router.router)
 api_router.include_router(metadata_router.router)
+api_router.include_router(documents_router.router)
 
 __all__ = ["api_router"]

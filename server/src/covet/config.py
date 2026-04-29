@@ -144,6 +144,10 @@ class Settings(BaseSettings):
         default_factory=lambda: [256, 1024]
     )
 
+    # Document attachment storage
+    documents_dir: Path | None = None
+    documents_max_bytes: int = 50 * 1024 * 1024
+
     # Sync
     sync_snapshot_interval: int = 100
     sync_retention_days: int = 30
@@ -219,6 +223,8 @@ class Settings(BaseSettings):
     def _derive_defaults(self) -> Settings:
         if self.photos_dir is None:
             object.__setattr__(self, "photos_dir", self.data_dir / "photos")
+        if self.documents_dir is None:
+            object.__setattr__(self, "documents_dir", self.data_dir / "documents")
 
         parsed = urlparse(self.public_url)
         is_https = parsed.scheme == "https"

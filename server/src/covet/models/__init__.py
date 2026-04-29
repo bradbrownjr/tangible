@@ -7,6 +7,7 @@ from covet.models.audit import AuditLogEntry
 from covet.models.base import TimestampMixin, ULIDPrimaryKey, ulid_str
 from covet.models.collection import Collection
 from covet.models.contact import Contact
+from covet.models.document import Document
 from covet.models.invitation import Invitation
 from covet.models.item import Item, ItemType
 from covet.models.item_template import ItemTemplate
@@ -32,6 +33,7 @@ __all__ = [
     "Collection",
     "CollectionMembership",
     "Contact",
+    "Document",
     "Invitation",
     "Item",
     "ItemTag",
