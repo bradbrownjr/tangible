@@ -6,14 +6,13 @@ on:
     paths:
       - "android/**"
       - ".github/workflows/android.yml"
+    tags: ["v*.*.*"]
   pull_request:
     branches: [main]
     paths:
       - "android/**"
       - ".github/workflows/android.yml"
   workflow_dispatch:
-  release:
-    types: [published]
 
 permissions:
   contents: write
@@ -84,14 +83,13 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
 
-      - name: Rename debug APK for release
-        if: github.event_name == 'release'
+      - name: Rename debug APK
         run: |
           VERSION=$(grep versionName app/build.gradle.kts | head -1 | grep -oP '"\K[^"]+')
           mv app/build/outputs/apk/debug/app-debug.apk \
              app/build/outputs/apk/debug/covet-${VERSION}-debug.apk
 
-      - name: Upload debug APK
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: covet-debug-apk
@@ -100,7 +98,7 @@ jobs:
           retention-days: 14
 
       - name: Assemble release APK (if tag)
-        if: github.event_name == 'release'
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -120,13 +118,22 @@ jobs:
           fi
 
       - name: Attach APKs to GitHub Release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            android/app/build/outputs/apk/debug/*.apk
-            android/app/build/outputs/apk/release/*.apk
-          fail_on_unmatched_files: false
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Wait up to 60s for release.yml to create the release first.
+          for i in $(seq 1 12); do
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 && break
+            echo "Waiting for release $TAG to exist... ($i/12)"
+            sleep 5
+          done
+          gh release upload "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber \
+            app/build/outputs/apk/debug/*.apk \
+            $(ls app/build/outputs/apk/release/*.apk 2>/dev/null || true)
 
       - name: Attach debug APK to GitHub Release (fallback if unsigned)
         # Always attach the debug APK to the release so users have an

@@ -61,12 +61,24 @@ jobs:
           cat notes.md
 
       - name: Create / update GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          name: Covet ${{ steps.ver.outputs.version }}
-          body_path: notes.md
-          # Treat 0.x.y as pre-releases automatically.
-          prerelease: ${{ startsWith(steps.ver.outputs.version, '0.') }}
-          draft: false
-          fail_on_unmatched_files: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          VERSION="${{ steps.ver.outputs.version }}"
+          PRERELEASE=""
+          [[ "$VERSION" == 0.* ]] && PRERELEASE="--prerelease"
+          # Update if exists, otherwise create.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Covet $VERSION" \
+              --notes-file notes.md \
+              $PRERELEASE
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Covet $VERSION" \
+              --notes-file notes.md \
+              $PRERELEASE
+          fi
