@@ -8,6 +8,21 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Photos API + multi-upload + URL ingest + HEIC/EXIF** — first-class
+  HTTP endpoints for item photos:
+  `POST /items/{id}/photos` (multipart, **multiple files** in one
+  request),
+  `POST /items/{id}/photos/from-url {url}` (server fetches the URL
+  through the same SSRF guard used by the metadata scraper),
+  `GET /items/{id}/photos`, `GET /photos/{id}/download`,
+  `PATCH /photos/{id}` (set `sort_order`, set `is_primary`),
+  `DELETE /photos/{id}` (auto-promotes the next photo to primary).
+  Pillow + `pillow-heif` decode HEIF/HEIC and transcode to JPEG, and
+  EXIF orientation is applied so saved pixels are upright (no more
+  side-ways photos from iOS uploads). Photos are content-addressed by
+  SHA-256 under `photos_dir` and de-duplicated. New `photos.is_primary`
+  column (migration 0007).
+
 - **Maintenance schedules** — items can carry recurring maintenance
   tasks (oil change, filter swap, calibration). New
   `MaintenanceTask` model + endpoints

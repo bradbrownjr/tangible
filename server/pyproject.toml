@@ -23,6 +23,7 @@ dependencies = [
     "slowapi>=0.1.9",
     "apscheduler>=3.10.4",
     "pillow>=11.0",
+    "pillow-heif>=0.18",
     "defusedxml>=0.7",
     "prometheus-client>=0.21",
     # DB drivers

@@ -27,5 +27,6 @@ class Photo(ULIDPrimaryKey, TimestampMixin, Base):
     height: Mapped[int | None] = mapped_column(Integer, nullable=True)
     byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_primary: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     item: Mapped[Item] = relationship(back_populates="photos")

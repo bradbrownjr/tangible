@@ -40,6 +40,7 @@ from covet.schemas.maintenance import (
     MaintenanceTaskRead,
     MaintenanceTaskUpdate,
 )
+from covet.schemas.photo import PhotoFromUrl, PhotoRead, PhotoUpdate
 from covet.schemas.sync import (
     SyncChange,
     SyncChangeUpload,
@@ -85,6 +86,9 @@ __all__ = [
     "MembershipRead",
     "MembershipUpdate",
     "OIDCProviderInfo",
+    "PhotoFromUrl",
+    "PhotoRead",
+    "PhotoUpdate",
     "RegisterRequest",
     "SessionInfo",
     "ShareLinkCreate",
