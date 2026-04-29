@@ -165,6 +165,14 @@ class OriginCsrfMiddleware(BaseHTTPMiddleware):
             # tricked into a cookie-CSRF flow, so allow them through.
             return await call_next(request)
         host = (urlparse(origin).hostname or "").lower()
+        # Same-origin requests (the standard SPA case) are always safe — the
+        # Origin host always matches the request's own Host header.
+        request_host = (request.url.hostname or "").lower()
+        if host and host == request_host:
+            return await call_next(request)
+        # Wildcard allowed_hosts (LAN-friendly default) trusts any host.
+        if "*" in self._allowed_hosts:
+            return await call_next(request)
         if host and host in self._allowed_hosts:
             return await call_next(request)
         return JSONResponse(
