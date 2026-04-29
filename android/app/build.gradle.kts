@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "us.lynwood.covet"
+    namespace = "io.github.bradbrownjr.covet"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "us.lynwood.covet"
+        applicationId = "io.github.bradbrownjr.covet"
         minSdk = 26 // Android 8.0
         targetSdk = 35
         versionCode = 11

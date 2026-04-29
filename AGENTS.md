@@ -120,7 +120,7 @@ covet/
 ├── web/                 # SvelteKit 2.8 / Svelte 5 runes / adapter-static
 │   └── src/{lib,routes,app.html}
 ├── android/             # AGP 8.7.2, Kotlin 2.0.21, Hilt, Room, Compose
-│   └── app/src/main/java/us/lynwood/covet/
+│   └── app/src/main/java/io/github/bradbrownjr/covet/
 ├── docker/              # Compose examples (standard / postgres / unraid)
 ├── Dockerfile           # Multi-stage; runs as non-root via PUID/PGID/UMASK
 ├── .github/workflows/   # ci.yml, release-image.yml, android.yml, release.yml

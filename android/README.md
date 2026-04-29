@@ -32,7 +32,7 @@ Open the `android/` directory as a project in Android Studio and hit Run, or:
 
 ```bash
 ./gradlew :app:installDebug
-adb shell am start -n us.lynwood.covet.debug/us.lynwood.covet.MainActivity
+adb shell am start -n io.github.bradbrownjr.covet.debug/io.github.bradbrownjr.covet.MainActivity
 ```
 
 ## Tests
@@ -45,7 +45,7 @@ adb shell am start -n us.lynwood.covet.debug/us.lynwood.covet.MainActivity
 ## App layout
 
 ```
-app/src/main/java/us/lynwood/covet/
+app/src/main/java/io/github/bradbrownjr/covet/
 ├── CovetApp.kt                — Application + Hilt + WorkManager bootstrap
 ├── MainActivity.kt
 ├── data/

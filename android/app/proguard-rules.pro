@@ -12,4 +12,4 @@
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 
 # Keep Room entities so reflection in migrations doesn't choke.
--keep class us.lynwood.covet.data.local.entity.** { *; }
+-keep class io.github.bradbrownjr.covet.data.local.entity.** { *; }
