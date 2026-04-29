@@ -161,8 +161,14 @@
 </script>
 
 {#if collection}
-    <h1>{collection.name} — Members</h1>
-    <p class="muted"><a href="/collections/{cid}">← back to items</a></p>
+    <h1>{collection.name}</h1>
+    {#if collection.description}<p class="muted">{collection.description}</p>{/if}
+
+    <nav class="subnav" aria-label="Collection sections">
+        <a class="tab" href="/collections/{cid}">Items</a>
+        <a class="tab" href="/collections/{cid}/templates">Templates</a>
+        <a class="tab tab-active" href="/collections/{cid}/members" aria-current="page">Members</a>
+    </nav>
 
     {#if error}<p class="error">{error}</p>{/if}
 
@@ -359,3 +365,35 @@
 {:else if !loading}
     <p class="error">Collection not found.</p>
 {/if}
+
+<style>
+    .subnav {
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .tab {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        font: inherit;
+        font-weight: 500;
+        color: var(--fg);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .tab:hover {
+        border-color: var(--accent);
+    }
+    .tab-active {
+        background: var(--accent);
+        color: var(--accent-fg, white);
+        border-color: var(--accent);
+    }
+</style>

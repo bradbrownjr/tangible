@@ -9,17 +9,15 @@
     let items = $state<Item[]>([]);
     let categories = $state<Category[]>([]);
     let search = $state('');
-    // Filter is by top-level root slug (matches subtree); empty = all.
-    let rootFilter = $state('');
+    let rootFilter = $state(''); // only used when collection has no default category
     let loading = $state(true);
     let error = $state('');
     let didSeedDefaults = $state(false);
 
     // Inline create form: cascading root → leaf.
-    let newRoot = $state('movies');
-    let newLeaf = $state('movies.dvd');
-    let newTitle = $state('');
-    let scrapeUrl = $state('');
+    let newRoot = $state('other');
+    let newLeaf = $state('other.generic');
+    let newQuery = $state(''); // smart input: URL / ISBN / EAN / Title
     let scraping = $state(false);
 
     const cid = $derived(page.params.id ?? '');
@@ -29,6 +27,13 @@
         if (!root) return [];
         return childrenOf(categories, root.id);
     });
+    // True when this collection is "focused" on a single root (preset wizard).
+    const isFocused = $derived.by(() => {
+        const def = collection?.default_category_slug;
+        if (!def) return false;
+        const c = categories.find((x) => x.slug === def);
+        return !!c;
+    });
 
     $effect(() => {
         if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
@@ -36,13 +41,22 @@
         }
     });
 
+    function detectKind(q: string): 'url' | 'isbn' | 'ean' | 'title' {
+        const s = q.trim();
+        if (/^https?:\/\//i.test(s)) return 'url';
+        const digits = s.replace(/[\s-]/g, '');
+        if (/^(?:97[89])\d{10}$/.test(digits)) return 'isbn'; // ISBN-13
+        if (/^\d{9}[\dXx]$/.test(digits)) return 'isbn'; // ISBN-10
+        if (/^\d{12,13}$/.test(digits)) return 'ean';
+        return 'title';
+    }
+    const detected = $derived(detectKind(newQuery));
+
     async function load() {
         loading = true;
         try {
             if (categories.length === 0) categories = await loadCategories();
             collection = await api.get<Collection>(`/collections/${cid}`);
-            // Seed the create-item form root from the collection's
-            // default_category_slug (root or leaf) on first successful load.
             const def = collection?.default_category_slug;
             if (def && !didSeedDefaults) {
                 const cat = categories.find((c) => c.slug === def);
@@ -68,43 +82,69 @@
         }
     }
 
-    async function addItem(e: Event) {
-        e.preventDefault();
-        if (!newTitle.trim()) return;
-        await api.post('/items', {
-            collection_id: cid,
-            category: newLeaf,
-            title: newTitle.trim()
-        });
-        newTitle = '';
-        await load();
+    function applyScrapeResult(res: { title?: string; category?: string }) {
+        if (res.title) newQuery = res.title;
+        if (res.category) {
+            const leaf = categories.find((c) => c.slug === res.category);
+            if (leaf?.parent_id) {
+                const root = categories.find((c) => c.id === leaf.parent_id);
+                if (root) newRoot = root.slug;
+                newLeaf = leaf.slug;
+            }
+        }
     }
 
-    async function scrapeFromUrl() {
-        const url = scrapeUrl.trim();
-        if (!url) return;
+    async function lookupAndPrefill() {
+        const kind = detected;
+        if (kind === 'title') return;
         scraping = true;
         error = '';
         try {
+            let url = '';
+            if (kind === 'url') {
+                url = newQuery.trim();
+            } else {
+                const digits = newQuery.replace(/[\s-]/g, '');
+                url = `https://openlibrary.org/isbn/${digits}`;
+            }
             const res = await api.post<{ title?: string; category?: string }>(
                 '/metadata/scrape',
                 { url }
             );
-            if (res.title) newTitle = res.title;
-            if (res.category) {
-                const leaf = categories.find((c) => c.slug === res.category);
-                if (leaf?.parent_id) {
-                    const root = categories.find((c) => c.id === leaf.parent_id);
-                    if (root) newRoot = root.slug;
-                    newLeaf = leaf.slug;
-                }
-            }
-            scrapeUrl = '';
+            applyScrapeResult(res);
         } catch (e) {
-            error = (e as Error).message;
+            error = `Lookup failed: ${(e as Error).message}`;
         } finally {
             scraping = false;
         }
+    }
+
+    async function addItem(e: Event) {
+        e.preventDefault();
+        const q = newQuery.trim();
+        if (!q) return;
+        // If the input is a URL or barcode, scrape first; otherwise use as title.
+        if (detected !== 'title') {
+            await lookupAndPrefill();
+        }
+        const title = newQuery.trim();
+        if (!title || /^https?:\/\//i.test(title)) {
+            error = 'Could not derive a title — please enter one manually.';
+            return;
+        }
+        const identifiers: Record<string, string> = {};
+        const original = q.replace(/[\s-]/g, '');
+        const orig_kind = detectKind(q);
+        if (orig_kind === 'isbn') identifiers.isbn = original;
+        else if (orig_kind === 'ean') identifiers.ean = original;
+        await api.post('/items', {
+            collection_id: cid,
+            category: newLeaf,
+            title,
+            identifiers
+        });
+        newQuery = '';
+        await load();
     }
 
     async function removeItem(id: string) {
@@ -136,63 +176,73 @@
 {#if collection}
     <h1>{collection.name}</h1>
     {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-    <p>
-        <a href="/collections/{cid}/members">Manage members →</a>
-        &nbsp;·&nbsp;
-        <a href="/collections/{cid}/templates">Item templates →</a>
-        &nbsp;·&nbsp;
-        <button type="button" class="link-danger" onclick={deleteCollection}>
-            Delete collection
-        </button>
-    </p>
 
-    <form onsubmit={addItem} class="card" style="margin: 1rem 0">
-        <div style="display:grid; grid-template-columns:1fr auto; gap:.5rem; margin-bottom:.5rem">
-            <input
-                bind:value={scrapeUrl}
-                placeholder="Paste URL to prefill (Open Library, any web page)…"
-            />
-            <button type="button" onclick={scrapeFromUrl} disabled={scraping}>
-                {scraping ? 'Scraping…' : 'Scrape URL'}
-            </button>
-        </div>
-        <div style="display: grid; grid-template-columns: 140px 160px 1fr auto; gap: .5rem">
-            <select bind:value={newRoot}>
-                {#each roots as r (r.id)}
-                    <option value={r.slug}>{r.name}</option>
-                {/each}
-            </select>
-            <select bind:value={newLeaf}>
+    <nav class="subnav" aria-label="Collection sections">
+        <a class="tab tab-active" href="/collections/{cid}" aria-current="page">Items</a>
+        <a class="tab" href="/collections/{cid}/templates">Templates</a>
+        <a class="tab" href="/collections/{cid}/members">Members</a>
+        <button type="button" class="tab tab-danger" onclick={deleteCollection}>Delete</button>
+    </nav>
+
+    <form onsubmit={addItem} class="card add-form">
+        <label class="add-label" for="addq">
+            Add an item
+            <span class="muted">— paste a URL, scan a barcode, type an ISBN/EAN, or just a title</span>
+        </label>
+        <div class="add-grid">
+            {#if !isFocused}
+                <select bind:value={newRoot} title="Category root">
+                    {#each roots as r (r.id)}
+                        <option value={r.slug}>{r.name}</option>
+                    {/each}
+                </select>
+            {/if}
+            <select bind:value={newLeaf} title="Category">
                 {#each leaves as l (l.id)}
                     <option value={l.slug}>{l.name}</option>
                 {/each}
             </select>
-            <input bind:value={newTitle} placeholder="Title" />
-            <button type="submit">Add</button>
+            <input
+                id="addq"
+                bind:value={newQuery}
+                placeholder="URL · ISBN · EAN · or title…"
+                autocomplete="off"
+            />
+            {#if detected !== 'title' && newQuery.trim()}
+                <button type="button" onclick={lookupAndPrefill} disabled={scraping}>
+                    {scraping ? 'Looking up…' : `Look up ${detected.toUpperCase()}`}
+                </button>
+            {/if}
+            <button type="submit" disabled={scraping || !newQuery.trim()}>Add</button>
         </div>
+        {#if error}<p class="error">{error}</p>{/if}
     </form>
 
-    <div style="display:flex; gap:.5rem; margin-bottom: 1rem">
-        <input bind:value={search} placeholder="Search title…" oninput={() => load()} />
-        <select bind:value={rootFilter} onchange={() => load()}>
-            <option value="">All categories</option>
-            {#each roots as r (r.id)}
-                <option value={r.slug}>{r.name}</option>
-            {/each}
-        </select>
+    <div class="filters">
+        <input
+            bind:value={search}
+            placeholder="Search this collection (title)…"
+            oninput={() => load()}
+        />
+        {#if !isFocused}
+            <select bind:value={rootFilter} onchange={() => load()}>
+                <option value="">All categories</option>
+                {#each roots as r (r.id)}
+                    <option value={r.slug}>{r.name}</option>
+                {/each}
+            </select>
+        {/if}
     </div>
 
     {#if loading}
         <p class="muted">Loading…</p>
-    {:else if error}
-        <p class="error">{error}</p>
     {:else if items.length === 0}
         <p class="muted">No items yet.</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>Category</th>
+                    {#if !isFocused}<th>Category</th>{/if}
                     <th>Title</th>
                     <th>Qty</th>
                     <th>Condition</th>
@@ -202,8 +252,11 @@
             <tbody>
                 {#each items as i (i.id)}
                     <tr>
-                        <td class="muted">{i.category_slug ?? ''}</td>
-                        <td>{i.title}{#if i.subtitle} <span class="muted">— {i.subtitle}</span>{/if}</td>
+                        {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
+                        <td>
+                            {i.title}
+                            {#if i.subtitle}<span class="muted">— {i.subtitle}</span>{/if}
+                        </td>
                         <td>{i.quantity}</td>
                         <td>{i.condition ?? ''}</td>
                         <td>
@@ -219,13 +272,72 @@
 {/if}
 
 <style>
-    .link-danger {
-        background: none;
-        border: none;
-        padding: 0;
+    .subnav {
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .tab {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
         font: inherit;
-        color: var(--danger, #c0392b);
+        font-weight: 500;
+        color: var(--fg);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        text-decoration: none;
         cursor: pointer;
-        text-decoration: underline;
+    }
+    .tab:hover {
+        border-color: var(--accent);
+    }
+    .tab-active {
+        background: var(--accent);
+        color: var(--accent-fg, white);
+        border-color: var(--accent);
+    }
+    .tab-danger {
+        color: var(--danger);
+        border-color: var(--danger);
+        margin-left: auto;
+    }
+    .tab-danger:hover {
+        background: var(--danger);
+        color: white;
+    }
+    .add-form {
+        margin: 1rem 0;
+    }
+    .add-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    .add-grid {
+        display: grid;
+        grid-template-columns: minmax(140px, 200px) minmax(140px, 200px) 1fr auto auto;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    @media (max-width: 700px) {
+        .add-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        .add-grid > input {
+            grid-column: 1 / -1;
+        }
+    }
+    .filters {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .filters > input {
+        flex: 1;
     }
 </style>

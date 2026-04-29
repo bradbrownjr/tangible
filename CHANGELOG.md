@@ -5,6 +5,34 @@ All notable changes to **Covet** are documented here. Format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.13.2] — 2026-04-30
+
+### Changed
+
+- **Cleaner collection navigation.** The arrow links
+  (`Manage members →`, `Item templates →`, `Delete collection`) are
+  replaced by a real button bar at the top of every collection page:
+  **Items │ Templates │ Members │ Delete**. The same bar appears on
+  the Templates and Members sub-pages with the active tab highlighted,
+  so it's always obvious where you are.
+- **Smarter add-item input.** The separate "Paste URL" and "Title"
+  fields are merged into one input that detects what you typed:
+  - Starts with `http://`/`https://` → scrape the page.
+  - Looks like an ISBN-10, ISBN-13, or 12/13-digit EAN → look up via
+    Open Library, prefilling title and category.
+  - Anything else → use as the item title.
+  The original ISBN/EAN is also stored on the item's `identifiers`.
+- **Collection-aware search and filter.** Inside a preset collection
+  (Music, Movies, etc.) the redundant **All categories** filter is
+  hidden; the search box is labelled
+  *"Search this collection (title)…"* so it's clear what it does.
+- **Templates editor without JSON.** The Templates page now hides the
+  category select (templates inherit the collection's default category)
+  and ships a row builder for custom fields with key, label, type,
+  required, and select options. An **Advanced (JSON)** toggle is still
+  available for power users.
+
 ## [0.13.1] — 2026-04-30
 
 ### Added
