@@ -6,6 +6,20 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **Unraid compose no longer requires a pre-existing `proxy` network.**
+  The `docker-compose.unraid.yml` sample previously declared its
+  network as `external: true`, which failed on a fresh box with
+  `network proxy declared as external, but could not be found`. The
+  network is now a Compose-managed bridge by default; instructions
+  for switching to an external proxy network are inline in the file.
+- **Default `COVET_ALLOWED_HOSTS` for the Unraid sample is now `*`.**
+  The previous example assumed the user already had a public hostname
+  + reverse proxy and would lock out plain LAN access at
+  `http://<unraid-ip>:8000/`. The proxy hostname is now opt-in via
+  `COVET_PUBLIC_URL` / `COVET_BEHIND_PROXY` overrides.
+
 ### Changed
 
 - **First registered user is auto-promoted to admin.** When the database

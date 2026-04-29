@@ -30,16 +30,21 @@ services:
       PUID: 99
       PGID: 100
       UMASK: "0022"
-      COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-https://covet.example.com}
-      COVET_BEHIND_PROXY: "true"
-      COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-covet.example.com}
+      # ----- LAN-only first run (default) -----
+      # Wildcard allows any Host header so you can reach the container
+      # at http://<unraid-ip>:8000/ immediately. Once you put a reverse
+      # proxy in front, narrow this to your real hostname and set
+      # COVET_PUBLIC_URL + COVET_BEHIND_PROXY to match.
+      COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-}
+      COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-*}
+      # COVET_BEHIND_PROXY: "true"
       COVET_REGISTRATION_ENABLED: "false"
       # Optional: bootstrap an admin from env on first launch.
-      # If you leave both unset, simply browse to ${COVET_PUBLIC_URL} after
-      # the container is healthy and click 'Register' — the very first user
-      # to sign up is automatically promoted to admin (regardless of the
-      # COVET_REGISTRATION_ENABLED setting). Set these only if you want a
-      # specific admin username/password baked into the deployment.
+      # If you leave both unset, browse to http://<unraid-ip>:8000/ after
+      # the container is healthy and click 'Register' — the very first
+      # user to sign up is automatically promoted to admin (regardless
+      # of the COVET_REGISTRATION_ENABLED setting). Set these only if
+      # you want a specific admin baked into the deployment.
       # COVET_ADMIN_USERNAME: admin
       # COVET_ADMIN_PASSWORD_FILE: /run/secrets/covet_admin_password
     volumes:
@@ -52,9 +57,15 @@ services:
       retries: 3
       start_period: 20s
     networks:
-      - proxy
+      - covet
 
 networks:
-  proxy:
-    external: true
-    name: ${COVET_NETWORK:-proxy}
+  # Default: a Compose-managed bridge network created on first 'up'.
+  # If you front Covet with a reverse proxy (SWAG / Nginx Proxy Manager /
+  # Traefik) running on a shared external network, replace the block
+  # below with:
+  #   covet:
+  #     external: true
+  #     name: proxy        # or whatever your proxy network is called
+  covet:
+    driver: bridge
