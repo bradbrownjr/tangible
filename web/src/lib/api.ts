@@ -25,7 +25,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
         init.body = JSON.stringify(body);
     }
-    const res = await fetch(path, init);
+    const res = await fetch('/api' + path, init);
     let parsed: unknown = null;
     const text = await res.text();
     if (text) {

@@ -80,7 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
-    app.include_router(api_router)
+    app.include_router(api_router, prefix="/api")
     _mount_web(app, settings)
     return app
 
@@ -119,27 +119,9 @@ def _mount_web(app: FastAPI, settings: Settings) -> None:
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def _spa_fallback(full_path: str) -> FileResponse:
-        # Don't shadow API routes; FastAPI matches more specific routes first,
-        # but we still bail out for known API prefixes to be safe.
-        if full_path.startswith(
-            (
-                "auth/",
-                "collections/",
-                "items/",
-                "tags/",
-                "contacts/",
-                "loans/",
-                "imports/",
-                "healthz",
-                "readyz",
-                "version",
-                "config",
-                "openapi.json",
-                "docs",
-                "redoc",
-                "metrics",
-            )
-        ):
+        # API routes are all under /api/ so they won't reach here.
+        # Block only the few non-API server paths that must not serve the SPA.
+        if full_path.startswith(("api/", "openapi.json", "docs", "redoc")):
             raise HTTPException(status_code=404)
         # Try a literal file first (favicon.ico, robots.txt, etc.)
         target = (web_dir / full_path).resolve()

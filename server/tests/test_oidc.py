@@ -36,12 +36,12 @@ def _enable_oidc(monkeypatch, settings: Settings) -> None:
 
 def test_public_config_lists_providers_when_enabled(client, settings, monkeypatch) -> None:
     # Disabled by default
-    body = client.get("/config/public").json()
+    body = client.get("/api/config/public").json()
     assert body["oidc_enabled"] is False
     assert body["oidc_providers"] == []
 
     _enable_oidc(monkeypatch, settings)
-    body = client.get("/config/public").json()
+    body = client.get("/api/config/public").json()
     assert body["oidc_enabled"] is True
     assert body["oidc_providers"] == [
         {"name": "acme", "label": "Acme", "login_url": "/auth/oidc/acme/login"}
@@ -49,13 +49,13 @@ def test_public_config_lists_providers_when_enabled(client, settings, monkeypatc
 
 
 def test_oidc_login_404_when_disabled(client) -> None:
-    r = client.get("/auth/oidc/acme/login", follow_redirects=False)
+    r = client.get("/api/auth/oidc/acme/login", follow_redirects=False)
     assert r.status_code == 404
 
 
 def test_oidc_login_404_for_unknown_provider(client, settings, monkeypatch) -> None:
     _enable_oidc(monkeypatch, settings)
-    r = client.get("/auth/oidc/unknown/login", follow_redirects=False)
+    r = client.get("/api/auth/oidc/unknown/login", follow_redirects=False)
     assert r.status_code == 404
 
 

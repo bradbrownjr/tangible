@@ -8,15 +8,15 @@ import json
 
 def _signup_and_login(client, username: str, password: str = "hunter22-secure") -> None:
     client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={"username": username, "password": password, "email": f"{username}@x.io"},
     )
-    r = client.post("/auth/login", json={"username": username, "password": password})
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
     assert r.status_code == 200, r.text
 
 
 def _make_collection(client, name: str = "Imports") -> str:
-    r = client.post("/collections", json={"name": name})
+    r = client.post("/api/collections", json={"name": name})
     assert r.status_code == 201
     return r.json()["id"]
 
@@ -32,14 +32,14 @@ def test_import_clz_movie(client) -> None:
         b"</movielist>"
     )
     r = client.post(
-        "/imports/clz",
+        "/api/imports/clz",
         data={"collection_id": cid, "flavor": "clz-movie"},
         files={"file": ("export.xml", io.BytesIO(xml), "application/xml")},
     )
     assert r.status_code == 200, r.text
     assert r.json()["imported"] == 2
 
-    items = client.get("/items", params={"collection_id": cid}).json()
+    items = client.get("/api/items", params={"collection_id": cid}).json()
     titles = sorted(i["title"] for i in items)
     assert titles == ["Blade Runner", "The Matrix"]
 
@@ -48,7 +48,7 @@ def test_import_clz_unknown_flavor(client) -> None:
     _signup_and_login(client, "alice")
     cid = _make_collection(client)
     r = client.post(
-        "/imports/clz",
+        "/api/imports/clz",
         data={"collection_id": cid, "flavor": "clz-bogus"},
         files={"file": ("x.xml", io.BytesIO(b"<x/>"), "application/xml")},
     )
@@ -66,7 +66,7 @@ def test_import_csv(client) -> None:
         "ISBN": "id:isbn",
     }
     r = client.post(
-        "/imports/csv",
+        "/api/imports/csv",
         data={
             "collection_id": cid,
             "category": "books.print",
@@ -77,7 +77,7 @@ def test_import_csv(client) -> None:
     assert r.status_code == 200, r.text
     assert r.json()["imported"] == 2
 
-    items = client.get("/items", params={"collection_id": cid}).json()
+    items = client.get("/api/items", params={"collection_id": cid}).json()
     assert {i["title"] for i in items} == {"Dune", "Foundation"}
 
 
@@ -85,17 +85,17 @@ def test_backup_and_restore_roundtrip(client) -> None:
     _signup_and_login(client, "alice")
     cid = _make_collection(client, "Originals")
     client.post(
-        "/items",
+        "/api/items",
         json={"collection_id": cid, "category": "movies.dvd", "title": "The Matrix"},
     )
     client.post(
-        "/items",
+        "/api/items",
         json={"collection_id": cid, "category": "movies.dvd", "title": "Blade Runner"},
     )
-    client.post("/tags", json={"name": "favorite", "color": "#ff0"})
-    client.post("/contacts", json={"name": "Bob"})
+    client.post("/api/tags", json={"name": "favorite", "color": "#ff0"})
+    client.post("/api/contacts", json={"name": "Bob"})
 
-    r = client.get("/imports/backup")
+    r = client.get("/api/imports/backup")
     assert r.status_code == 200, r.text
     payload = r.json()
     assert payload["version"] == 1
@@ -104,10 +104,10 @@ def test_backup_and_restore_roundtrip(client) -> None:
     assert len(payload["tags"]) == 1
 
     # Restore into a fresh user.
-    client.post("/auth/logout")
+    client.post("/api/auth/logout")
     _signup_and_login(client, "carol")
     r = client.post(
-        "/imports/restore",
+        "/api/imports/restore",
         files={
             "file": (
                 "backup.json",
@@ -124,7 +124,7 @@ def test_backup_and_restore_roundtrip(client) -> None:
     assert stats["contacts"] == 1
 
     # Carol now sees the imported data.
-    cols = client.get("/collections").json()
+    cols = client.get("/api/collections").json()
     assert any(c["name"] == "Originals" for c in cols)
 
 
@@ -132,7 +132,7 @@ def test_restore_rejects_unknown_version(client) -> None:
     _signup_and_login(client, "alice")
     bad = json.dumps({"version": 99, "collections": []}).encode("utf-8")
     r = client.post(
-        "/imports/restore",
+        "/api/imports/restore",
         files={"file": ("b.json", io.BytesIO(bad), "application/json")},
     )
     assert r.status_code == 400

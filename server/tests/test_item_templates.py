@@ -5,14 +5,14 @@ from __future__ import annotations
 
 def _register(client, username, password="hunter22-secure"):
     r = client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={"username": username, "password": password, "email": f"{username}@x.io"},
     )
     assert r.status_code == 201, r.text
 
 
 def _login(client, username, password="hunter22-secure"):
-    r = client.post("/auth/login", json={"username": username, "password": password})
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
     assert r.status_code == 200, r.text
 
 
@@ -32,11 +32,11 @@ BOOK_FIELDS = [
 def test_template_crud_and_attr_validation(client) -> None:
     _register(client, "alice")
     _login(client, "alice")
-    cid = client.post("/collections", json={"name": "Library"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "Library"}).json()["id"]
 
     # Create template
     r = client.post(
-        f"/collections/{cid}/templates",
+        f"/api/collections/{cid}/templates",
         json={
             "name": "Hardcover Book",
             "category_slug": "books.print",
@@ -49,13 +49,13 @@ def test_template_crud_and_attr_validation(client) -> None:
     assert r.json()["fields"][0]["key"] == "isbn"
 
     # List shows it
-    r = client.get(f"/collections/{cid}/templates")
+    r = client.get(f"/api/collections/{cid}/templates")
     assert r.status_code == 200
     assert any(t["id"] == tmpl_id for t in r.json())
 
     # Item creation without required attr → 422
     r = client.post(
-        "/items",
+        "/api/items",
         json={
             "collection_id": cid,
             "category": "books.print",
@@ -68,7 +68,7 @@ def test_template_crud_and_attr_validation(client) -> None:
 
     # With required attr present → 201; default applied; coercion runs
     r = client.post(
-        "/items",
+        "/api/items",
         json={
             "collection_id": cid,
             "category": "books.print",
@@ -85,7 +85,7 @@ def test_template_crud_and_attr_validation(client) -> None:
 
     # Invalid select option rejected on update
     r = client.patch(
-        f"/items/{item['id']}",
+        f"/api/items/{item['id']}",
         json={"attrs": {"isbn": "978-0441172719", "shelf": "Z"}},
     )
     assert r.status_code == 422
@@ -94,14 +94,14 @@ def test_template_crud_and_attr_validation(client) -> None:
 def test_template_update_and_delete(client) -> None:
     _register(client, "carol")
     _login(client, "carol")
-    cid = client.post("/collections", json={"name": "Tools"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "Tools"}).json()["id"]
     tmpl_id = client.post(
-        f"/collections/{cid}/templates",
+        f"/api/collections/{cid}/templates",
         json={"name": "Hand Tool", "category_slug": "tools.hand", "fields": []},
     ).json()["id"]
 
     r = client.patch(
-        f"/templates/{tmpl_id}",
+        f"/api/templates/{tmpl_id}",
         json={
             "name": "Hand Tool v2",
             "fields": [
@@ -114,7 +114,7 @@ def test_template_update_and_delete(client) -> None:
 
     # Now items missing 'brand' should fail
     r = client.post(
-        "/items",
+        "/api/items",
         json={
             "collection_id": cid,
             "category": "tools.hand",
@@ -124,19 +124,19 @@ def test_template_update_and_delete(client) -> None:
     )
     assert r.status_code == 422
 
-    r = client.delete(f"/templates/{tmpl_id}")
+    r = client.delete(f"/api/templates/{tmpl_id}")
     assert r.status_code == 204
-    r = client.get(f"/templates/{tmpl_id}")
+    r = client.get(f"/api/templates/{tmpl_id}")
     assert r.status_code == 404
 
 
 def test_template_unknown_id_rejected(client) -> None:
     _register(client, "dave")
     _login(client, "dave")
-    cid = client.post("/collections", json={"name": "Misc"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "Misc"}).json()["id"]
 
     r = client.post(
-        "/items",
+        "/api/items",
         json={
             "collection_id": cid,
             "category": "other.generic",
@@ -150,16 +150,16 @@ def test_template_unknown_id_rejected(client) -> None:
 def test_template_other_collection_rejected(client) -> None:
     _register(client, "eve")
     _login(client, "eve")
-    cid_a = client.post("/collections", json={"name": "A"}).json()["id"]
-    cid_b = client.post("/collections", json={"name": "B"}).json()["id"]
+    cid_a = client.post("/api/collections", json={"name": "A"}).json()["id"]
+    cid_b = client.post("/api/collections", json={"name": "B"}).json()["id"]
 
     tmpl_b = client.post(
-        f"/collections/{cid_b}/templates",
+        f"/api/collections/{cid_b}/templates",
         json={"name": "T", "category_slug": "other.generic", "fields": []},
     ).json()["id"]
 
     r = client.post(
-        "/items",
+        "/api/items",
         json={
             "collection_id": cid_a,
             "category": "other.generic",
@@ -174,16 +174,16 @@ def test_viewer_cannot_create_template(client) -> None:
     _register(client, "owner1")
     _register(client, "viewer1")
     _login(client, "owner1")
-    cid = client.post("/collections", json={"name": "Shared"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "Shared"}).json()["id"]
     client.post(
-        f"/collections/{cid}/members",
+        f"/api/collections/{cid}/members",
         json={"user_identifier": "viewer1", "role": "viewer"},
     )
-    client.post("/auth/logout")
+    client.post("/api/auth/logout")
 
     _login(client, "viewer1")
     r = client.post(
-        f"/collections/{cid}/templates",
+        f"/api/collections/{cid}/templates",
         json={"name": "T", "category_slug": "other.generic", "fields": []},
     )
     assert r.status_code == 403

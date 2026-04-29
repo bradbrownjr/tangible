@@ -94,15 +94,15 @@ def test_validate_url_rejects_loopback(monkeypatch) -> None:
 
 
 def test_scrape_endpoint_requires_auth(client) -> None:
-    r = client.post("/metadata/scrape", json={"url": "https://example.com"})
+    r = client.post("/api/metadata/scrape", json={"url": "https://example.com"})
     assert r.status_code == 401
 
 
 def test_scrape_endpoint_rejects_loopback(client, monkeypatch) -> None:
     client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={"username": "scraper", "password": "hunter22-secure", "email": "s@x.io"},
     )
-    client.post("/auth/login", json={"username": "scraper", "password": "hunter22-secure"})
-    r = client.post("/metadata/scrape", json={"url": "http://127.0.0.1/x"})
+    client.post("/api/auth/login", json={"username": "scraper", "password": "hunter22-secure"})
+    r = client.post("/api/metadata/scrape", json={"url": "http://127.0.0.1/x"})
     assert r.status_code == 400

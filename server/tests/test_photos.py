@@ -28,23 +28,23 @@ def _jpeg_with_orientation(orientation: int) -> bytes:
 
 def _register(client, username, password="hunter22-secure"):
     r = client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={"username": username, "password": password, "email": f"{username}@x.io"},
     )
     assert r.status_code == 201, r.text
 
 
 def _login(client, username, password="hunter22-secure"):
-    r = client.post("/auth/login", json={"username": username, "password": password})
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
     assert r.status_code == 200, r.text
 
 
 def _setup_item(client, owner="alice"):
     _register(client, owner)
     _login(client, owner)
-    cid = client.post("/collections", json={"name": "Stuff"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "Stuff"}).json()["id"]
     iid = client.post(
-        "/items", json={"collection_id": cid, "category": "tools.hand", "title": "Drill"}
+        "/api/items", json={"collection_id": cid, "category": "tools.hand", "title": "Drill"}
     ).json()["id"]
     return cid, iid
 
@@ -55,7 +55,7 @@ def test_upload_multiple_photos(client) -> None:
         ("files", ("a.png", io.BytesIO(_png_bytes()), "image/png")),
         ("files", ("b.png", io.BytesIO(_png_bytes(color=(0, 0, 200))), "image/png")),
     ]
-    r = client.post(f"/items/{iid}/photos", files=files)
+    r = client.post(f"/api/items/{iid}/photos", files=files)
     assert r.status_code == 201, r.text
     photos = r.json()
     assert len(photos) == 2
@@ -68,18 +68,18 @@ def test_upload_multiple_photos(client) -> None:
 def test_set_primary_photo(client) -> None:
     _, iid = _setup_item(client, "prim")
     client.post(
-        f"/items/{iid}/photos",
+        f"/api/items/{iid}/photos",
         files=[("files", ("a.png", io.BytesIO(_png_bytes()), "image/png"))],
     )
     p2 = client.post(
-        f"/items/{iid}/photos",
+        f"/api/items/{iid}/photos",
         files=[("files", ("b.png", io.BytesIO(_png_bytes(color=(10, 10, 10))), "image/png"))],
     ).json()[0]
 
-    r = client.patch(f"/photos/{p2['id']}", json={"is_primary": True})
+    r = client.patch(f"/api/photos/{p2['id']}", json={"is_primary": True})
     assert r.status_code == 200
     assert r.json()["is_primary"] is True
-    listing = client.get(f"/items/{iid}/photos").json()
+    listing = client.get(f"/api/items/{iid}/photos").json()
     primaries = [p for p in listing if p["is_primary"]]
     assert len(primaries) == 1
     assert primaries[0]["id"] == p2["id"]
@@ -91,12 +91,12 @@ def test_delete_promotes_next_primary(client) -> None:
         ("files", ("a.png", io.BytesIO(_png_bytes()), "image/png")),
         ("files", ("b.png", io.BytesIO(_png_bytes(color=(0, 0, 50))), "image/png")),
     ]
-    photos = client.post(f"/items/{iid}/photos", files=files).json()
+    photos = client.post(f"/api/items/{iid}/photos", files=files).json()
     primary_id = photos[0]["id"]
     other_id = photos[1]["id"]
-    r = client.delete(f"/photos/{primary_id}")
+    r = client.delete(f"/api/photos/{primary_id}")
     assert r.status_code == 204
-    remaining = client.get(f"/items/{iid}/photos").json()
+    remaining = client.get(f"/api/items/{iid}/photos").json()
     assert len(remaining) == 1
     assert remaining[0]["id"] == other_id
     assert remaining[0]["is_primary"] is True
@@ -107,7 +107,7 @@ def test_exif_rotation_changes_dimensions(client) -> None:
     _, iid = _setup_item(client, "exif")
     raw = _jpeg_with_orientation(6)
     r = client.post(
-        f"/items/{iid}/photos",
+        f"/api/items/{iid}/photos",
         files=[("files", ("rot.jpg", io.BytesIO(raw), "image/jpeg"))],
     )
     assert r.status_code == 201, r.text
@@ -120,7 +120,7 @@ def test_exif_rotation_changes_dimensions(client) -> None:
 def test_reject_non_image(client) -> None:
     _, iid = _setup_item(client, "bad")
     r = client.post(
-        f"/items/{iid}/photos",
+        f"/api/items/{iid}/photos",
         files=[("files", ("x.txt", io.BytesIO(b"not an image"), "image/png"))],
     )
     assert r.status_code == 415
@@ -130,18 +130,18 @@ def test_viewer_cannot_upload_photo(client) -> None:
     _register(client, "owner2")
     _register(client, "viewer2")
     _login(client, "owner2")
-    cid = client.post("/collections", json={"name": "X"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "X"}).json()["id"]
     iid = client.post(
-        "/items", json={"collection_id": cid, "category": "other.generic", "title": "Y"}
+        "/api/items", json={"collection_id": cid, "category": "other.generic", "title": "Y"}
     ).json()["id"]
     client.post(
-        f"/collections/{cid}/members",
+        f"/api/collections/{cid}/members",
         json={"user_identifier": "viewer2", "role": "viewer"},
     )
-    client.post("/auth/logout")
+    client.post("/api/auth/logout")
     _login(client, "viewer2")
     r = client.post(
-        f"/items/{iid}/photos",
+        f"/api/items/{iid}/photos",
         files=[("files", ("a.png", io.BytesIO(_png_bytes()), "image/png"))],
     )
     assert r.status_code == 403

@@ -7,25 +7,25 @@ from datetime import UTC, datetime, timedelta
 
 def _register(client, username, password="hunter22-secure"):
     r = client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={"username": username, "password": password, "email": f"{username}@x.io"},
     )
     assert r.status_code == 201, r.text
 
 
 def _login(client, username, password="hunter22-secure"):
-    r = client.post("/auth/login", json={"username": username, "password": password})
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
     assert r.status_code == 200, r.text
 
 
 def _logout(client):
-    client.post("/auth/logout")
+    client.post("/api/auth/logout")
 
 
 def _setup_collection_with_item(client) -> tuple[str, str]:
-    cid = client.post("/collections", json={"name": "Vinyl"}).json()["id"]
+    cid = client.post("/api/collections", json={"name": "Vinyl"}).json()["id"]
     iid = client.post(
-        "/items",
+        "/api/items",
         json={"collection_id": cid, "category": "music.vinyl", "title": "Kind of Blue"},
     ).json()["id"]
     return cid, iid
@@ -36,7 +36,7 @@ def test_create_and_use_share_link(client) -> None:
     _login(client, "alice")
     cid, iid = _setup_collection_with_item(client)
 
-    r = client.post(f"/collections/{cid}/share-links", json={"label": "Public"})
+    r = client.post(f"/api/collections/{cid}/share-links", json={"label": "Public"})
     assert r.status_code == 201, r.text
     body = r.json()
     slug = body["slug"]
@@ -45,17 +45,17 @@ def test_create_and_use_share_link(client) -> None:
 
     # Anonymous can read collection + items via slug.
     _logout(client)
-    r = client.get(f"/public/share/{slug}")
+    r = client.get(f"/api/public/share/{slug}")
     assert r.status_code == 200
     assert r.json()["id"] == cid
 
-    r = client.get(f"/public/share/{slug}/items")
+    r = client.get(f"/api/public/share/{slug}/items")
     assert r.status_code == 200
     assert [it["id"] for it in r.json()] == [iid]
 
 
 def test_unknown_slug_404(client) -> None:
-    r = client.get("/public/share/does-not-exist")
+    r = client.get("/api/public/share/does-not-exist")
     assert r.status_code == 404
 
 
@@ -65,13 +65,13 @@ def test_expired_share_returns_410(client) -> None:
     cid, _iid = _setup_collection_with_item(client)
     past = (datetime.now(UTC) - timedelta(minutes=1)).isoformat()
     r = client.post(
-        f"/collections/{cid}/share-links",
+        f"/api/collections/{cid}/share-links",
         json={"expires_at": past},
     )
     assert r.status_code == 201
     slug = r.json()["slug"]
     _logout(client)
-    r = client.get(f"/public/share/{slug}")
+    r = client.get(f"/api/public/share/{slug}")
     assert r.status_code == 410
 
 
@@ -79,13 +79,13 @@ def test_revoked_share_404(client) -> None:
     _register(client, "alice")
     _login(client, "alice")
     cid, _iid = _setup_collection_with_item(client)
-    r = client.post(f"/collections/{cid}/share-links", json={})
+    r = client.post(f"/api/collections/{cid}/share-links", json={})
     link_id = r.json()["id"]
     slug = r.json()["slug"]
 
-    assert client.delete(f"/collections/{cid}/share-links/{link_id}").status_code == 204
+    assert client.delete(f"/api/collections/{cid}/share-links/{link_id}").status_code == 204
     _logout(client)
-    assert client.get(f"/public/share/{slug}").status_code == 404
+    assert client.get(f"/api/public/share/{slug}").status_code == 404
 
 
 def test_non_owner_cannot_create_share_link(client) -> None:
@@ -94,12 +94,12 @@ def test_non_owner_cannot_create_share_link(client) -> None:
     _login(client, "alice")
     cid, _iid = _setup_collection_with_item(client)
     client.post(
-        f"/collections/{cid}/members",
+        f"/api/collections/{cid}/members",
         json={"user_identifier": "bob", "role": "editor"},
     )
     _logout(client)
     _login(client, "bob")
-    r = client.post(f"/collections/{cid}/share-links", json={})
+    r = client.post(f"/api/collections/{cid}/share-links", json={})
     assert r.status_code == 403
 
 
@@ -107,8 +107,8 @@ def test_list_share_links(client) -> None:
     _register(client, "alice")
     _login(client, "alice")
     cid, _iid = _setup_collection_with_item(client)
-    client.post(f"/collections/{cid}/share-links", json={"label": "A"})
-    client.post(f"/collections/{cid}/share-links", json={"label": "B"})
-    r = client.get(f"/collections/{cid}/share-links")
+    client.post(f"/api/collections/{cid}/share-links", json={"label": "A"})
+    client.post(f"/api/collections/{cid}/share-links", json={"label": "B"})
+    r = client.get(f"/api/collections/{cid}/share-links")
     assert r.status_code == 200
     assert len(r.json()) == 2

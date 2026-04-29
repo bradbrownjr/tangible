@@ -47,8 +47,9 @@ object NetworkModule {
     @Provides @Singleton
     fun retrofit(client: OkHttpClient, moshi: Moshi, session: SessionStore): Retrofit {
         val base = runBlocking { session.baseUrl.firstOrNull() } ?: "https://covet.invalid/"
+        val apiBase = "${base.trimEnd('/')}/api/"
         return Retrofit.Builder()
-            .baseUrl(if (base.endsWith('/')) base else "$base/")
+            .baseUrl(apiBase)
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -63,7 +64,7 @@ object NetworkModule {
      */
     fun apiFor(baseUrl: String, moshi: Moshi, client: OkHttpClient): CovetApi =
         Retrofit.Builder()
-            .baseUrl(if (baseUrl.endsWith('/')) baseUrl else "$baseUrl/")
+            .baseUrl("${baseUrl.trimEnd('/')}/api/")
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()

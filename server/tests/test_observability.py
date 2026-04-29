@@ -7,8 +7,8 @@ from fastapi.testclient import TestClient
 
 def test_metrics_endpoint_exposes_prometheus_format(client: TestClient) -> None:
     # Generate some traffic to ensure counters appear.
-    client.get("/healthz")
-    client.get("/healthz")
+    client.get("/api/healthz")
+    client.get("/api/healthz")
     r = client.get("/metrics")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/plain")

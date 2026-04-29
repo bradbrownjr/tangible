@@ -9,7 +9,7 @@
 
     onMount(async () => {
         try {
-            const res = await fetch('/changelog', { credentials: 'include' });
+            const res = await fetch('/api/changelog', { credentials: 'include' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             md = await res.text();
         } catch (e) {

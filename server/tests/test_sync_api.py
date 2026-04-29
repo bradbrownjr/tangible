@@ -26,15 +26,15 @@ def _change(actor: str = "actor-a") -> dict:
 
 def _signup_and_login(client, username: str, password: str = "hunter22-secure") -> None:
     client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={"username": username, "password": password, "email": f"{username}@x.io"},
     )
-    r = client.post("/auth/login", json={"username": username, "password": password})
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
     assert r.status_code == 200, r.text
 
 
 def _make_collection(client) -> str:
-    r = client.post("/collections", json={"name": "Sync Test"})
+    r = client.post("/api/collections", json={"name": "Sync Test"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -47,7 +47,7 @@ def test_push_and_pull_changes(client) -> None:
     c1, c2 = _change(), _change()
 
     r = client.post(
-        f"/collections/{cid}/sync/item/{doc_id}/changes",
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes",
         json={"changes": [c1, c2]},
     )
     assert r.status_code == 200, r.text
@@ -59,7 +59,7 @@ def test_push_and_pull_changes(client) -> None:
 
     # Idempotent re-push: both should be duplicates.
     r = client.post(
-        f"/collections/{cid}/sync/item/{doc_id}/changes",
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes",
         json={"changes": [c1, c2]},
     )
     assert r.status_code == 200
@@ -71,7 +71,7 @@ def test_push_and_pull_changes(client) -> None:
     }
 
     # Pull from 0: should return both, in order.
-    r = client.get(f"/collections/{cid}/sync/item/{doc_id}/changes")
+    r = client.get(f"/api/collections/{cid}/sync/item/{doc_id}/changes")
     assert r.status_code == 200
     pulled = r.json()
     assert pulled["head_seq"] == 2
@@ -82,7 +82,7 @@ def test_push_and_pull_changes(client) -> None:
 
     # Incremental pull.
     r = client.get(
-        f"/collections/{cid}/sync/item/{doc_id}/changes", params={"since": 1}
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes", params={"since": 1}
     )
     assert r.status_code == 200
     assert [c["server_seq"] for c in r.json()["changes"]] == [2]
@@ -94,14 +94,14 @@ def test_list_collection_docs(client) -> None:
     doc_a, doc_b = "DOC0000000000000000000001A", "DOC0000000000000000000002B"
 
     client.post(
-        f"/collections/{cid}/sync/item/{doc_a}/changes", json={"changes": [_change()]}
+        f"/api/collections/{cid}/sync/item/{doc_a}/changes", json={"changes": [_change()]}
     )
     client.post(
-        f"/collections/{cid}/sync/item/{doc_b}/changes",
+        f"/api/collections/{cid}/sync/item/{doc_b}/changes",
         json={"changes": [_change(), _change()]},
     )
 
-    r = client.get(f"/collections/{cid}/sync")
+    r = client.get(f"/api/collections/{cid}/sync")
     assert r.status_code == 200
     summaries = {s["id"]: s for s in r.json()}
     assert summaries[doc_a]["head_seq"] == 1
@@ -117,7 +117,7 @@ def test_snapshot_compaction(client) -> None:
     # Push three changes.
     changes = [_change() for _ in range(3)]
     client.post(
-        f"/collections/{cid}/sync/item/{doc_id}/changes", json={"changes": changes}
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes", json={"changes": changes}
     )
 
     snap_bytes = secrets.token_bytes(128)
@@ -125,7 +125,7 @@ def test_snapshot_compaction(client) -> None:
 
     # Upload snapshot covering the first two changes.
     r = client.put(
-        f"/collections/{cid}/sync/item/{doc_id}/snapshot",
+        f"/api/collections/{cid}/sync/item/{doc_id}/snapshot",
         json={
             "snapshot_b64": _b64(snap_bytes),
             "head_hash": head_hash,
@@ -140,19 +140,19 @@ def test_snapshot_compaction(client) -> None:
     assert snap["head_seq"] == 3
 
     # Pulling from 0 now only returns the post-snapshot tail.
-    r = client.get(f"/collections/{cid}/sync/item/{doc_id}/changes")
+    r = client.get(f"/api/collections/{cid}/sync/item/{doc_id}/changes")
     assert r.status_code == 200
     tail = r.json()["changes"]
     assert [c["server_seq"] for c in tail] == [3]
 
     # Snapshot is fetchable.
-    r = client.get(f"/collections/{cid}/sync/item/{doc_id}/snapshot")
+    r = client.get(f"/api/collections/{cid}/sync/item/{doc_id}/snapshot")
     assert r.status_code == 200
     assert r.json()["snapshot_b64"] == _b64(snap_bytes)
 
     # Cannot snapshot beyond head.
     r = client.put(
-        f"/collections/{cid}/sync/item/{doc_id}/snapshot",
+        f"/api/collections/{cid}/sync/item/{doc_id}/snapshot",
         json={
             "snapshot_b64": _b64(snap_bytes),
             "head_hash": head_hash,
@@ -167,18 +167,18 @@ def test_sync_acl(client) -> None:
     cid = _make_collection(client)
     doc_id = "DOC0000000000000000000004D"
     client.post(
-        f"/collections/{cid}/sync/item/{doc_id}/changes", json={"changes": [_change()]}
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes", json={"changes": [_change()]}
     )
 
     # Bob has no access.
-    client.post("/auth/logout")
+    client.post("/api/auth/logout")
     _signup_and_login(client, "bob")
-    r = client.get(f"/collections/{cid}/sync")
+    r = client.get(f"/api/collections/{cid}/sync")
     assert r.status_code == 403
-    r = client.get(f"/collections/{cid}/sync/item/{doc_id}/changes")
+    r = client.get(f"/api/collections/{cid}/sync/item/{doc_id}/changes")
     assert r.status_code == 403
     r = client.post(
-        f"/collections/{cid}/sync/item/{doc_id}/changes",
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes",
         json={"changes": [_change("bob")]},
     )
     assert r.status_code == 403
@@ -190,7 +190,7 @@ def test_invalid_blob_rejected(client) -> None:
     doc_id = "DOC0000000000000000000005E"
 
     r = client.post(
-        f"/collections/{cid}/sync/item/{doc_id}/changes",
+        f"/api/collections/{cid}/sync/item/{doc_id}/changes",
         json={
             "changes": [
                 {"change_hash": "abc", "actor_id": "x", "blob_b64": "!!!not base64!!!"}
@@ -203,5 +203,5 @@ def test_invalid_blob_rejected(client) -> None:
 def test_pull_unknown_doc_404(client) -> None:
     _signup_and_login(client, "alice")
     cid = _make_collection(client)
-    r = client.get(f"/collections/{cid}/sync/item/DOCNOPE000000000000000NOPE/changes")
+    r = client.get(f"/api/collections/{cid}/sync/item/DOCNOPE000000000000000NOPE/changes")
     assert r.status_code == 404

@@ -82,7 +82,7 @@
                 fd.set('category', csvLeaf);
                 fd.set('mapping', csvMapping);
                 fd.set('file', csvFile[0]);
-                path = '/imports/csv';
+                path = '/api/imports/csv';
             } else if (mode === 'list') {
                 if (!listText.trim() && !listFile?.[0])
                     throw new Error('Paste a list or attach a .txt file');
@@ -90,11 +90,11 @@
                 fd.set('category', listLeaf);
                 if (listText.trim()) fd.set('titles', listText);
                 if (listFile?.[0]) fd.set('file', listFile[0]);
-                path = '/imports/list';
+                path = '/api/imports/list';
             } else {
                 if (!restoreFile?.[0]) throw new Error('Pick a file');
                 fd.set('file', restoreFile[0]);
-                path = '/imports/restore';
+                path = '/api/imports/restore';
             }
             const res = await fetch(path, {
                 method: 'POST',
@@ -114,7 +114,7 @@
     }
 
     async function downloadBackup() {
-        const res = await fetch('/imports/backup', { credentials: 'include' });
+        const res = await fetch('/api/imports/backup', { credentials: 'include' });
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -125,7 +125,7 @@
     }
 
     async function downloadCsvTemplate() {
-        const res = await fetch(`/imports/csv/template?category=${encodeURIComponent(csvLeaf)}`, {
+        const res = await fetch(`/api/imports/csv/template?category=${encodeURIComponent(csvLeaf)}`, {
             credentials: 'include'
         });
         const blob = await res.blob();
