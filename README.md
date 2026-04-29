@@ -27,12 +27,25 @@ internet connection.
 | `docker/`   | `Dockerfile`, compose examples, Caddy snippet              |
 | `docs/`     | User and developer documentation                           |
 
+## Documentation
+
+- [User guide](docs/user-guide.md) — collections, items, photos,
+  templates, sharing, sync, mobile app
+- [Admin guide](docs/admin-guide.md) — first-run setup, users &
+  invitations, OIDC/SSO, backups, upgrades, observability
+- [Deployment guide](docs/deployment.md) — Docker, Unraid, Postgres,
+  reverse proxy
+- [Configuration reference](docs/configuration.md) — every
+  `COVET_*` environment variable
+- [Development guide](docs/development.md) — running the stack locally
+
 ## Quick start (development)
 
 See [docs/development.md](docs/development.md).
 
 ## Deployment
 
+- [Deployment guide](docs/deployment.md)
 - Standard Docker: [docker/docker-compose.standard.yml](docker/docker-compose.standard.yml)
 - Unraid: [docker/docker-compose.unraid.yml](docker/docker-compose.unraid.yml)
 - With PostgreSQL: [docker/docker-compose.postgres.yml](docker/docker-compose.postgres.yml)

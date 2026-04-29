@@ -4,6 +4,11 @@ Covet ships as a single multi-arch (amd64/arm64) Docker image at
 `ghcr.io/bradbrownjr/covet`. The image bundles the FastAPI server and the
 SvelteKit web SPA — the API and UI share one port.
 
+> Once the container is up, see the [Admin guide](admin-guide.md) for
+> first-run setup, users, SSO, backups and upgrades. End-user docs live
+> in the [User guide](user-guide.md). Every environment variable is in
+> the [Configuration reference](configuration.md).
+
 Tags:
 
 - `:edge` — built from `main` on every push
