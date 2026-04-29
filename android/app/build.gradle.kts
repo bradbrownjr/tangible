@@ -15,8 +15,8 @@ android {
         applicationId = "us.lynwood.covet"
         minSdk = 26 // Android 8.0
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 9
+        versionName = "0.9.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
