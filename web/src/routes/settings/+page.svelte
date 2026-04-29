@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { api } from '$lib/api';
-    import { me } from '$lib/session';
     import { theme, type ThemeMode } from '$lib/theme';
 
     interface Token {
@@ -50,15 +49,6 @@
 </script>
 
 <h1>Settings</h1>
-
-{#if $me}
-    <div class="card" style="margin-bottom: 1rem">
-        <h3 style="margin-top:0">Profile</h3>
-        <p><strong>Username:</strong> {$me.username}</p>
-        {#if $me.email}<p><strong>Email:</strong> {$me.email}</p>{/if}
-        {#if $me.is_admin}<p class="muted">Administrator</p>{/if}
-    </div>
-{/if}
 
 <div class="card" style="margin-bottom: 1rem">
     <h3 style="margin-top:0">Appearance</h3>
