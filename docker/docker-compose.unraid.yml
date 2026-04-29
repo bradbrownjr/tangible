@@ -21,7 +21,7 @@ services:
     labels:
       net.unraid.docker.webui: "http://[IP]:[PORT:8000]/"
       net.unraid.docker.shell: "bash"
-      # net.unraid.docker.icon: "https://example.com/covet-icon.png"
+      net.unraid.docker.icon: "https://raw.githubusercontent.com/bradbrownjr/covet/main/web/static/icon-512.png"
     ports:
       - "8000:8000"
     environment:

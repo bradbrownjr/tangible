@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Covet favicon — gem only (transparent background) so it reads well at
+  16/32px tab sizes and on any browser theme.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Covet">
+    <title>Covet</title>
+    <!-- Vertices: table 13,3 / 19,3 / girdle 23,10 / culet 16,26 / girdle 9,10 -->
+    <path d="M 13 3 L 9 10 L 16 26 Z" fill="#7dd3fc"/>
+    <path d="M 19 3 L 23 10 L 16 26 Z" fill="#0ea5e9"/>
+    <path d="M 13 3 L 19 3 L 16 26 Z" fill="#38bdf8"/>
+    <path d="M 13 3 L 19 3 L 23 10 L 16 26 L 9 10 Z M 13 3 L 16 26 M 19 3 L 16 26"
+          fill="none" stroke="#0f172a" stroke-width="0.8" stroke-linejoin="round"/>
+</svg>

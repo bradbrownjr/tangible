@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Covet brand mark.
+  Open treasure box with a faceted gem floating above, in the project's
+  slate/sky palette (matches web/src/lib/styles.css and the
+  meta[name=theme-color] in web/src/app.html).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Covet">
+    <title>Covet</title>
+    <!-- Tile background (rounded square) -->
+    <rect width="1024" height="1024" rx="192" fill="#0f172a"/>
+
+    <!-- Faceted gem floating above the box -->
+    <g>
+        <!-- Outline coords:
+             P1 (table-left)   = 464, 96
+             P2 (table-right)  = 560, 96
+             P3 (girdle-right) = 624, 200
+             P4 (culet)        = 512, 308
+             P5 (girdle-left)  = 400, 200 -->
+        <!-- Left facet -->
+        <path d="M 464 96 L 400 200 L 512 308 Z" fill="#7dd3fc"/>
+        <!-- Right facet -->
+        <path d="M 560 96 L 624 200 L 512 308 Z" fill="#0ea5e9"/>
+        <!-- Center facet (table + main pavilion) -->
+        <path d="M 464 96 L 560 96 L 512 308 Z" fill="#38bdf8"/>
+        <!-- Outline + facet creases -->
+        <path d="M 464 96 L 560 96 L 624 200 L 512 308 L 400 200 Z
+                 M 464 96 L 512 308 M 560 96 L 512 308"
+              fill="none" stroke="#0f172a" stroke-width="10" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Treasure box -->
+    <g fill="#1e293b" stroke="#38bdf8" stroke-width="32" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Open lid, hinged at back-top, tilted up & back -->
+        <path d="M 268 528 L 756 528 L 712 360 L 224 360 Z"/>
+        <!-- Box body (front face) with rounded corners -->
+        <rect x="208" y="536" width="608" height="368" rx="40"/>
+    </g>
+    <!-- Inner shadow at the top of the box opening to read as "open" -->
+    <rect x="240" y="552" width="544" height="40" rx="14" fill="#0f172a"/>
+    <!-- Subtle clasp / lock plate centered on front face -->
+    <g fill="#38bdf8">
+        <rect x="476" y="700" width="72" height="96" rx="12"/>
+        <circle cx="512" cy="748" r="14" fill="#0f172a"/>
+    </g>
+</svg>
