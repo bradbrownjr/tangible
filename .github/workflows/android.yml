@@ -67,6 +67,17 @@ jobs:
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --no-daemon
 
+      - name: Upload unit test reports (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            android/app/build/reports/tests/**
+            android/app/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
 
