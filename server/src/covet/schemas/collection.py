@@ -46,6 +46,25 @@ class MembershipRead(BaseModel):
     role: Role
 
 
+class MembershipDetail(MembershipRead):
+    """Membership row plus enough user info to render a member list."""
+
+    username: str
+    email: str | None = None
+    display_name: str | None = None
+
+
+class MembershipCreate(BaseModel):
+    """Add a user (by username or email) to a collection."""
+
+    user_identifier: str = Field(min_length=1, max_length=255)
+    role: Role = "viewer"
+
+
+class MembershipUpdate(BaseModel):
+    role: Role
+
+
 class ShareLinkCreate(BaseModel):
     label: str | None = None
     expires_at: datetime | None = None

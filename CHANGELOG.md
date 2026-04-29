@@ -16,6 +16,11 @@ All notable changes to **Covet** are documented here. Format follows
   existing one by email). Optional `admin_groups` claim mapping promotes
   members of named groups to admin. `/config/public` now lists enabled
   providers so the web sign-in page renders the right buttons.
+- **Members panel** — collection owners can now invite existing users to
+  a collection as `editor` or `viewer` via
+  `GET/POST/PATCH/DELETE /collections/{id}/members`. Web app gains a
+  per-collection Members page with add/remove/role-change controls.
+  Owner is surfaced in the member list (read-only).
 
 ### Changed
 

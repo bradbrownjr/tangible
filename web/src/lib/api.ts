@@ -97,6 +97,18 @@ export interface Tag {
     color: string | null;
 }
 
+export type Role = 'viewer' | 'editor' | 'owner';
+
+export interface Membership {
+    id: string;
+    collection_id: string;
+    user_id: string;
+    role: Role;
+    username: string;
+    email: string | null;
+    display_name: string | null;
+}
+
 export interface PublicConfig {
     public_url: string;
     registration_enabled: boolean;
