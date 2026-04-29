@@ -47,10 +47,15 @@ WORKDIR /src
 COPY LICENSE NOTICE README.md ./
 COPY server/pyproject.toml ./server/pyproject.toml
 COPY server/src ./server/src
+COPY server/alembic.ini ./server/alembic.ini
+COPY server/alembic ./server/alembic
 
 # Build wheel + collect runtime dependencies into a venv we can copy across
 RUN uv venv --python python${PYTHON_VERSION} /opt/covet \
-    && uv pip install --python /opt/covet/bin/python --no-cache ./server
+    && uv pip install --python /opt/covet/bin/python --no-cache ./server \
+    && mkdir -p /opt/covet/share/covet \
+    && cp -r /src/server/alembic /opt/covet/share/covet/alembic \
+    && cp /src/server/alembic.ini /opt/covet/share/covet/alembic.ini
 
 # ----------------------------------------------------------------------------
 # Stage 3: runtime
@@ -63,6 +68,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     COVET_DATA_DIR=/data \
     COVET_CONFIG_DIR=/config \
     COVET_WEB_DIR=/app/web \
+    COVET_ALEMBIC_DIR=/opt/covet/share/covet/alembic \
     COVET_HOST=0.0.0.0 \
     COVET_PORT=8000 \
     PUID=1000 \

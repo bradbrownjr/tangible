@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import structlog
@@ -22,10 +23,33 @@ def ensure_data_dirs(settings: Settings) -> None:
             Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def _alembic_config(settings: Settings) -> Config:
+def _find_alembic_dir() -> Path:
+    """Locate the ``alembic`` migrations directory.
+
+    Search order:
+      1. ``$COVET_ALEMBIC_DIR`` (explicit override, used by Docker image).
+      2. Repo layout (``server/alembic`` next to ``server/src``) — for dev.
+      3. ``<sys.prefix>/share/covet/alembic`` — installed/Docker fallback.
+    """
+    import sys
+
+    env_override = os.environ.get("COVET_ALEMBIC_DIR")
+    if env_override:
+        return Path(env_override)
+
     server_root = Path(__file__).resolve().parent.parent.parent
-    cfg = Config(str(server_root / "alembic.ini"))
-    cfg.set_main_option("script_location", str(server_root / "alembic"))
+    candidate = server_root / "alembic"
+    if candidate.is_dir():
+        return candidate
+
+    return Path(sys.prefix) / "share" / "covet" / "alembic"
+
+
+def _alembic_config(settings: Settings) -> Config:
+    alembic_dir = _find_alembic_dir()
+    ini_path = alembic_dir.parent / "alembic.ini"
+    cfg = Config(str(ini_path)) if ini_path.is_file() else Config()
+    cfg.set_main_option("script_location", str(alembic_dir))
     cfg.set_main_option("sqlalchemy.url", settings.resolved_database_url())
     return cfg
 
