@@ -6,6 +6,15 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.13.4] — 2026-04-29
+
+### Fixed
+
+- **Android APK now ships with GitHub Releases.** A compilation error
+  (`WizardStep` private enum exposed through public data class) and a
+  workflow path bug (rename step ran from wrong directory) both
+  prevented the APK from being attached to prior releases.
+
 ## [0.13.3] — 2026-05-01
 
 ### Fixed
