@@ -21,6 +21,7 @@ from covet.schemas import (
     MembershipDetail,
     MembershipUpdate,
 )
+from covet.services import audit
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
@@ -167,7 +168,7 @@ def add_member(
     collection_id: str,
     payload: MembershipCreate,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("owner")),
+    auth: AuthContext = Depends(require_collection_role("owner")),
 ) -> MembershipDetail:
     collection = db.get(Collection, collection_id)
     if collection is None:
@@ -202,6 +203,15 @@ def add_member(
         collection_id=collection_id, user_id=user.id, role=payload.role
     )
     db.add(membership)
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="member.add",
+        collection_id=collection_id,
+        target_type="user",
+        target_id=user.id,
+        payload={"role": payload.role, "username": user.username},
+    )
     db.commit()
     db.refresh(membership)
     return _membership_to_detail(membership, user)
@@ -213,12 +223,22 @@ def update_member(
     member_id: str,
     payload: MembershipUpdate,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("owner")),
+    auth: AuthContext = Depends(require_collection_role("owner")),
 ) -> MembershipDetail:
     membership = db.get(CollectionMembership, member_id)
     if membership is None or membership.collection_id != collection_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    old_role = membership.role
     membership.role = payload.role
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="member.update_role",
+        collection_id=collection_id,
+        target_type="user",
+        target_id=membership.user_id,
+        payload={"old_role": old_role, "new_role": payload.role},
+    )
     db.commit()
     db.refresh(membership)
     user = db.get(User, membership.user_id)
@@ -234,10 +254,19 @@ def remove_member(
     collection_id: str,
     member_id: str,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("owner")),
+    auth: AuthContext = Depends(require_collection_role("owner")),
 ) -> None:
     membership = db.get(CollectionMembership, member_id)
     if membership is None or membership.collection_id != collection_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="member.remove",
+        collection_id=collection_id,
+        target_type="user",
+        target_id=membership.user_id,
+        payload={"role": membership.role},
+    )
     db.delete(membership)
     db.commit()

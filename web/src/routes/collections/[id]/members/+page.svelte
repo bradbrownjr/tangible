@@ -3,6 +3,7 @@
     import { page } from '$app/stores';
     import {
         api,
+        type AuditLogEntry,
         type Collection,
         type Invitation,
         type InvitationCreated,
@@ -15,6 +16,7 @@
     let members = $state<Membership[]>([]);
     let shareLinks = $state<ShareLink[]>([]);
     let invitations = $state<Invitation[]>([]);
+    let auditLog = $state<AuditLogEntry[]>([]);
     let lastInviteUrl = $state<string | null>(null);
     let loading = $state(true);
     let error = $state('');
@@ -44,6 +46,13 @@
                 );
             } catch {
                 invitations = [];
+            }
+            try {
+                auditLog = await api.get<AuditLogEntry[]>(
+                    `/audit?collection_id=${cid}&limit=50`
+                );
+            } catch {
+                auditLog = [];
             }
         } catch (e) {
             error = (e as Error).message;
@@ -315,6 +324,32 @@
                             <button class="danger" onclick={() => revokeShareLink(l)}>
                                 Revoke
                             </button>
+                        </td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    {/if}
+    <h2 style="margin-top:2rem">Activity log</h2>
+    <p class="muted">Recent membership, invitation and share-link events.</p>
+    {#if auditLog.length === 0}
+        <p class="muted">No recorded activity yet.</p>
+    {:else}
+        <table>
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#each auditLog as entry (entry.id)}
+                    <tr>
+                        <td class="muted">{entry.created_at}</td>
+                        <td><code>{entry.action}</code></td>
+                        <td class="muted">
+                            {entry.target_type ?? ''}{entry.target_id ? ' ' + entry.target_id : ''}
                         </td>
                     </tr>
                 {/each}

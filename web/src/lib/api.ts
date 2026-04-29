@@ -141,6 +141,17 @@ export interface InvitationPreview {
     expires_at: string | null;
 }
 
+export interface AuditLogEntry {
+    id: string;
+    actor_user_id: string | null;
+    collection_id: string | null;
+    action: string;
+    target_type: string | null;
+    target_id: string | null;
+    payload: Record<string, unknown> | null;
+    created_at: string;
+}
+
 export interface PublicConfig {
     public_url: string;
     registration_enabled: boolean;

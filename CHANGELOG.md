@@ -35,6 +35,13 @@ All notable changes to **Covet** are documented here. Format follows
   the invitation anonymously, then sign in (or sign up) to accept,
   becoming a member at the chosen role. Acceptance never downgrades an
   existing higher role.
+- **Append-only audit log** — new `audit_log` table records membership,
+  share-link and invitation events (`member.add/update_role/remove`,
+  `share_link.create/revoke`, `invitation.create/revoke/accept`) with
+  actor, collection, target and JSON payload. New `GET /audit` endpoint:
+  global view requires admin; per-collection view (`?collection_id=`)
+  requires owner. Web Members page surfaces the recent activity log for
+  the collection.
 
 ### Changed
 

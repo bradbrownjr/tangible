@@ -18,6 +18,7 @@ from covet.schemas import (
     ShareLinkCreate,
     ShareLinkRead,
 )
+from covet.services import audit
 
 router = APIRouter(tags=["share"])
 
@@ -52,7 +53,7 @@ def create_share_link(
     collection_id: str,
     payload: ShareLinkCreate,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("owner")),
+    auth: AuthContext = Depends(require_collection_role("owner")),
 ) -> ShareLink:
     collection = db.get(Collection, collection_id)
     if collection is None:
@@ -65,6 +66,15 @@ def create_share_link(
         revoked=False,
     )
     db.add(link)
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="share_link.create",
+        collection_id=collection_id,
+        target_type="share_link",
+        target_id=link.id,
+        payload={"label": payload.label},
+    )
     db.commit()
     db.refresh(link)
     return link
@@ -78,11 +88,19 @@ def revoke_share_link(
     collection_id: str,
     link_id: str,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("owner")),
+    auth: AuthContext = Depends(require_collection_role("owner")),
 ) -> None:
     link = db.get(ShareLink, link_id)
     if link is None or link.collection_id != collection_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="share_link.revoke",
+        collection_id=collection_id,
+        target_type="share_link",
+        target_id=link.id,
+    )
     db.delete(link)
     db.commit()
 

@@ -19,6 +19,7 @@ from covet.schemas import (
     InvitationPreview,
     InvitationRead,
 )
+from covet.services import audit
 
 router = APIRouter(tags=["invitations"])
 
@@ -82,6 +83,15 @@ def create_invitation(
         created_by=auth.user.id,
     )
     db.add(inv)
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="invitation.create",
+        collection_id=collection_id,
+        target_type="invitation",
+        target_id=inv.id,
+        payload={"role": payload.role, "email": payload.email},
+    )
     db.commit()
     db.refresh(inv)
     return InvitationCreated(
@@ -104,11 +114,19 @@ def revoke_invitation(
     collection_id: str,
     invitation_id: str,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("owner")),
+    auth: AuthContext = Depends(require_collection_role("owner")),
 ) -> None:
     inv = db.get(Invitation, invitation_id)
     if inv is None or inv.collection_id != collection_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="invitation.revoke",
+        collection_id=collection_id,
+        target_type="invitation",
+        target_id=inv.id,
+    )
     db.delete(inv)
     db.commit()
 
@@ -185,4 +203,13 @@ def accept_invitation(
             existing.role = inv.role
 
     inv.accepted_at = datetime.now(UTC)
+    audit.log(
+        db,
+        actor_user_id=user.id,
+        action="invitation.accept",
+        collection_id=collection.id,
+        target_type="invitation",
+        target_id=inv.id,
+        payload={"role": inv.role},
+    )
     db.commit()

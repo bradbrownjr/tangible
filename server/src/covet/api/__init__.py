@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from covet.api import audit as audit_router
 from covet.api import auth as auth_router
 from covet.api import collections as collections_router
 from covet.api import contacts as contacts_router
@@ -26,5 +27,6 @@ api_router.include_router(sync_router.router)
 api_router.include_router(imports_router.router)
 api_router.include_router(share_router.router)
 api_router.include_router(invitations_router.router)
+api_router.include_router(audit_router.router)
 
 __all__ = ["api_router"]

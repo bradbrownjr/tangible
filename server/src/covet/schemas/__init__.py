@@ -1,5 +1,6 @@
 """Pydantic v2 schemas for the public API."""
 
+from covet.schemas.audit import AuditLogRead
 from covet.schemas.auth import (
     LoginRequest,
     OIDCProviderInfo,
@@ -41,6 +42,7 @@ from covet.schemas.tag import TagCreate, TagRead, TagUpdate
 from covet.schemas.user import UserCreate, UserRead, UserUpdate
 
 __all__ = [
+    "AuditLogRead",
     "CollectionCreate",
     "CollectionRead",
     "CollectionUpdate",

@@ -3,6 +3,7 @@
 Importing this module registers all model classes with :class:`covet.db.Base`.
 """
 
+from covet.models.audit import AuditLogEntry
 from covet.models.base import TimestampMixin, ULIDPrimaryKey, ulid_str
 from covet.models.collection import Collection
 from covet.models.contact import Contact
@@ -24,6 +25,7 @@ from covet.models.user import (
 
 __all__ = [
     "APIToken",
+    "AuditLogEntry",
     "AutomergeChange",
     "AutomergeDoc",
     "Collection",
