@@ -6,6 +6,7 @@ Importing this module registers all model classes with :class:`covet.db.Base`.
 from covet.models.base import TimestampMixin, ULIDPrimaryKey, ulid_str
 from covet.models.collection import Collection
 from covet.models.contact import Contact
+from covet.models.invitation import Invitation
 from covet.models.item import Item, ItemType
 from covet.models.loan import Loan
 from covet.models.metadata_cache import MetadataCacheEntry
@@ -28,6 +29,7 @@ __all__ = [
     "Collection",
     "CollectionMembership",
     "Contact",
+    "Invitation",
     "Item",
     "ItemTag",
     "ItemType",

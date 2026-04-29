@@ -28,6 +28,13 @@ All notable changes to **Covet** are documented here. Format follows
   required. Links can have an optional label and `expires_at`; revoke
   immediately cuts off access. Web app exposes the share UI on the
   Members page and serves the public viewer at `/share/{slug}`.
+- **Single-use invitation tokens** — owners create
+  `/collections/{id}/invitations` to mint a one-time link
+  (`/invite/{token}` in the web app). The plaintext token is shown only
+  once at creation; the server stores the SHA-256 hash. Invitees preview
+  the invitation anonymously, then sign in (or sign up) to accept,
+  becoming a member at the chosen role. Acceptance never downgrades an
+  existing higher role.
 
 ### Changed
 

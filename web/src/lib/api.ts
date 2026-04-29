@@ -119,6 +119,28 @@ export interface ShareLink {
     created_at: string;
 }
 
+export interface Invitation {
+    id: string;
+    collection_id: string;
+    role: string;
+    email: string | null;
+    expires_at: string | null;
+    accepted_at: string | null;
+    created_at: string;
+}
+
+export interface InvitationCreated extends Invitation {
+    token: string;
+}
+
+export interface InvitationPreview {
+    collection_id: string;
+    collection_name: string;
+    role: string;
+    email: string | null;
+    expires_at: string | null;
+}
+
 export interface PublicConfig {
     public_url: string;
     registration_enabled: boolean;

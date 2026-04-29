@@ -1,17 +1,29 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
-    import { api, type Collection, type Membership, type Role, type ShareLink } from '$lib/api';
+    import {
+        api,
+        type Collection,
+        type Invitation,
+        type InvitationCreated,
+        type Membership,
+        type Role,
+        type ShareLink
+    } from '$lib/api';
 
     let collection = $state<Collection | null>(null);
     let members = $state<Membership[]>([]);
     let shareLinks = $state<ShareLink[]>([]);
+    let invitations = $state<Invitation[]>([]);
+    let lastInviteUrl = $state<string | null>(null);
     let loading = $state(true);
     let error = $state('');
 
     let newIdent = $state('');
     let newRole: Role = $state('viewer');
     let newLinkLabel = $state('');
+    let newInviteEmail = $state('');
+    let newInviteRole: Role = $state('viewer');
 
     const cid = $derived($page.params.id ?? '');
 
@@ -24,8 +36,14 @@
             try {
                 shareLinks = await api.get<ShareLink[]>(`/collections/${cid}/share-links`);
             } catch {
-                // Non-owners can't list share links; that's fine.
                 shareLinks = [];
+            }
+            try {
+                invitations = await api.get<Invitation[]>(
+                    `/collections/${cid}/invitations`
+                );
+            } catch {
+                invitations = [];
             }
         } catch (e) {
             error = (e as Error).message;
@@ -97,6 +115,39 @@
         return `${window.location.origin}/share/${slug}`;
     }
 
+    function inviteUrl(token: string): string {
+        if (typeof window === 'undefined') return `/invite/${token}`;
+        return `${window.location.origin}/invite/${token}`;
+    }
+
+    async function createInvitation(e: Event) {
+        e.preventDefault();
+        try {
+            const created = await api.post<InvitationCreated>(
+                `/collections/${cid}/invitations`,
+                {
+                    role: newInviteRole,
+                    email: newInviteEmail.trim() || null
+                }
+            );
+            lastInviteUrl = inviteUrl(created.token);
+            newInviteEmail = '';
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
+    async function revokeInvitation(inv: Invitation) {
+        if (!confirm('Revoke this invitation?')) return;
+        try {
+            await api.delete(`/collections/${cid}/invitations/${inv.id}`);
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
     onMount(load);
 </script>
 
@@ -152,6 +203,72 @@
                             {#if m.role !== 'owner'}
                                 <button class="danger" onclick={() => removeMember(m)}>Remove</button>
                             {/if}
+                        </td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    {/if}
+
+    <h2 style="margin-top:2rem">Invitations</h2>
+    <p class="muted">
+        Send a single-use invitation link. The invitee opens it while signed in
+        (or after signing up) to gain access at the chosen role.
+    </p>
+
+    <form onsubmit={createInvitation} class="card" style="margin: 1rem 0">
+        <div style="display:grid; grid-template-columns: 1fr 140px auto; gap:.5rem">
+            <input
+                type="email"
+                bind:value={newInviteEmail}
+                placeholder="Email (optional, for your records)"
+            />
+            <select bind:value={newInviteRole}>
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+            </select>
+            <button type="submit">Create invitation</button>
+        </div>
+    </form>
+
+    {#if lastInviteUrl}
+        <p>
+            <strong>One-time link:</strong>
+            <code>{lastInviteUrl}</code>
+            <span class="muted"> (copy now — won't be shown again)</span>
+        </p>
+    {/if}
+
+    {#if invitations.length === 0}
+        <p class="muted">No pending invitations.</p>
+    {:else}
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Expires</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {#each invitations as inv (inv.id)}
+                    <tr>
+                        <td>{inv.email ?? ''}</td>
+                        <td>{inv.role}</td>
+                        <td class="muted">{inv.expires_at ?? 'never'}</td>
+                        <td>
+                            {#if inv.accepted_at}
+                                <span class="muted">accepted</span>
+                            {:else}
+                                pending
+                            {/if}
+                        </td>
+                        <td>
+                            <button class="danger" onclick={() => revokeInvitation(inv)}>
+                                Revoke
+                            </button>
                         </td>
                     </tr>
                 {/each}

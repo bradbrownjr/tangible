@@ -19,6 +19,12 @@ from covet.schemas.collection import (
     ShareLinkRead,
 )
 from covet.schemas.contact import ContactCreate, ContactRead, ContactUpdate
+from covet.schemas.invitation import (
+    InvitationCreate,
+    InvitationCreated,
+    InvitationPreview,
+    InvitationRead,
+)
 from covet.schemas.item import ItemCreate, ItemRead, ItemUpdate
 from covet.schemas.loan import LoanCreate, LoanRead, LoanUpdate
 from covet.schemas.sync import (
@@ -41,6 +47,10 @@ __all__ = [
     "ContactCreate",
     "ContactRead",
     "ContactUpdate",
+    "InvitationCreate",
+    "InvitationCreated",
+    "InvitationPreview",
+    "InvitationRead",
     "ItemCreate",
     "ItemRead",
     "ItemUpdate",
