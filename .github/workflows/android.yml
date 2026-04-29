@@ -65,7 +65,9 @@ jobs:
           retention-days: 7
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee unit-tests.log
 
       - name: Upload unit test reports (on failure)
         if: failure()
@@ -73,7 +75,8 @@ jobs:
         with:
           name: unit-test-reports
           path: |
-            android/app/build/reports/tests/**
+            android/unit-tests.log
+            android/app/build/reports/**
             android/app/build/test-results/**
           if-no-files-found: ignore
           retention-days: 7
