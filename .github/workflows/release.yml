@@ -1,0 +1,69 @@
+name: Release
+
+# Auto-publish a GitHub Release whenever a v*.*.* tag is pushed.
+# Notes are extracted from the matching section of CHANGELOG.md so the
+# release procedure is just:
+#
+#   1. Update CHANGELOG.md (add a "## [X.Y.Z] - YYYY-MM-DD" heading + body).
+#   2. Bump versions, commit.
+#   3. git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.9.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag and version
+        id: ver
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract notes from CHANGELOG.md
+        id: notes
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          if [ ! -f CHANGELOG.md ]; then
+            echo "No CHANGELOG.md found." > notes.md
+          else
+            # Pull the body between "## [VERSION]" and the next "## [" heading.
+            awk -v v="$VERSION" '
+              $0 ~ "^## \\[" v "\\]" { capture=1; next }
+              capture && /^## \[/ { exit }
+              capture { print }
+            ' CHANGELOG.md > notes.md
+            if [ ! -s notes.md ]; then
+              echo "_No CHANGELOG entry found for ${VERSION}._" > notes.md
+            fi
+          fi
+          echo "----- release notes -----"
+          cat notes.md
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Covet ${{ steps.ver.outputs.version }}
+          body_path: notes.md
+          # Treat 0.x.y as pre-releases automatically.
+          prerelease: ${{ startsWith(steps.ver.outputs.version, '0.') }}
+          draft: false
+          fail_on_unmatched_files: false
