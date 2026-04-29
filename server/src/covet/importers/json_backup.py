@@ -61,7 +61,6 @@ _COLLECTION_FIELDS = ["id", "name", "description", "icon", "is_public"]
 _ITEM_FIELDS = [
     "id",
     "collection_id",
-    "type",
     "title",
     "subtitle",
     "notes",
@@ -152,7 +151,10 @@ def export_user(db: DBSession, *, user: User) -> dict[str, Any]:
         "version": BACKUP_VERSION,
         "exported_for": user.username,
         "collections": [_model_to_dict(c, _COLLECTION_FIELDS) for c in collections],
-        "items": [_model_to_dict(i, _ITEM_FIELDS) for i in items],
+        "items": [
+            {**_model_to_dict(i, _ITEM_FIELDS), "category_slug": i.category.slug}
+            for i in items
+        ],
         "photos": [_model_to_dict(p, _PHOTO_FIELDS) for p in photos],
         "tags": [_model_to_dict(t, _TAG_FIELDS) for t in tags],
         "item_tags": [{"item_id": i, "tag_id": t} for i, t in item_tag_pairs],
@@ -207,17 +209,26 @@ def import_backup(
         stats.collections += 1
 
     item_id_map: dict[str, str] = {}
+    slug_cache: dict[str, str] = {}
     for raw in payload.get("items", []):
         old_cid = raw["collection_id"]
         if old_cid not in coll_id_map:
             continue  # orphan — skip
+        slug = raw.get("category_slug") or "other.generic"
+        if slug not in slug_cache:
+            from covet.services.categories import resolve_slug
+
+            try:
+                slug_cache[slug] = resolve_slug(db, slug).id
+            except LookupError:
+                slug_cache[slug] = resolve_slug(db, "other.generic").id
         new_id = ulid_str()
         item_id_map[raw["id"]] = new_id
         db.add(
             Item(
                 id=new_id,
                 collection_id=coll_id_map[old_cid],
-                type=raw["type"],
+                category_id=slug_cache[slug],
                 title=raw["title"],
                 subtitle=raw.get("subtitle"),
                 notes=raw.get("notes"),

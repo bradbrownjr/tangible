@@ -39,7 +39,7 @@ def test_template_crud_and_attr_validation(client) -> None:
         f"/collections/{cid}/templates",
         json={
             "name": "Hardcover Book",
-            "item_type": "book",
+            "category_slug": "books.print",
             "description": "Bound books with ISBN",
             "fields": BOOK_FIELDS,
         },
@@ -58,7 +58,7 @@ def test_template_crud_and_attr_validation(client) -> None:
         "/items",
         json={
             "collection_id": cid,
-            "type": "book",
+            "category": "books.print",
             "title": "Dune",
             "template_id": tmpl_id,
             "attrs": {},
@@ -71,7 +71,7 @@ def test_template_crud_and_attr_validation(client) -> None:
         "/items",
         json={
             "collection_id": cid,
-            "type": "book",
+            "category": "books.print",
             "title": "Dune",
             "template_id": tmpl_id,
             "attrs": {"isbn": "978-0441172719", "pages": "658"},
@@ -97,7 +97,7 @@ def test_template_update_and_delete(client) -> None:
     cid = client.post("/collections", json={"name": "Tools"}).json()["id"]
     tmpl_id = client.post(
         f"/collections/{cid}/templates",
-        json={"name": "Hand Tool", "item_type": "tool", "fields": []},
+        json={"name": "Hand Tool", "category_slug": "tools.hand", "fields": []},
     ).json()["id"]
 
     r = client.patch(
@@ -117,7 +117,7 @@ def test_template_update_and_delete(client) -> None:
         "/items",
         json={
             "collection_id": cid,
-            "type": "tool",
+            "category": "tools.hand",
             "title": "Hammer",
             "template_id": tmpl_id,
         },
@@ -139,7 +139,7 @@ def test_template_unknown_id_rejected(client) -> None:
         "/items",
         json={
             "collection_id": cid,
-            "type": "generic",
+            "category": "other.generic",
             "title": "X",
             "template_id": "01ZZZZZZZZZZZZZZZZZZZZZZZZ",
         },
@@ -155,14 +155,14 @@ def test_template_other_collection_rejected(client) -> None:
 
     tmpl_b = client.post(
         f"/collections/{cid_b}/templates",
-        json={"name": "T", "item_type": "generic", "fields": []},
+        json={"name": "T", "category_slug": "other.generic", "fields": []},
     ).json()["id"]
 
     r = client.post(
         "/items",
         json={
             "collection_id": cid_a,
-            "type": "generic",
+            "category": "other.generic",
             "title": "X",
             "template_id": tmpl_b,
         },
@@ -184,6 +184,6 @@ def test_viewer_cannot_create_template(client) -> None:
     _login(client, "viewer1")
     r = client.post(
         f"/collections/{cid}/templates",
-        json={"name": "T", "item_type": "generic", "fields": []},
+        json={"name": "T", "category_slug": "other.generic", "fields": []},
     )
     assert r.status_code == 403

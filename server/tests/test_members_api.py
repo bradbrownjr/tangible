@@ -156,7 +156,7 @@ def test_editor_can_modify_items_viewer_cannot(client) -> None:
     cid = client.post("/collections", json={"name": "X"}).json()["id"]
     iid = client.post(
         "/items",
-        json={"collection_id": cid, "type": "generic", "title": "thing"},
+        json={"collection_id": cid, "category": "other.generic", "title": "thing"},
     ).json()["id"]
     client.post(
         f"/collections/{cid}/members",

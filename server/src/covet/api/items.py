@@ -13,9 +13,9 @@ from covet.auth.deps import (
     require_user,
 )
 from covet.db import get_session
-from covet.models import Item, ItemTemplate
-from covet.models.item import ItemType
+from covet.models import Category, Item, ItemTemplate
 from covet.schemas import ItemCreate, ItemRead, ItemUpdate
+from covet.services.categories import resolve_slug, subtree_ids
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -59,7 +59,11 @@ def _validate_parent(
 @router.get("", response_model=list[ItemRead])
 def list_items(
     collection_id: str = Query(...),
-    type_filter: ItemType | None = Query(default=None, alias="type"),
+    category: str | None = Query(default=None, description="Category slug, e.g. 'music.vinyl'."),
+    category_subtree: str | None = Query(
+        default=None,
+        description="Top-level category slug; matches the root and all of its children.",
+    ),
     search: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -68,8 +72,22 @@ def list_items(
 ) -> list[ItemRead]:
     _require_role(db, auth, collection_id, _VIEWER_ROLES)
     stmt = select(Item).where(Item.collection_id == collection_id)
-    if type_filter is not None:
-        stmt = stmt.where(Item.type == type_filter)
+    if category_subtree:
+        try:
+            ids = subtree_ids(db, category_subtree)
+        except LookupError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
+        stmt = stmt.where(Item.category_id.in_(ids))
+    elif category:
+        try:
+            cat = resolve_slug(db, category)
+        except LookupError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
+        stmt = stmt.where(Item.category_id == cat.id)
     if search:
         like = f"%{search.lower()}%"
         stmt = stmt.where(Item.title.ilike(like))
@@ -85,6 +103,23 @@ def create_item(
 ) -> ItemRead:
     _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
     data = payload.model_dump()
+    cat_slug = data.pop("category", None)
+    if not data.get("category_id"):
+        if not cat_slug:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Either category_id or category (slug) is required",
+            )
+        try:
+            data["category_id"] = resolve_slug(db, cat_slug).id
+        except LookupError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
+    elif db.get(Category, data["category_id"]) is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Unknown category_id"
+        )
     if data.get("parent_id"):
         _validate_parent(db, data["parent_id"], payload.collection_id, child_id=None)
     if data.get("template_id"):
@@ -127,6 +162,19 @@ def update_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
     updates = payload.model_dump(exclude_unset=True)
+    if "category" in updates:
+        slug = updates.pop("category")
+        if slug:
+            try:
+                updates["category_id"] = resolve_slug(db, slug).id
+            except LookupError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+                ) from exc
+    if updates.get("category_id") and db.get(Category, updates["category_id"]) is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Unknown category_id"
+        )
     if updates.get("parent_id"):
         _validate_parent(db, updates["parent_id"], item.collection_id, child_id=item.id)
     new_template_id = updates.get("template_id", item.template_id)

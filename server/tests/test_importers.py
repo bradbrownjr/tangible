@@ -42,7 +42,7 @@ def test_clz_movie_basic_parse() -> None:
     assert result.warnings == []
     assert len(result.items) == 2
     matrix = result.items[0]
-    assert matrix.type == "movie"
+    assert matrix.category_slug == "movies.dvd"
     assert matrix.title == "The Matrix"
     assert matrix.identifiers["barcode"] == "012345678901"
     assert matrix.attrs["year"] == "1999"
@@ -57,22 +57,22 @@ def test_clz_music_book_comic_game() -> None:
         (
             CLZMusicImporter(),
             b"<musiclist><music><title>OK Computer</title><artist>Radiohead</artist></music></musiclist>",
-            {"title": "OK Computer", "type": "music", "artist": "Radiohead"},
+            {"title": "OK Computer", "category": "music.cd", "artist": "Radiohead"},
         ),
         (
             CLZBookImporter(),
             b"<booklist><book><title>Dune</title><author>Frank Herbert</author><isbn>9780441172719</isbn></book></booklist>",
-            {"title": "Dune", "type": "book", "author": "Frank Herbert", "isbn": "9780441172719"},
+            {"title": "Dune", "category": "books.print", "author": "Frank Herbert", "isbn": "9780441172719"},
         ),
         (
             CLZComicImporter(),
             b"<comiclist><comic><title>Saga #1</title><series>Saga</series><issuenr>1</issuenr></comic></comiclist>",
-            {"title": "Saga #1", "type": "comic", "series": "Saga"},
+            {"title": "Saga #1", "category": "books.comic", "series": "Saga"},
         ),
         (
             CLZGameImporter(),
             b"<gamelist><game><title>Hades</title><platform>Switch</platform></game></gamelist>",
-            {"title": "Hades", "type": "game", "platform": "Switch"},
+            {"title": "Hades", "category": "games.software", "platform": "Switch"},
         ),
     ]
     for importer, xml, expected in cases:
@@ -80,9 +80,9 @@ def test_clz_music_book_comic_game() -> None:
         assert len(result.items) == 1, f"{importer.name}: no items"
         item = result.items[0]
         assert item.title == expected["title"]
-        assert item.type == expected["type"]
+        assert item.category_slug == expected["category"]
         for key, value in expected.items():
-            if key in ("title", "type"):
+            if key in ("title", "category"):
                 continue
             if key in item.identifiers:
                 assert item.identifiers[key] == value
@@ -106,7 +106,7 @@ def test_csv_importer_with_mapping() -> None:
         b",2020,000,Drama,Missing title\n"  # dropped: no title
     )
     importer = CSVImporter(
-        item_type="movie",
+        category_slug="movies.dvd",
         mapping={
             "Name": "title",
             "Year": "attr:year",
@@ -126,7 +126,7 @@ def test_csv_importer_with_mapping() -> None:
 
 def test_csv_importer_warns_on_unknown_column() -> None:
     csv_text = b"title,extra\nFoo,Bar\n"
-    importer = CSVImporter(item_type="other", mapping={"title": "title"})
+    importer = CSVImporter(category_slug="other.generic", mapping={"title": "title"})
     result = importer.parse(io.BytesIO(csv_text))
     assert len(result.items) == 1
     assert any("Ignoring unmapped" in w for w in result.warnings)

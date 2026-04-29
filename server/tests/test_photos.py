@@ -44,7 +44,7 @@ def _setup_item(client, owner="alice"):
     _login(client, owner)
     cid = client.post("/collections", json={"name": "Stuff"}).json()["id"]
     iid = client.post(
-        "/items", json={"collection_id": cid, "type": "tool", "title": "Drill"}
+        "/items", json={"collection_id": cid, "category": "tools.hand", "title": "Drill"}
     ).json()["id"]
     return cid, iid
 
@@ -132,7 +132,7 @@ def test_viewer_cannot_upload_photo(client) -> None:
     _login(client, "owner2")
     cid = client.post("/collections", json={"name": "X"}).json()["id"]
     iid = client.post(
-        "/items", json={"collection_id": cid, "type": "generic", "title": "Y"}
+        "/items", json={"collection_id": cid, "category": "other.generic", "title": "Y"}
     ).json()["id"]
     client.post(
         f"/collections/{cid}/members",

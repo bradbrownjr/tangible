@@ -1,40 +1,43 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { api, type Collection, type ItemTemplate, type TemplateField, type TemplateFieldType } from '$lib/api';
+    import { api, type Category, type Collection, type ItemTemplate, type TemplateField, type TemplateFieldType } from '$lib/api';
+    import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
-    const ITEM_TYPES = [
-        'generic',
-        'vinyl',
-        'cd',
-        'tape',
-        'movie',
-        'game',
-        'console',
-        'funko',
-        'pokemon_card',
-        'book',
-        'tool',
-        'spice'
-    ];
     const FIELD_TYPES: TemplateFieldType[] = ['text', 'number', 'boolean', 'date', 'url', 'select'];
 
     let collection = $state<Collection | null>(null);
     let templates = $state<ItemTemplate[]>([]);
+    let categories = $state<Category[]>([]);
     let loading = $state(true);
     let error = $state('');
 
     let newName = $state('');
-    let newType = $state('generic');
+    let newRoot = $state('other');
+    let newLeaf = $state('other.generic');
     let newFieldsJson = $state('[]');
     const placeholderExample = '[{"key":"isbn","label":"ISBN","type":"text","required":true}]';
 
     const cid = $derived(page.params.id ?? '');
+    const roots = $derived(rootCategories(categories));
+    const leaves = $derived.by(() => {
+        const root = categories.find((c) => c.slug === newRoot);
+        if (!root) return [];
+        return childrenOf(categories, root.id);
+    });
+
+    $effect(() => {
+        // Reset leaf when root changes if current leaf is no longer valid.
+        if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
+            newLeaf = leaves[0].slug;
+        }
+    });
 
     async function load() {
         loading = true;
         error = '';
         try {
+            categories = await loadCategories();
             collection = await api.get<Collection>(`/collections/${cid}`);
             templates = await api.get<ItemTemplate[]>(`/collections/${cid}/templates`);
         } catch (e) {
@@ -50,7 +53,7 @@
             const fields: TemplateField[] = JSON.parse(newFieldsJson);
             await api.post(`/collections/${cid}/templates`, {
                 name: newName.trim(),
-                item_type: newType,
+                category_slug: newLeaf,
                 fields
             });
             newName = '';
@@ -81,11 +84,16 @@
     {#if error}<p class="error">{error}</p>{/if}
 
     <form onsubmit={createTemplate} class="card" style="margin: 1rem 0; display:grid; gap:.5rem">
-        <div style="display:grid; grid-template-columns: 1fr 200px; gap:.5rem">
+        <div style="display:grid; grid-template-columns: 1fr 160px 200px; gap:.5rem">
             <input bind:value={newName} placeholder="Template name" required />
-            <select bind:value={newType}>
-                {#each ITEM_TYPES as t}
-                    <option value={t}>{t}</option>
+            <select bind:value={newRoot}>
+                {#each roots as r (r.id)}
+                    <option value={r.slug}>{r.name}</option>
+                {/each}
+            </select>
+            <select bind:value={newLeaf}>
+                {#each leaves as l (l.id)}
+                    <option value={l.slug}>{l.name}</option>
                 {/each}
             </select>
         </div>
@@ -110,7 +118,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Item type</th>
+                    <th>Category</th>
                     <th>Fields</th>
                     <th></th>
                 </tr>
@@ -119,7 +127,7 @@
                 {#each templates as t (t.id)}
                     <tr>
                         <td>{t.name}</td>
-                        <td><code>{t.item_type}</code></td>
+                        <td><code>{t.category_slug}</code></td>
                         <td class="muted">
                             {t.fields.map((f) => `${f.key}:${f.type}${f.required ? '*' : ''}`).join(', ')}
                         </td>

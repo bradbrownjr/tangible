@@ -42,6 +42,7 @@ class ScrapeResult:
     description: str | None = None
     image_url: str | None = None
     item_type: str | None = None
+    category: str | None = None
     attrs: dict[str, Any] = field(default_factory=dict)
 
 
@@ -214,6 +215,7 @@ class OpenLibraryAdapter:
             description=authors or None,
             image_url=cover,
             item_type="book",
+            category="books.print",
             attrs=attrs,
         )
 

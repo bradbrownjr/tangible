@@ -37,7 +37,7 @@ def test_item_crud_and_acl(client) -> None:
 
     r = client.post(
         "/items",
-        json={"collection_id": cid, "type": "movie", "title": "The Matrix"},
+        json={"collection_id": cid, "category": "movies.dvd", "title": "The Matrix"},
     )
     assert r.status_code == 201
     iid = r.json()["id"]

@@ -16,14 +16,14 @@ from typing import IO, Any, Protocol
 class ImportItem:
     """One item discovered by an importer.
 
-    ``type`` matches :class:`covet.models.item.ItemType` values
-    (``movie``, ``music``, ``book``, ``comic``, ``game``, ``other``).
+    ``category_slug`` references a leaf in the curated category tree
+    (e.g. ``movies.dvd``, ``music.vinyl``, ``books.print``).
     ``identifiers`` is a free-form dict (e.g. ``{"barcode": "...", "isbn": "..."}``).
-    ``attrs`` holds any extra type-specific fields not modelled in the items
-    table — these survive the round-trip via the JSON ``attrs`` column.
+    ``attrs`` holds any extra category-specific fields not modelled in the
+    items table — these survive the round-trip via the JSON ``attrs`` column.
     """
 
-    type: str
+    category_slug: str
     title: str
     subtitle: str | None = None
     notes: str | None = None

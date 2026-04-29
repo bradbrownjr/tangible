@@ -69,7 +69,7 @@ def test_import_csv(client) -> None:
         "/imports/csv",
         data={
             "collection_id": cid,
-            "item_type": "book",
+            "category": "books.print",
             "mapping": json.dumps(mapping),
         },
         files={"file": ("books.csv", io.BytesIO(csv_text), "text/csv")},
@@ -86,11 +86,11 @@ def test_backup_and_restore_roundtrip(client) -> None:
     cid = _make_collection(client, "Originals")
     client.post(
         "/items",
-        json={"collection_id": cid, "type": "movie", "title": "The Matrix"},
+        json={"collection_id": cid, "category": "movies.dvd", "title": "The Matrix"},
     )
     client.post(
         "/items",
-        json={"collection_id": cid, "type": "movie", "title": "Blade Runner"},
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Blade Runner"},
     )
     client.post("/tags", json={"name": "favorite", "color": "#ff0"})
     client.post("/contacts", json={"name": "Bob"})

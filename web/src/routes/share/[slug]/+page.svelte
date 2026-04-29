@@ -42,7 +42,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Type</th>
+                    <th>Category</th>
                     <th>Title</th>
                     <th>Qty</th>
                     <th>Condition</th>
@@ -51,7 +51,7 @@
             <tbody>
                 {#each items as i (i.id)}
                     <tr>
-                        <td class="muted">{i.type}</td>
+                        <td class="muted">{i.category_slug ?? ''}</td>
                         <td>
                             {i.title}{#if i.subtitle}
                                 <span class="muted">— {i.subtitle}</span>

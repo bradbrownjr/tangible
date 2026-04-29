@@ -26,7 +26,7 @@ def _setup(client, owner="alice"):
 def test_maintenance_task_lifecycle(client) -> None:
     cid = _setup(client, "mech")
     iid = client.post(
-        "/items", json={"collection_id": cid, "type": "tool", "title": "Mower"}
+        "/items", json={"collection_id": cid, "category": "tools.hand", "title": "Mower"}
     ).json()["id"]
 
     r = client.post(
@@ -55,13 +55,13 @@ def test_maintenance_task_lifecycle(client) -> None:
 def test_parent_child_items(client) -> None:
     cid = _setup(client, "kit")
     parent = client.post(
-        "/items", json={"collection_id": cid, "type": "generic", "title": "Camera kit"}
+        "/items", json={"collection_id": cid, "category": "other.generic", "title": "Camera kit"}
     ).json()
     child = client.post(
         "/items",
         json={
             "collection_id": cid,
-            "type": "generic",
+            "category": "other.generic",
             "title": "Lens",
             "parent_id": parent["id"],
         },
@@ -76,7 +76,7 @@ def test_parent_child_items(client) -> None:
 def test_parent_self_rejected(client) -> None:
     cid = _setup(client, "self")
     iid = client.post(
-        "/items", json={"collection_id": cid, "type": "generic", "title": "X"}
+        "/items", json={"collection_id": cid, "category": "other.generic", "title": "X"}
     ).json()["id"]
     r = client.patch(f"/items/{iid}", json={"parent_id": iid})
     assert r.status_code == 422
@@ -85,11 +85,11 @@ def test_parent_self_rejected(client) -> None:
 def test_parent_cycle_rejected(client) -> None:
     cid = _setup(client, "cyc")
     a = client.post(
-        "/items", json={"collection_id": cid, "type": "generic", "title": "A"}
+        "/items", json={"collection_id": cid, "category": "other.generic", "title": "A"}
     ).json()["id"]
     b = client.post(
         "/items",
-        json={"collection_id": cid, "type": "generic", "title": "B", "parent_id": a},
+        json={"collection_id": cid, "category": "other.generic", "title": "B", "parent_id": a},
     ).json()["id"]
     # Try to set A's parent to B -> would form A -> B -> A cycle.
     r = client.patch(f"/items/{a}", json={"parent_id": b})
@@ -100,10 +100,10 @@ def test_parent_must_be_same_collection(client) -> None:
     cid1 = _setup(client, "xcuser")
     cid2 = client.post("/collections", json={"name": "Other"}).json()["id"]
     a = client.post(
-        "/items", json={"collection_id": cid1, "type": "generic", "title": "A"}
+        "/items", json={"collection_id": cid1, "category": "other.generic", "title": "A"}
     ).json()["id"]
     b = client.post(
-        "/items", json={"collection_id": cid2, "type": "generic", "title": "B"}
+        "/items", json={"collection_id": cid2, "category": "other.generic", "title": "B"}
     ).json()["id"]
     r = client.patch(f"/items/{b}", json={"parent_id": a})
     assert r.status_code == 422

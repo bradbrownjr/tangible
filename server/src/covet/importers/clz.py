@@ -101,9 +101,9 @@ def _common_identifiers(node) -> dict[str, str]:  # type: ignore[no-untyped-def]
 
 
 class CLZImporter(Importer):
-    """Base class — subclasses set the XML tags and item ``type``."""
+    """Base class — subclasses set the XML tags and item ``category_slug``."""
 
-    item_type: str = ""
+    category_slug: str = ""
     record_tag: str = ""
     name: str = "clz"
 
@@ -117,7 +117,7 @@ class CLZImporter(Importer):
         if not records:
             warnings.append(
                 f"No <{self.record_tag}> records found; is this a "
-                f"{self.item_type} CLZ export?"
+                f"{self.category_slug} CLZ export?"
             )
 
         for node in records:
@@ -135,7 +135,7 @@ class CLZImporter(Importer):
         attrs = _common_attrs(node)
         attrs.update(self._extra_attrs(node))
         item = ImportItem(
-            type=self.item_type,
+            category_slug=self.category_slug,
             title=title,
             subtitle=_text(node, "subtitle") or _text(node, "originaltitle"),
             notes=_text(node, "notes") or _text(node, "plot"),
@@ -158,7 +158,7 @@ class CLZImporter(Importer):
 
 
 class CLZMovieImporter(CLZImporter):
-    item_type = "movie"
+    category_slug = "movies.dvd"
     record_tag = "movie"
     name = "clz-movie"
 
@@ -175,7 +175,7 @@ class CLZMovieImporter(CLZImporter):
 
 
 class CLZMusicImporter(CLZImporter):
-    item_type = "music"
+    category_slug = "music.cd"
     record_tag = "music"
     name = "clz-music"
 
@@ -192,7 +192,7 @@ class CLZMusicImporter(CLZImporter):
 
 
 class CLZBookImporter(CLZImporter):
-    item_type = "book"
+    category_slug = "books.print"
     record_tag = "book"
     name = "clz-book"
 
@@ -206,7 +206,7 @@ class CLZBookImporter(CLZImporter):
 
 
 class CLZComicImporter(CLZImporter):
-    item_type = "comic"
+    category_slug = "books.comic"
     record_tag = "comic"
     name = "clz-comic"
 
@@ -220,7 +220,7 @@ class CLZComicImporter(CLZImporter):
 
 
 class CLZGameImporter(CLZImporter):
-    item_type = "game"
+    category_slug = "games.software"
     record_tag = "game"
     name = "clz-game"
 

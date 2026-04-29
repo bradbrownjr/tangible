@@ -77,12 +77,30 @@ export interface Collection {
     owner_id: string;
 }
 
-export type ItemType = 'movie' | 'music' | 'book' | 'comic' | 'game' | 'other';
+export interface Category {
+    id: string;
+    parent_id: string | null;
+    slug: string;
+    name: string;
+    description: string | null;
+    position: number;
+    is_system: boolean;
+    is_active: boolean;
+}
+
+export interface CategoryNode {
+    id: string;
+    slug: string;
+    name: string;
+    description: string | null;
+    children: CategoryNode[];
+}
 
 export interface Item {
     id: string;
     collection_id: string;
-    type: ItemType;
+    category_id: string;
+    category_slug: string | null;
     title: string;
     subtitle: string | null;
     notes: string | null;
@@ -173,7 +191,7 @@ export interface ItemTemplate {
     id: string;
     collection_id: string;
     name: string;
-    item_type: string;
+    category_slug: string;
     description: string | null;
     fields: TemplateField[];
     created_by: string | null;

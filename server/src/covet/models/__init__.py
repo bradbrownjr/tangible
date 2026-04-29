@@ -5,11 +5,12 @@ Importing this module registers all model classes with :class:`covet.db.Base`.
 
 from covet.models.audit import AuditLogEntry
 from covet.models.base import TimestampMixin, ULIDPrimaryKey, ulid_str
+from covet.models.category import Category
 from covet.models.collection import Collection
 from covet.models.contact import Contact
 from covet.models.document import Document
 from covet.models.invitation import Invitation
-from covet.models.item import Item, ItemType
+from covet.models.item import Item
 from covet.models.item_template import ItemTemplate
 from covet.models.loan import Loan
 from covet.models.maintenance import MaintenanceTask
@@ -31,6 +32,7 @@ __all__ = [
     "AuditLogEntry",
     "AutomergeChange",
     "AutomergeDoc",
+    "Category",
     "Collection",
     "CollectionMembership",
     "Contact",
@@ -39,7 +41,6 @@ __all__ = [
     "Item",
     "ItemTag",
     "ItemTemplate",
-    "ItemType",
     "Loan",
     "MaintenanceTask",
     "MetadataCacheEntry",

@@ -7,8 +7,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from covet.models.item import ItemType
-
 FieldType = Literal["text", "number", "boolean", "date", "url", "select"]
 
 
@@ -24,7 +22,10 @@ class TemplateField(BaseModel):
 
 class ItemTemplateBase(BaseModel):
     name: str = Field(min_length=1, max_length=128)
-    item_type: ItemType
+    category_slug: str = Field(
+        min_length=1, max_length=64,
+        description="Category this template applies to (e.g. 'music.vinyl').",
+    )
     description: str | None = Field(default=None, max_length=512)
     fields: list[TemplateField] = Field(default_factory=list)
 
@@ -35,7 +36,7 @@ class ItemTemplateCreate(ItemTemplateBase):
 
 class ItemTemplateUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
-    item_type: ItemType | None = None
+    category_slug: str | None = Field(default=None, min_length=1, max_length=64)
     description: str | None = Field(default=None, max_length=512)
     fields: list[TemplateField] | None = None
 

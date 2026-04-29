@@ -70,7 +70,7 @@ def create_template(
     tmpl = ItemTemplate(
         collection_id=collection_id,
         name=payload.name,
-        item_type=payload.item_type,
+        category_slug=payload.category_slug,
         description=payload.description,
         fields=[f.model_dump() for f in payload.fields],
         created_by=auth.user.id,

@@ -9,6 +9,7 @@ from covet.schemas.auth import (
     SessionInfo,
     TokenInfo,
 )
+from covet.schemas.category import CategoryRead
 from covet.schemas.collection import (
     CollectionCreate,
     CollectionRead,
@@ -57,6 +58,7 @@ from covet.schemas.user import UserCreate, UserRead, UserUpdate
 
 __all__ = [
     "AuditLogRead",
+    "CategoryRead",
     "CollectionCreate",
     "CollectionRead",
     "CollectionUpdate",

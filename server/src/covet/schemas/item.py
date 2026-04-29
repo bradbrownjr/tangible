@@ -8,11 +8,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from covet.models.item import ItemType
-
 
 class ItemBase(BaseModel):
-    type: ItemType
+    """Fields common to create / update / read."""
+
     title: str = Field(min_length=1, max_length=512)
     subtitle: str | None = Field(default=None, max_length=512)
     notes: str | None = None
@@ -31,11 +30,18 @@ class ItemBase(BaseModel):
 
 
 class ItemCreate(ItemBase):
+    """Create payload.
+
+    Pass either ``category_id`` (canonical) or ``category`` (slug like
+    ``music.vinyl``); the API resolves the slug if ``category_id`` is missing.
+    """
+
     collection_id: str
+    category_id: str | None = None
+    category: str | None = Field(default=None, description="Category slug")
 
 
 class ItemUpdate(BaseModel):
-    type: ItemType | None = None
     title: str | None = Field(default=None, min_length=1, max_length=512)
     subtitle: str | None = None
     notes: str | None = None
@@ -51,6 +57,8 @@ class ItemUpdate(BaseModel):
     attrs: dict[str, Any] | None = None
     template_id: str | None = None
     parent_id: str | None = None
+    category_id: str | None = None
+    category: str | None = None
 
 
 class ItemRead(ItemBase):
@@ -58,5 +66,16 @@ class ItemRead(ItemBase):
 
     id: str
     collection_id: str
+    category_id: str
+    category_slug: str | None = None
     created_at: datetime
     updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj, *args, **kwargs):  # type: ignore[override]
+        # Pull slug off the eager-loaded relationship for convenience.
+        slug = getattr(getattr(obj, "category", None), "slug", None)
+        instance = super().model_validate(obj, *args, **kwargs)
+        if slug is not None:
+            instance.category_slug = slug
+        return instance

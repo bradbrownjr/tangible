@@ -1,37 +1,22 @@
-"""Item and ItemType models."""
+"""Item model."""
 
 from __future__ import annotations
 
-import enum
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from covet.db import Base
 from covet.models.base import TimestampMixin, ULIDPrimaryKey
 
 if TYPE_CHECKING:
+    from covet.models.category import Category
     from covet.models.collection import Collection
     from covet.models.loan import Loan
     from covet.models.photo import Photo
     from covet.models.tag import ItemTag
-
-
-class ItemType(enum.StrEnum):
-    GENERIC = "generic"
-    VINYL = "vinyl"
-    CD = "cd"
-    TAPE = "tape"
-    MOVIE = "movie"
-    GAME = "game"
-    CONSOLE = "console"
-    FUNKO = "funko"
-    POKEMON_CARD = "pokemon_card"
-    BOOK = "book"
-    TOOL = "tool"
-    SPICE = "spice"
 
 
 class Item(ULIDPrimaryKey, TimestampMixin, Base):
@@ -40,8 +25,9 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     collection_id: Mapped[str] = mapped_column(
         String(26), ForeignKey("collections.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    type: Mapped[ItemType] = mapped_column(
-        Enum(ItemType, name="item_type", native_enum=False, length=32),
+    category_id: Mapped[str] = mapped_column(
+        String(26),
+        ForeignKey("categories.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
@@ -77,6 +63,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     )
 
     collection: Mapped[Collection] = relationship(back_populates="items")
+    category: Mapped[Category] = relationship(lazy="joined")
     photos: Mapped[list[Photo]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
     )

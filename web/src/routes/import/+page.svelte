@@ -1,9 +1,11 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { api, ApiError, type Collection } from '$lib/api';
+    import { api, ApiError, type Category, type Collection } from '$lib/api';
+    import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
     let collections = $state<Collection[]>([]);
     let collectionId = $state('');
+    let categories = $state<Category[]>([]);
 
     let mode = $state<'clz' | 'csv' | 'list' | 'restore'>('clz');
 
@@ -12,14 +14,16 @@
     let clzFile = $state<FileList | null>(null);
 
     // CSV
-    let csvType = $state('movie');
+    let csvRoot = $state('movies');
+    let csvLeaf = $state('movies.dvd');
     let csvFile = $state<FileList | null>(null);
     let csvMapping = $state(
         '{\n  "Title": "title",\n  "Subtitle": "subtitle",\n  "Year": "attr:year",\n  "Notes": "notes",\n  "Quantity": "quantity",\n  "Condition": "condition",\n  "Location": "location",\n  "Currency": "currency",\n  "Purchase price": "purchase_price",\n  "Current value": "current_value",\n  "Barcode": "id:barcode"\n}'
     );
 
     // List (plain titles)
-    let listType = $state('movie');
+    let listRoot = $state('movies');
+    let listLeaf = $state('movies.dvd');
     let listText = $state('');
     let listFile = $state<FileList | null>(null);
 
@@ -30,7 +34,29 @@
     let result = $state('');
     let error = $state('');
 
+    const roots = $derived(rootCategories(categories));
+    const csvLeaves = $derived.by(() => {
+        const r = categories.find((c) => c.slug === csvRoot);
+        return r ? childrenOf(categories, r.id) : [];
+    });
+    const listLeaves = $derived.by(() => {
+        const r = categories.find((c) => c.slug === listRoot);
+        return r ? childrenOf(categories, r.id) : [];
+    });
+
+    $effect(() => {
+        if (csvLeaves.length && !csvLeaves.some((l) => l.slug === csvLeaf)) {
+            csvLeaf = csvLeaves[0].slug;
+        }
+    });
+    $effect(() => {
+        if (listLeaves.length && !listLeaves.some((l) => l.slug === listLeaf)) {
+            listLeaf = listLeaves[0].slug;
+        }
+    });
+
     onMount(async () => {
+        categories = await loadCategories();
         collections = await api.get<Collection[]>('/collections');
         if (collections.length) collectionId = collections[0].id;
     });
@@ -53,7 +79,7 @@
                 if (!csvFile?.[0]) throw new Error('Pick a file');
                 JSON.parse(csvMapping); // sanity
                 fd.set('collection_id', collectionId);
-                fd.set('item_type', csvType);
+                fd.set('category', csvLeaf);
                 fd.set('mapping', csvMapping);
                 fd.set('file', csvFile[0]);
                 path = '/imports/csv';
@@ -61,7 +87,7 @@
                 if (!listText.trim() && !listFile?.[0])
                     throw new Error('Paste a list or attach a .txt file');
                 fd.set('collection_id', collectionId);
-                fd.set('item_type', listType);
+                fd.set('category', listLeaf);
                 if (listText.trim()) fd.set('titles', listText);
                 if (listFile?.[0]) fd.set('file', listFile[0]);
                 path = '/imports/list';
@@ -99,14 +125,14 @@
     }
 
     async function downloadCsvTemplate() {
-        const res = await fetch(`/imports/csv/template?item_type=${encodeURIComponent(csvType)}`, {
+        const res = await fetch(`/imports/csv/template?category=${encodeURIComponent(csvLeaf)}`, {
             credentials: 'include'
         });
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `covet-${csvType}-template.csv`;
+        a.download = `covet-${csvLeaf.replace('.', '-')}-template.csv`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -162,15 +188,19 @@
             </div>
         {:else if mode === 'csv'}
             <div class="field">
-                <label>Item type</label>
-                <select bind:value={csvType}>
-                    <option>movie</option>
-                    <option>music</option>
-                    <option>book</option>
-                    <option>comic</option>
-                    <option>game</option>
-                    <option>other</option>
-                </select>
+                <label>Category</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:.5rem">
+                    <select bind:value={csvRoot}>
+                        {#each roots as r (r.id)}
+                            <option value={r.slug}>{r.name}</option>
+                        {/each}
+                    </select>
+                    <select bind:value={csvLeaf}>
+                        {#each csvLeaves as l (l.id)}
+                            <option value={l.slug}>{l.name}</option>
+                        {/each}
+                    </select>
+                </div>
             </div>
             <div class="field">
                 <button type="button" class="secondary" onclick={downloadCsvTemplate}>
@@ -197,15 +227,19 @@
             </div>
         {:else if mode === 'list'}
             <div class="field">
-                <label>Item type</label>
-                <select bind:value={listType}>
-                    <option>movie</option>
-                    <option>music</option>
-                    <option>book</option>
-                    <option>comic</option>
-                    <option>game</option>
-                    <option>other</option>
-                </select>
+                <label>Category</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:.5rem">
+                    <select bind:value={listRoot}>
+                        {#each roots as r (r.id)}
+                            <option value={r.slug}>{r.name}</option>
+                        {/each}
+                    </select>
+                    <select bind:value={listLeaf}>
+                        {#each listLeaves as l (l.id)}
+                            <option value={l.slug}>{l.name}</option>
+                        {/each}
+                    </select>
+                </div>
             </div>
             <div class="field">
                 <label for="list-text">Paste titles (one per line)</label>

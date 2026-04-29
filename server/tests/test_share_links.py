@@ -26,7 +26,7 @@ def _setup_collection_with_item(client) -> tuple[str, str]:
     cid = client.post("/collections", json={"name": "Vinyl"}).json()["id"]
     iid = client.post(
         "/items",
-        json={"collection_id": cid, "type": "vinyl", "title": "Kind of Blue"},
+        json={"collection_id": cid, "category": "music.vinyl", "title": "Kind of Blue"},
     ).json()["id"]
     return cid, iid
 

@@ -32,7 +32,7 @@ _STRING = {
 class CSVImporter(Importer):
     """CSV → ImportItems given a column mapping."""
 
-    item_type: str
+    category_slug: str
     mapping: dict[str, str]
     name: str = "csv"
     encoding: str = "utf-8-sig"  # tolerate BOM-prefixed files
@@ -64,7 +64,7 @@ class CSVImporter(Importer):
         return ImportResult(items=items, warnings=warnings)
 
     def _row_to_item(self, row: dict[str, str]) -> ImportItem | None:
-        kwargs: dict[str, object] = {"type": self.item_type}
+        kwargs: dict[str, object] = {"category_slug": self.category_slug}
         identifiers: dict[str, object] = {}
         attrs: dict[str, object] = {}
 

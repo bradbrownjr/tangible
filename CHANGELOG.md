@@ -6,6 +6,34 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-04-30
+
+### Added
+
+- **Hierarchical category taxonomy.** ~40 curated categories grouped
+  under nine roots — Music, Movies, Video Games, Tabletop, Books,
+  Collectibles, Tools, Spices, Other — replace the old flat item-type
+  list. Cascading root → leaf selects appear on the new-item form,
+  template editor, and CSV / list import wizards.
+- **`GET /categories` endpoint.** Returns the seeded catalog so clients
+  can render the picker without hardcoding values.
+- **Subtree filtering.** `GET /items?category=<slug>` filters by exact
+  leaf; `?category_subtree=<root>` filters by an entire root and all
+  its leaves (e.g. show every "Music" item).
+- **Per-category CSV templates.** The CSV import "Download template"
+  button now downloads by category slug
+  (`?category=movies.dvd`, `?category=music.vinyl`, …).
+
+### Changed
+
+- **Breaking:** the `ItemType` enum is gone. Items now carry a
+  `category_id` foreign key (or accept a `category` slug on create);
+  templates use `category_slug`; importers use `category_slug`; the
+  metadata scraper returns `category` instead of `item_type`.
+  Existing databases must be reset — there is no migration path from
+  the old enum to the new categories table for the small number of
+  pre-0.13 installations.
+
 ## [0.12.0] — 2026-04-29
 
 ### Added

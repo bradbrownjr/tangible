@@ -17,6 +17,7 @@ from covet.auth.deps import (
 from covet.db import get_session
 from covet.importers import CLZ_IMPORTERS, BackupStats, CSVImporter, export_user, import_backup
 from covet.models import Item
+from covet.services.categories import resolve_slug
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -33,11 +34,15 @@ def _persist_items(
     db: DBSession, *, collection_id: str, items_data: list[dict]
 ) -> int:
     count = 0
+    slug_cache: dict[str, str] = {}
     for raw in items_data:
+        slug = raw["category_slug"]
+        if slug not in slug_cache:
+            slug_cache[slug] = resolve_slug(db, slug).id
         db.add(
             Item(
                 collection_id=collection_id,
-                type=raw["type"],
+                category_id=slug_cache[slug],
                 title=raw["title"],
                 subtitle=raw.get("subtitle"),
                 notes=raw.get("notes"),
@@ -78,7 +83,7 @@ async def import_clz(
         collection_id=collection_id,
         items_data=[
             {
-                "type": i.type,
+                "category_slug": i.category_slug,
                 "title": i.title,
                 "subtitle": i.subtitle,
                 "notes": i.notes,
@@ -100,7 +105,7 @@ async def import_clz(
 @router.post("/csv", status_code=status.HTTP_200_OK)
 async def import_csv(
     collection_id: Annotated[str, Form(...)],
-    item_type: Annotated[str, Form(..., description="movie|music|book|comic|game|other")],
+    category: Annotated[str, Form(..., description="Category slug, e.g. 'movies.dvd'.")],
     mapping: Annotated[str, Form(..., description="JSON object: csv_header → target field")],
     file: Annotated[UploadFile, File(...)],
     db: DBSession = Depends(get_session),
@@ -119,14 +124,14 @@ async def import_csv(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="mapping must be a JSON object",
         )
-    importer = CSVImporter(item_type=item_type, mapping=column_map)
+    importer = CSVImporter(category_slug=category, mapping=column_map)
     result = importer.parse(file.file)
     inserted = _persist_items(
         db,
         collection_id=collection_id,
         items_data=[
             {
-                "type": i.type,
+                "category_slug": i.category_slug,
                 "title": i.title,
                 "subtitle": i.subtitle,
                 "notes": i.notes,
@@ -146,7 +151,7 @@ async def import_csv(
 
 
 @router.get("/csv/template", status_code=status.HTTP_200_OK)
-def csv_template(item_type: str = "movie") -> PlainTextResponse:
+def csv_template(category: str = "movies.dvd") -> PlainTextResponse:
     """Download a starter CSV with the column headers Covet's CSV importer
     expects out of the box. Users fill it in and upload it back through the
     CSV importer with the matching default mapping.
@@ -164,18 +169,21 @@ def csv_template(item_type: str = "movie") -> PlainTextResponse:
         "Current value",
         "Barcode",
     ]
-    sample = {
-        "movie": ["The Matrix", "", "1999", "", "1", "good", "", "USD", "", "", ""],
-        "music": ["OK Computer", "Radiohead", "1997", "", "1", "good", "", "USD", "", "", ""],
-        "book": ["Dune", "Frank Herbert", "1965", "", "1", "good", "", "USD", "", "", ""],
-        "comic": ["Saga #1", "", "2012", "", "1", "good", "", "USD", "", "", ""],
-        "game": ["Hades", "", "2020", "", "1", "good", "", "USD", "", "", ""],
-        "other": ["Item name", "", "", "", "1", "", "", "", "", "", ""],
-    }.get(item_type, ["", "", "", "", "1", "", "", "", "", "", ""])
+    samples: dict[str, list[str]] = {
+        "movies.dvd": ["The Matrix", "", "1999", "", "1", "good", "", "USD", "", "", ""],
+        "movies.bluray": ["Blade Runner 2049", "", "2017", "", "1", "good", "", "USD", "", "", ""],
+        "music.cd": ["OK Computer", "Radiohead", "1997", "", "1", "good", "", "USD", "", "", ""],
+        "music.vinyl": ["Kind of Blue", "Miles Davis", "1959", "", "1", "good", "", "USD", "", "", ""],
+        "books.print": ["Dune", "Frank Herbert", "1965", "", "1", "good", "", "USD", "", "", ""],
+        "books.comic": ["Saga #1", "", "2012", "", "1", "good", "", "USD", "", "", ""],
+        "games.software": ["Hades", "", "2020", "", "1", "good", "", "USD", "", "", ""],
+    }
+    sample = samples.get(category, ["Item name", "", "", "", "1", "", "", "", "", "", ""])
 
     import csv
     import io
 
+    safe_name = category.replace(".", "-")
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(headers)
@@ -183,21 +191,21 @@ def csv_template(item_type: str = "movie") -> PlainTextResponse:
     return PlainTextResponse(
         buf.getvalue(),
         media_type="text/csv",
-        headers={"content-disposition": f'attachment; filename="covet-{item_type}-template.csv"'},
+        headers={"content-disposition": f'attachment; filename="covet-{safe_name}-template.csv"'},
     )
 
 
 @router.post("/list", status_code=status.HTTP_200_OK)
 async def import_list(
     collection_id: Annotated[str, Form()],
-    item_type: Annotated[str, Form(description="movie|music|book|comic|game|other")],
+    category: Annotated[str, Form(description="Category slug, e.g. 'other.generic'.")],
     titles: Annotated[str, Form()] = "",
     file: Annotated[UploadFile | None, File()] = None,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> dict:
     """Quick-add a flat list of titles. Each non-blank line becomes one item
-    of ``item_type`` with only ``title`` set. Lines beginning with '#' are
+    in ``category`` with only ``title`` set. Lines beginning with '#' are
     treated as comments and skipped. Either paste the list in ``titles`` or
     attach a plain-text ``file``.
     """
@@ -218,7 +226,7 @@ async def import_list(
     inserted = _persist_items(
         db,
         collection_id=collection_id,
-        items_data=[{"type": item_type, "title": t} for t in lines],
+        items_data=[{"category_slug": category, "title": t} for t in lines],
     )
     return {"imported": inserted, "warnings": []}
 

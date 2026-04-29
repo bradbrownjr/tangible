@@ -21,7 +21,7 @@ class ScrapeResponse(BaseModel):
     title: str | None = None
     description: str | None = None
     image_url: str | None = None
-    item_type: str | None = None
+    category: str | None = None
     attrs: dict = {}
 
 
@@ -42,6 +42,6 @@ def scrape_url(
         title=result.title,
         description=result.description,
         image_url=result.image_url,
-        item_type=result.item_type,
+        category=result.category,
         attrs=result.attrs,
     )

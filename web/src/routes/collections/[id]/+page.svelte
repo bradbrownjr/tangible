@@ -1,30 +1,47 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { api, type Collection, type Item, type ItemType } from '$lib/api';
+    import { api, type Category, type Collection, type Item } from '$lib/api';
+    import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
+    let categories = $state<Category[]>([]);
     let search = $state('');
-    let typeFilter = $state<ItemType | ''>('');
+    // Filter is by top-level root slug (matches subtree); empty = all.
+    let rootFilter = $state('');
     let loading = $state(true);
     let error = $state('');
 
-    // Inline create form
-    let newType: ItemType = $state('movie');
+    // Inline create form: cascading root → leaf.
+    let newRoot = $state('movies');
+    let newLeaf = $state('movies.dvd');
     let newTitle = $state('');
     let scrapeUrl = $state('');
     let scraping = $state(false);
 
     const cid = $derived(page.params.id ?? '');
+    const roots = $derived(rootCategories(categories));
+    const leaves = $derived.by(() => {
+        const root = categories.find((c) => c.slug === newRoot);
+        if (!root) return [];
+        return childrenOf(categories, root.id);
+    });
+
+    $effect(() => {
+        if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
+            newLeaf = leaves[0].slug;
+        }
+    });
 
     async function load() {
         loading = true;
         try {
+            if (categories.length === 0) categories = await loadCategories();
             collection = await api.get<Collection>(`/collections/${cid}`);
             const params = new URLSearchParams({ collection_id: cid });
             if (search) params.set('search', search);
-            if (typeFilter) params.set('type', typeFilter);
+            if (rootFilter) params.set('category_subtree', rootFilter);
             items = await api.get<Item[]>(`/items?${params.toString()}`);
         } catch (e) {
             error = (e as Error).message;
@@ -36,7 +53,11 @@
     async function addItem(e: Event) {
         e.preventDefault();
         if (!newTitle.trim()) return;
-        await api.post('/items', { collection_id: cid, type: newType, title: newTitle.trim() });
+        await api.post('/items', {
+            collection_id: cid,
+            category: newLeaf,
+            title: newTitle.trim()
+        });
         newTitle = '';
         await load();
     }
@@ -47,12 +68,19 @@
         scraping = true;
         error = '';
         try {
-            const res = await api.post<{ title?: string; item_type?: string }>(
+            const res = await api.post<{ title?: string; category?: string }>(
                 '/metadata/scrape',
                 { url }
             );
             if (res.title) newTitle = res.title;
-            if (res.item_type) newType = res.item_type as ItemType;
+            if (res.category) {
+                const leaf = categories.find((c) => c.slug === res.category);
+                if (leaf?.parent_id) {
+                    const root = categories.find((c) => c.id === leaf.parent_id);
+                    if (root) newRoot = root.slug;
+                    newLeaf = leaf.slug;
+                }
+            }
             scrapeUrl = '';
         } catch (e) {
             error = (e as Error).message;
@@ -89,14 +117,16 @@
                 {scraping ? 'Scraping…' : 'Scrape URL'}
             </button>
         </div>
-        <div style="display: grid; grid-template-columns: 140px 1fr auto; gap: .5rem">
-            <select bind:value={newType}>
-                <option value="movie">Movie</option>
-                <option value="music">Music</option>
-                <option value="book">Book</option>
-                <option value="comic">Comic</option>
-                <option value="game">Game</option>
-                <option value="other">Other</option>
+        <div style="display: grid; grid-template-columns: 140px 160px 1fr auto; gap: .5rem">
+            <select bind:value={newRoot}>
+                {#each roots as r (r.id)}
+                    <option value={r.slug}>{r.name}</option>
+                {/each}
+            </select>
+            <select bind:value={newLeaf}>
+                {#each leaves as l (l.id)}
+                    <option value={l.slug}>{l.name}</option>
+                {/each}
             </select>
             <input bind:value={newTitle} placeholder="Title" />
             <button type="submit">Add</button>
@@ -105,14 +135,11 @@
 
     <div style="display:flex; gap:.5rem; margin-bottom: 1rem">
         <input bind:value={search} placeholder="Search title…" oninput={() => load()} />
-        <select bind:value={typeFilter} onchange={() => load()}>
-            <option value="">All types</option>
-            <option value="movie">Movies</option>
-            <option value="music">Music</option>
-            <option value="book">Books</option>
-            <option value="comic">Comics</option>
-            <option value="game">Games</option>
-            <option value="other">Other</option>
+        <select bind:value={rootFilter} onchange={() => load()}>
+            <option value="">All categories</option>
+            {#each roots as r (r.id)}
+                <option value={r.slug}>{r.name}</option>
+            {/each}
         </select>
     </div>
 
@@ -126,7 +153,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Type</th>
+                    <th>Category</th>
                     <th>Title</th>
                     <th>Qty</th>
                     <th>Condition</th>
@@ -136,7 +163,7 @@
             <tbody>
                 {#each items as i (i.id)}
                     <tr>
-                        <td class="muted">{i.type}</td>
+                        <td class="muted">{i.category_slug ?? ''}</td>
                         <td>{i.title}{#if i.subtitle} <span class="muted">— {i.subtitle}</span>{/if}</td>
                         <td>{i.quantity}</td>
                         <td>{i.condition ?? ''}</td>
