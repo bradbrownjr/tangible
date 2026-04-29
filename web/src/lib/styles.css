@@ -1,4 +1,5 @@
-:root {
+:root,
+:root[data-theme='dark'] {
     --bg: #0f172a;
     --surface: #1e293b;
     --surface-2: #334155;
@@ -10,6 +11,20 @@
     --danger: #f87171;
     --success: #4ade80;
     color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-2: #e2e8f0;
+    --border: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --danger: #dc2626;
+    --success: #16a34a;
+    color-scheme: light;
 }
 
 * {

@@ -4,11 +4,13 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { me, refreshMe, loadPublicConfig, logout } from '$lib/session';
+    import { initTheme } from '$lib/theme';
 
     let { children } = $props();
     let ready = $state(false);
 
     onMount(async () => {
+        initTheme();
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
         const path = $page.url.pathname;

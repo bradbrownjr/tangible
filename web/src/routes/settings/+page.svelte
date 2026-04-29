@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { api } from '$lib/api';
     import { me } from '$lib/session';
+    import { theme, type ThemeMode } from '$lib/theme';
 
     interface Token {
         id: string;
@@ -59,6 +60,23 @@
     </div>
 {/if}
 
+<div class="card" style="margin-bottom: 1rem">
+    <h3 style="margin-top:0">Appearance</h3>
+    <p class="muted">Choose how Covet looks. "System" follows your OS setting.</p>
+    <div role="radiogroup" aria-label="Theme" class="theme-toggle">
+        {#each ['light', 'dark', 'system'] as const as opt (opt)}
+            <button
+                type="button"
+                class={$theme === opt ? '' : 'secondary'}
+                aria-pressed={$theme === opt}
+                onclick={() => theme.set(opt as ThemeMode)}
+            >
+                {opt[0].toUpperCase() + opt.slice(1)}
+            </button>
+        {/each}
+    </div>
+</div>
+
 <div class="card">
     <h3 style="margin-top:0">API tokens</h3>
     <p class="muted">For mobile apps and CLI integrations.</p>
@@ -107,3 +125,11 @@
         </table>
     {/if}
 </div>
+
+<style>
+    .theme-toggle {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
