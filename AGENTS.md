@@ -207,6 +207,61 @@ FastAPI's `Depends(...)`, `Query(...)`, `Body(...)` idiom requires call
 expressions in default arguments. `B008` (function-call-in-default) is in
 the global ignore list with an explanation comment. Don't re-enable.
 
+### `okhttp3.JavaNetCookieJar` lives in `okhttp-urlconnection`, not core
+
+It is shipped as a separate artifact. Add `okhttp-urlconnection` (same
+version ref as `okhttp`) to `gradle/libs.versions.toml` and reference it
+from `app/build.gradle.kts`. Importing it from `okhttp` core gives an
+unresolved-reference KSP failure.
+
+### CameraX `ImageProxy.image` opt-in needs BOTH annotation and `lint.xml`
+
+`androidx.camera.core.ExperimentalGetImage` is enforced by lint, not the
+compiler. Lint's opt-in propagation through deeply nested lambdas
+(`AndroidView` factory → `ProcessCameraProvider` listener →
+`ImageAnalysis.setAnalyzer`) is unreliable. Use both:
+1. `@OptIn(ExperimentalGetImage::class)` on the enclosing composable.
+2. Project-wide opt-in in `android/app/lint.xml` wired via
+   `lint { lintConfig = file("lint.xml") }` in `app/build.gradle.kts`.
+
+### Backtick test names cannot contain JVM-illegal method chars
+
+JUnit backtick names compile to JVM method names, which forbid
+`.;[]/\<>:`. So `` `round-trips dto -> entity -> dto` `` fails with
+`Name contains illegal characters: >`. Use `to`/`then`/`-` instead of
+arrows, slashes, dots, etc.
+
+### Local Android build environment (no toolchain in dev container)
+
+CI is the only place this used to build. To validate Android changes
+locally before pushing (highly recommended — CI ping-pong is slow):
+
+```bash
+apt-get install -y --no-install-recommends openjdk-17-jdk-headless unzip
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+# Bootstrap gradle-wrapper.jar (gitignored):
+curl -fsSL -o /tmp/g.zip https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+unzip -q /tmp/g.zip -d /tmp/g
+cd android && /tmp/g/gradle-8.10.2/bin/gradle wrapper --gradle-version 8.10.2 --distribution-type bin
+
+# Android SDK (compileSdk=35):
+mkdir -p ~/android-sdk/cmdline-tools && cd ~/android-sdk/cmdline-tools
+curl -fsSL -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip -q tools.zip && mv cmdline-tools latest
+export ANDROID_HOME=$HOME/android-sdk
+export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+yes | sdkmanager --licenses >/dev/null
+sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+cd /home/vscode/code/covet/android
+./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug --no-daemon
+```
+
+Lint emits a wall of `WARNING: Missing analysis API method ...
+NoWriteActionInAnalyseCallChecker` from AGP 8.7.2's bundled lint vs.
+Kotlin 2.0.21 analysis API — known noise, not actionable.
+
 ---
 
 ## Feature Registry
