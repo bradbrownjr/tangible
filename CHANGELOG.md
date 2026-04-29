@@ -6,6 +6,8 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-04-29 — Make items richer
+
 ### Added
 
 - **Photos API + multi-upload + URL ingest + HEIC/EXIF** — first-class
