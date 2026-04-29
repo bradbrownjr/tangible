@@ -212,7 +212,7 @@
                 <textarea
                     id="list-text"
                     rows="8"
-                    placeholder="The Matrix&#10;Pulp Fiction&#10;Blade Runner"
+                    placeholder={'The Matrix\nPulp Fiction\nBlade Runner'}
                     bind:value={listText}
                 ></textarea>
                 <p class="muted hint">
