@@ -14,7 +14,7 @@ from covet.auth.deps import (
     require_user,
 )
 from covet.db import get_session
-from covet.models import Category, CollectionMembership, Item, ItemTemplate
+from covet.models import Category, Collection, CollectionMembership, Item, ItemTemplate
 from covet.schemas import ItemCreate, ItemRead, ItemUpdate
 from covet.services.categories import resolve_slug, subtree_ids
 
@@ -109,17 +109,32 @@ def grocery_list(
     Any collection member can view this list — it forms the basis of a shared
     household grocery / re-stock list.
     """
-    # Subquery: collection IDs accessible to this user.
-    member_cids = db.scalars(
-        select(CollectionMembership.collection_id).where(
-            CollectionMembership.user_id == auth.user.id
+    if auth.user.is_admin:
+        stmt = (
+            select(Item)
+            .where(Item.depleted.is_(True))
+            .options(selectinload(Item.photos))
+            .order_by(Item.title)
         )
-    ).all()
-    if not member_cids:
+        return [ItemRead.model_validate(item) for item in db.scalars(stmt)]
+
+    member_cids = set(
+        db.scalars(
+            select(CollectionMembership.collection_id).where(
+                CollectionMembership.user_id == auth.user.id
+            )
+        ).all()
+    )
+    owner_cids = set(
+        db.scalars(select(Collection.id).where(Collection.owner_id == auth.user.id)).all()
+    )
+    readable_cids = sorted(member_cids | owner_cids)
+    if not readable_cids:
         return []
+
     stmt = (
         select(Item)
-        .where(Item.collection_id.in_(member_cids))
+        .where(Item.collection_id.in_(readable_cids))
         .where(Item.depleted.is_(True))
         .options(selectinload(Item.photos))
         .order_by(Item.title)

@@ -14,6 +14,7 @@ from covet.models.base import TimestampMixin, ULIDPrimaryKey
 if TYPE_CHECKING:
     from covet.models.category import Category
     from covet.models.collection import Collection
+    from covet.models.item_lot import ItemLot
     from covet.models.loan import Loan
     from covet.models.photo import Photo
     from covet.models.tag import ItemTag
@@ -42,6 +43,12 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     acquired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     location: Mapped[str | None] = mapped_column(String(256), nullable=True)
+
+    # Consumable-specific dates for FIFO management (e.g. pantry items).
+    purchased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    use_by_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    date_frozen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    date_opened: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # JSON blobs for type-specific fields and external identifiers
     identifiers: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
@@ -74,5 +81,8 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
         back_populates="item", cascade="all, delete-orphan"
     )
     loans: Mapped[list[Loan]] = relationship(
+        back_populates="item", cascade="all, delete-orphan"
+    )
+    lots: Mapped[list[ItemLot]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
     )

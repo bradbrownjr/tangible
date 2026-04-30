@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import io.github.bradbrownjr.covet.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.covet.ui.screen.collection.CollectionDetailScreen
 import io.github.bradbrownjr.covet.ui.screen.collections.CollectionListScreen
+import io.github.bradbrownjr.covet.ui.screen.grocery.GroceryListScreen
 import io.github.bradbrownjr.covet.ui.screen.item.ItemDetailScreen
 import io.github.bradbrownjr.covet.ui.screen.login.LoginScreen
 import io.github.bradbrownjr.covet.ui.screen.scan.ScannerScreen
@@ -21,6 +22,7 @@ import io.github.bradbrownjr.covet.ui.screen.settings.SettingsScreen
 object Routes {
     const val LOGIN = "login"
     const val COLLECTIONS = "collections"
+    const val GROCERY_LIST = "grocery-list"
     const val COLLECTION_DETAIL = "collection/{id}"
     fun collectionDetail(id: String) = "collection/$id"
     const val ITEM_DETAIL = "item/{itemId}"
@@ -57,8 +59,14 @@ fun CovetApp() {
             composable(Routes.COLLECTIONS) {
                 CollectionListScreen(
                     onOpen = { nav.navigate(Routes.collectionDetail(it)) },
+                    onGroceryList = { nav.navigate(Routes.GROCERY_LIST) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onAbout = { nav.navigate(Routes.ABOUT) },
+                )
+            }
+            composable(Routes.GROCERY_LIST) {
+                GroceryListScreen(
+                    onNavigateToCollection = { collectionId -> nav.navigate(Routes.collectionDetail(collectionId)) },
                 )
             }
             composable(Routes.COLLECTION_DETAIL) { backStack ->

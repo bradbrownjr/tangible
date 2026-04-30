@@ -22,6 +22,13 @@
     let editSubtitle = $state('');
     let editCondition = $state('');
     let editQuantity = $state(1);
+    let editPurchasedAt = $state('');
+    let editUseByDate = $state('');
+    let editDateFrozen = $state('');
+    let editDateOpened = $state('');
+    let confirmDialog = $state<'delete-item' | 'delete-collection' | null>(null);
+    let pendingDeleteItemId = $state<string | null>(null);
+    let pendingDeleteItemTitle = $state('');
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
@@ -51,6 +58,13 @@
         return null;
     });
 
+    // Helper to determine if a category slug is for consumables (pantry, spices, batteries, etc).
+    function isConsumable(slug: string | null): boolean {
+        if (!slug) return false;
+        const root = slug.split('.')[0];
+        return root === 'spices'; // spices root includes pantry items
+    }
+
     const cid = $derived(page.params.id ?? '');
     const roots = $derived(rootCategories(categories));
     const canEdit = $derived(
@@ -68,6 +82,9 @@
         const c = categories.find((x) => x.slug === def);
         return !!c;
     });
+
+    // Check if current leaf is consumable
+    const isCurrentLeafConsumable = $derived(isConsumable(newLeaf));
 
     // Column headers for the items table based on the collection's root category.
     const collectionCreatorLabel = $derived.by(() => {
@@ -208,9 +225,18 @@
         await performAdd();
     }
 
-    async function removeItem(id: string) {
-        if (!confirm('Delete this item?')) return;
-        await api.delete(`/items/${id}`);
+    function requestRemoveItem(item: Item) {
+        pendingDeleteItemId = item.id;
+        pendingDeleteItemTitle = item.title;
+        confirmDialog = 'delete-item';
+    }
+
+    async function removeItemConfirmed() {
+        if (!pendingDeleteItemId) return;
+        await api.delete(`/items/${pendingDeleteItemId}`);
+        pendingDeleteItemId = null;
+        pendingDeleteItemTitle = '';
+        confirmDialog = null;
         await load();
     }
 
@@ -221,6 +247,11 @@
         editSubtitle = i.subtitle ?? '';
         editCondition = i.condition ?? '';
         editQuantity = i.quantity;
+        // Convert ISO strings to datetime-local format for input fields (remove Z, handle truncation)
+        editPurchasedAt = i.purchased_at ? new Date(i.purchased_at).toISOString().slice(0, 16) : '';
+        editUseByDate = i.use_by_date ? new Date(i.use_by_date).toISOString().slice(0, 16) : '';
+        editDateFrozen = i.date_frozen ? new Date(i.date_frozen).toISOString().slice(0, 16) : '';
+        editDateOpened = i.date_opened ? new Date(i.date_opened).toISOString().slice(0, 16) : '';
     }
 
     function cancelEdit() {
@@ -231,13 +262,22 @@
         if (!editingId) return;
         const attrsPayload: Record<string, string> = {};
         if (editCreator.trim()) attrsPayload.creator = editCreator.trim();
-        await api.patch(`/items/${editingId}`, {
+        const updatePayload: Record<string, unknown> = {
             title: editTitle.trim(),
             subtitle: editSubtitle.trim() || null,
             condition: editCondition.trim() || null,
             quantity: editQuantity,
             attrs: attrsPayload,
-        });
+        };
+        // Add consumable dates if this item is in a consumable category
+        const editingItem = items.find((it) => it.id === editingId);
+        if (editingItem && isConsumable(editingItem.category_slug)) {
+            updatePayload.purchased_at = editPurchasedAt ? new Date(editPurchasedAt).toISOString() : null;
+            updatePayload.use_by_date = editUseByDate ? new Date(editUseByDate).toISOString() : null;
+            updatePayload.date_frozen = editDateFrozen ? new Date(editDateFrozen).toISOString() : null;
+            updatePayload.date_opened = editDateOpened ? new Date(editDateOpened).toISOString() : null;
+        }
+        await api.patch(`/items/${editingId}`, updatePayload);
         editingId = null;
         await load();
     }
@@ -247,17 +287,15 @@
         await load();
     }
 
-    async function deleteCollection() {
+    function requestDeleteCollection() {
+        confirmDialog = 'delete-collection';
+    }
+
+    async function deleteCollectionConfirmed() {
         if (!collection) return;
-        const name = collection.name;
-        if (
-            !confirm(
-                `Delete the "${name}" collection? This permanently removes all items, photos, and shares it owns.`
-            )
-        )
-            return;
         try {
             await api.delete(`/collections/${cid}`);
+            confirmDialog = null;
             await goto('/');
         } catch (e) {
             error = (e as Error).message;
@@ -283,7 +321,7 @@
         <a class="tab" href="/collections/{cid}/templates">Templates</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
         {#if collection.my_role === 'owner'}
-            <button type="button" class="tab tab-danger" onclick={deleteCollection}>Delete</button>
+            <button type="button" class="tab tab-danger" onclick={requestDeleteCollection}>Delete</button>
         {/if}
     </nav>
 
@@ -404,6 +442,12 @@
                             {/if}
                             <input bind:value={editCondition} placeholder="Condition" class="edit-input" />
                             <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="width:5rem" />
+                            {#if isConsumable(i.category_slug)}
+                                <input type="datetime-local" bind:value={editPurchasedAt} placeholder="Purchased" class="edit-input" title="Purchased date" />
+                                <input type="datetime-local" bind:value={editUseByDate} placeholder="Use by" class="edit-input" title="Use by date" />
+                                <input type="datetime-local" bind:value={editDateFrozen} placeholder="Frozen" class="edit-input" title="Date frozen" />
+                                <input type="datetime-local" bind:value={editDateOpened} placeholder="Opened" class="edit-input" title="Date opened" />
+                            {/if}
                         </div>
                         <div class="item-card-actions">
                             <button onclick={saveEdit}>Save</button>
@@ -427,6 +471,10 @@
                                 {#if i.condition}<span>{i.condition}</span>{/if}
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
+                                {#if isConsumable(i.category_slug)}
+                                    {#if i.use_by_date}<span class="date-badge use-by">Use by {new Date(i.use_by_date).toLocaleDateString()}</span>{/if}
+                                    {#if i.date_opened}<span class="date-badge opened">Opened {new Date(i.date_opened).toLocaleDateString()}</span>{/if}
+                                {/if}
                             </div>
                         </div>
                         {#if canEdit}
@@ -437,7 +485,7 @@
                                     class={i.depleted ? 'secondary' : 'warn'}
                                     onclick={() => toggleDepleted(i)}
                                 >{i.depleted ? 'In stock' : 'Depleted'}</button>
-                                <button class="danger item-card-delete" onclick={() => removeItem(i.id)}>Delete</button>
+                                <button class="danger item-card-delete" onclick={() => requestRemoveItem(i)}>Delete</button>
                             </div>
                         {/if}
                     </div>
@@ -478,6 +526,18 @@
                                 </td>
                             {/if}
                         </tr>
+                        {#if isConsumable(i.category_slug)}
+                            <tr class="editing-row consumable-dates-row">
+                                <td colspan="100" style="padding: 0.5rem;">
+                                    <div class="consumable-dates-grid">
+                                        <input type="datetime-local" bind:value={editPurchasedAt} placeholder="Purchased" class="edit-input" title="Purchased date" />
+                                        <input type="datetime-local" bind:value={editUseByDate} placeholder="Use by" class="edit-input" title="Use by date" />
+                                        <input type="datetime-local" bind:value={editDateFrozen} placeholder="Frozen" class="edit-input" title="Date frozen" />
+                                        <input type="datetime-local" bind:value={editDateOpened} placeholder="Opened" class="edit-input" title="Date opened" />
+                                    </div>
+                                </td>
+                            </tr>
+                        {/if}
                     {:else}
                         <tr class:depleted-row={i.depleted}>
                             {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
@@ -495,7 +555,7 @@
                                         onclick={() => toggleDepleted(i)}
                                         title={i.depleted ? 'Mark as in stock' : 'Mark as depleted'}
                                     >{i.depleted ? 'In stock' : 'Depleted'}</button>
-                                    <button class="danger" onclick={() => removeItem(i.id)}>Delete</button>
+                                    <button class="danger" onclick={() => requestRemoveItem(i)}>Delete</button>
                                 </td>
                             {/if}
                         </tr>
@@ -506,6 +566,34 @@
     {/if}
 {:else if !loading}
     <p class="error">Collection not found.</p>
+{/if}
+
+{#if confirmDialog === 'delete-item'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-item-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="delete-item-title">Delete item?</h3>
+            <p class="muted">{pendingDeleteItemTitle || 'This item'} will be permanently removed.</p>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" class="danger" onclick={removeItemConfirmed}>Delete</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if confirmDialog === 'delete-collection'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-collection-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="delete-collection-title">Delete collection?</h3>
+            <p class="muted">
+                This permanently removes all items, photos, shares, and related data in {collection?.name}.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" class="danger" onclick={deleteCollectionConfirmed}>Delete collection</button>
+            </div>
+        </div>
+    </div>
 {/if}
 
 <style>
@@ -546,6 +634,29 @@
     .tab-danger:hover {
         background: var(--danger);
         color: white;
+    }
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        z-index: 40;
+    }
+    .modal {
+        width: min(34rem, 100%);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+        display: grid;
+        gap: 0.75rem;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
     }
     .edit-input {
         width: 100%;
@@ -735,6 +846,19 @@
         color: var(--danger, #c00);
         font-weight: 600;
     }
+    .date-badge {
+        font-size: 0.7rem;
+        font-weight: 500;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        background: color-mix(in srgb, currentColor 12%, transparent);
+    }
+    .date-badge.use-by {
+        color: color-mix(in srgb, orange 70%, var(--fg));
+    }
+    .date-badge.opened {
+        color: color-mix(in srgb, #0066cc 70%, var(--fg));
+    }
     button.warn {
         background: color-mix(in srgb, orange 15%, var(--surface));
         border-color: orange;
@@ -743,5 +867,17 @@
     button.warn:hover {
         background: orange;
         color: white;
+    }
+    /* Consumable date fields */
+    .consumable-dates-row {
+        background: color-mix(in srgb, var(--accent) 3%, var(--surface));
+    }
+    .consumable-dates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem;
+    }
+    .consumable-dates-grid .edit-input {
+        font-size: 0.875rem;
     }
 </style>

@@ -26,6 +26,10 @@
     let newLinkLabel = $state('');
     let newInviteEmail = $state('');
     let newInviteRole: Role = $state('viewer');
+        let confirmDialog = $state<'remove-member' | 'revoke-share' | 'revoke-invite' | null>(null);
+        let pendingMember = $state<Membership | null>(null);
+        let pendingShare = $state<ShareLink | null>(null);
+        let pendingInvite = $state<Invitation | null>(null);
 
     const cid = $derived(page.params.id ?? '');
 
@@ -86,10 +90,17 @@
         }
     }
 
-    async function removeMember(m: Membership) {
-        if (!confirm(`Remove ${m.username} from this collection?`)) return;
+    function requestRemoveMember(m: Membership) {
+        pendingMember = m;
+        confirmDialog = 'remove-member';
+    }
+
+    async function removeMemberConfirmed() {
+        if (!pendingMember) return;
         try {
-            await api.delete(`/collections/${cid}/members/${m.id}`);
+            await api.delete(`/collections/${cid}/members/${pendingMember.id}`);
+            pendingMember = null;
+            confirmDialog = null;
             await load();
         } catch (e) {
             error = (e as Error).message;
@@ -109,10 +120,17 @@
         }
     }
 
-    async function revokeShareLink(link: ShareLink) {
-        if (!confirm('Revoke this share link? Anyone holding it will lose access.')) return;
+    function requestRevokeShareLink(link: ShareLink) {
+        pendingShare = link;
+        confirmDialog = 'revoke-share';
+    }
+
+    async function revokeShareLinkConfirmed() {
+        if (!pendingShare) return;
         try {
-            await api.delete(`/collections/${cid}/share-links/${link.id}`);
+            await api.delete(`/collections/${cid}/share-links/${pendingShare.id}`);
+            pendingShare = null;
+            confirmDialog = null;
             await load();
         } catch (e) {
             error = (e as Error).message;
@@ -147,10 +165,17 @@
         }
     }
 
-    async function revokeInvitation(inv: Invitation) {
-        if (!confirm('Revoke this invitation?')) return;
+    function requestRevokeInvitation(inv: Invitation) {
+        pendingInvite = inv;
+        confirmDialog = 'revoke-invite';
+    }
+
+    async function revokeInvitationConfirmed() {
+        if (!pendingInvite) return;
         try {
-            await api.delete(`/collections/${cid}/invitations/${inv.id}`);
+            await api.delete(`/collections/${cid}/invitations/${pendingInvite.id}`);
+            pendingInvite = null;
+            confirmDialog = null;
             await load();
         } catch (e) {
             error = (e as Error).message;
@@ -216,7 +241,7 @@
                         </td>
                         <td>
                             {#if m.role !== 'owner'}
-                                <button class="danger" onclick={() => removeMember(m)}>Remove</button>
+                                    <button class="danger" onclick={() => requestRemoveMember(m)}>Remove</button>
                             {/if}
                         </td>
                     </tr>
@@ -281,7 +306,7 @@
                             {/if}
                         </td>
                         <td>
-                            <button class="danger" onclick={() => revokeInvitation(inv)}>
+                            <button class="danger" onclick={() => requestRevokeInvitation(inv)}>
                                 Revoke
                             </button>
                         </td>
@@ -327,7 +352,7 @@
                         </td>
                         <td class="muted">{l.expires_at ?? 'never'}</td>
                         <td>
-                            <button class="danger" onclick={() => revokeShareLink(l)}>
+                            <button class="danger" onclick={() => requestRevokeShareLink(l)}>
                                 Revoke
                             </button>
                         </td>
@@ -366,6 +391,45 @@
     <p class="error">Collection not found.</p>
 {/if}
 
+{#if confirmDialog === 'remove-member'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="remove-member-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="remove-member-title">Remove member?</h3>
+            <p class="muted">Remove {pendingMember?.username} from this collection.</p>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" class="danger" onclick={removeMemberConfirmed}>Remove</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if confirmDialog === 'revoke-share'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-share-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="revoke-share-title">Revoke share link?</h3>
+            <p class="muted">Anyone holding this link will lose access immediately.</p>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" class="danger" onclick={revokeShareLinkConfirmed}>Revoke</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if confirmDialog === 'revoke-invite'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-invite-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="revoke-invite-title">Revoke invitation?</h3>
+            <p class="muted">The invite link will stop working.</p>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" class="danger" onclick={revokeInvitationConfirmed}>Revoke</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
 <style>
     .subnav {
         display: flex;
@@ -396,4 +460,27 @@
         color: var(--accent-fg, white);
         border-color: var(--accent);
     }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: grid;
+            place-items: center;
+            padding: 1rem;
+            z-index: 40;
+        }
+        .modal {
+            width: min(34rem, 100%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
 </style>

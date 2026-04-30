@@ -23,6 +23,24 @@ All notable changes to **Covet** are documented here. Format follows
 - **`GET /items/grocery-list`** — server endpoint returning all depleted items
   across the authenticated user's accessible collections.
 - **`GET /items?depleted=true/false`** — filter items by depleted status.
+- **Per-package inventory lots for consumables.** New inventory-lot APIs now track individual purchases
+  (quantity, purchased date, use-by, frozen, opened, consumed) so household members can buy a second
+  package while an older one is still in stock and rotate FIFO accurately.
+- **`POST /items/{item_id}/restock`**, **`GET/POST /items/{item_id}/lots`**,
+  **`PATCH /lots/{lot_id}`**, **`POST /lots/{lot_id}/consume`**, and **`POST /lots/{lot_id}/freeze`**
+  for lot-level stock lifecycle management.
+- **Upcoming due-date alerts API.** New **`GET /alerts`** endpoint returns expiring/use-by/maintenance
+  alerts across readable collections for notification surfaces.
+- **Web + Android in-app due alerts.** Settings now surfaces upcoming due items (next 14 days) in both
+  web and Android to help prevent missed use-by and renewal dates.
+- **Admin system scrub control.** New admin-only Settings action calls
+  **`POST /admin/system/scrub-inventory`** with typed confirmation to clear inventory-domain data
+  during early schema iteration.
+
+### Changed
+
+- **No browser-native confirm dialogs in web flows.** Collection, member/share/invite, template,
+  token revoke, and system scrub confirmations now use in-app modal dialogs.
 
 ### Fixed
 

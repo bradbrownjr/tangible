@@ -12,12 +12,14 @@ from covet.api import imports as imports_router
 from covet.api import invitations as invitations_router
 from covet.api import item_templates as item_templates_router
 from covet.api import items as items_router
+from covet.api import inventory as inventory_router
 from covet.api import loans as loans_router
 from covet.api import maintenance as maintenance_router
 from covet.api import meta as meta_router
 from covet.api import metadata as metadata_router
 from covet.api import photos as photos_router
 from covet.api import share as share_router
+from covet.api import system as system_router
 from covet.api import sync as sync_router
 from covet.api import tags as tags_router
 
@@ -27,6 +29,7 @@ api_router.include_router(auth_router.router)
 api_router.include_router(collections_router.router)
 api_router.include_router(categories_router.router)
 api_router.include_router(items_router.router)
+api_router.include_router(inventory_router.router)
 api_router.include_router(item_templates_router.router)
 api_router.include_router(tags_router.router)
 api_router.include_router(contacts_router.router)
@@ -40,5 +43,6 @@ api_router.include_router(metadata_router.router)
 api_router.include_router(documents_router.router)
 api_router.include_router(maintenance_router.router)
 api_router.include_router(photos_router.router)
+api_router.include_router(system_router.router)
 
 __all__ = ["api_router"]

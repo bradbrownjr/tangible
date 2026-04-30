@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -24,6 +26,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import io.github.bradbrownjr.covet.data.auth.SessionStore
+import io.github.bradbrownjr.covet.data.remote.CovetApi
+import io.github.bradbrownjr.covet.data.remote.DueAlertDto
 import io.github.bradbrownjr.covet.data.repo.AuthRepository
 import javax.inject.Inject
 
@@ -35,12 +39,15 @@ data class SettingsUi(
     val testOk: Boolean = false,
     // "system" | "light" | "dark" — null treated as "system"
     val themeMode: String? = null,
+    val alerts: List<DueAlertDto> = emptyList(),
+    val alertsBusy: Boolean = false,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val session: SessionStore,
     private val auth: AuthRepository,
+    private val api: CovetApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUi())
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
@@ -57,6 +64,7 @@ class SettingsViewModel @Inject constructor(
                 _state.value = _state.value.copy(themeMode = mode)
             }
         }
+        refreshAlerts()
     }
 
     fun signOut(after: () -> Unit) {
@@ -81,6 +89,19 @@ class SettingsViewModel @Inject constructor(
             _state.value = _state.value.copy(testBusy = false, testResult = msg, testOk = ok)
         }
     }
+
+    fun refreshAlerts() {
+        if (_state.value.alertsBusy) return
+        _state.value = _state.value.copy(alertsBusy = true)
+        viewModelScope.launch {
+            val alerts = try {
+                api.getAlerts(withinDays = 14)
+            } catch (_: Throwable) {
+                emptyList()
+            }
+            _state.value = _state.value.copy(alerts = alerts, alertsBusy = false)
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,51 +124,89 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             Modifier.fillMaxSize().padding(padding).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Server: ${s.baseUrl ?: "—"}")
-            Text("Signed in as: ${s.username ?: "—"}")
-            Row(
+            item { Text("Server: ${s.baseUrl ?: "—"}") }
+            item { Text("Signed in as: ${s.username ?: "—"}") }
+            item {
+                Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                OutlinedButton(
-                    onClick = vm::testConnection,
-                    enabled = !s.testBusy && s.baseUrl != null,
                 ) {
-                    if (s.testBusy) {
-                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                    } else {
-                        Text("Test connection")
+                    OutlinedButton(
+                        onClick = vm::testConnection,
+                        enabled = !s.testBusy && s.baseUrl != null,
+                    ) {
+                        if (s.testBusy) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Test connection")
+                        }
+                    }
+                    if (s.testResult != null) {
+                        Text(
+                            text = s.testResult!!,
+                            color = if (s.testOk) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
-                if (s.testResult != null) {
-                    Text(
-                        text = s.testResult!!,
-                        color = if (s.testOk) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+            }
+            item { HorizontalDivider() }
+            item {
+                Text("Appearance", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            item {
+                @OptIn(ExperimentalMaterial3Api::class)
+                SingleChoiceSegmentedButtonRow {
+                    val options = listOf("system" to "System", "light" to "Light", "dark" to "Dark")
+                    options.forEachIndexed { index, (value, label) ->
+                        SegmentedButton(
+                            selected = (s.themeMode ?: "system") == value,
+                            onClick = { vm.setTheme(value) },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                            label = { Text(label) },
+                        )
+                    }
                 }
             }
-            HorizontalDivider()
-            Text("Appearance", style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            @OptIn(ExperimentalMaterial3Api::class)
-            SingleChoiceSegmentedButtonRow {
-                val options = listOf("system" to "System", "light" to "Light", "dark" to "Dark")
-                options.forEachIndexed { index, (value, label) ->
-                    SegmentedButton(
-                        selected = (s.themeMode ?: "system") == value,
-                        onClick = { vm.setTheme(value) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                        label = { Text(label) },
-                    )
+            item { HorizontalDivider() }
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text("Due soon", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = vm::refreshAlerts, enabled = !s.alertsBusy) {
+                        if (s.alertsBusy) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Refresh")
+                        }
+                    }
                 }
             }
-            HorizontalDivider()
-            Button(onClick = { vm.signOut(onSignOut) }) { Text("Sign out") }
+            if (s.alerts.isEmpty()) {
+                item { Text("No upcoming alerts in the next 14 days.", style = MaterialTheme.typography.bodySmall) }
+            } else {
+                items(s.alerts, key = { it.id }) { alert ->
+                    ElevatedCard {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(alert.title, style = MaterialTheme.typography.titleSmall)
+                            Text(alert.due_at, style = MaterialTheme.typography.bodySmall)
+                            if (!alert.details.isNullOrBlank()) {
+                                Text(alert.details!!, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+            item { HorizontalDivider() }
+            item { Button(onClick = { vm.signOut(onSignOut) }) { Text("Sign out") } }
         }
     }
 }

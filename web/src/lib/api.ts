@@ -115,6 +115,10 @@ export interface Item {
     identifiers: Record<string, unknown>;
     attrs: Record<string, unknown>;
     depleted: boolean;
+    purchased_at: string | null;
+    use_by_date: string | null;
+    date_frozen: string | null;
+    date_opened: string | null;
 }
 
 export interface Tag {

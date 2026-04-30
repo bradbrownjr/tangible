@@ -66,6 +66,15 @@ interface CovetApi {
     @DELETE("items/{id}")
     suspend fun deleteItem(@Path("id") id: String)
 
+    @GET("items/grocery-list")
+    suspend fun getGroceryList(): List<ItemDto>
+
+    @POST("items/{id}/restock")
+    suspend fun restockItem(@Path("id") id: String, @Body body: RestockRequest): ItemLotDto
+
+    @GET("alerts")
+    suspend fun getAlerts(@Query("within_days") withinDays: Int = 14): List<DueAlertDto>
+
     // --- Metadata ---
     @POST("metadata/scrape")
     suspend fun scrape(@Body body: ScrapeRequest): ScrapeResponse

@@ -82,6 +82,10 @@ fun ItemDto.toEntity(moshi: Moshi, now: Long = System.currentTimeMillis()): Item
         identifiersJson = adapter.toJson(identifiers),
         attrsJson = adapter.toJson(attrs),
         depleted = depleted,
+        purchasedAt = purchased_at,
+        useByDate = use_by_date,
+        dateFrozen = date_frozen,
+        dateOpened = date_opened,
         cachedAt = now,
     )
 }
@@ -105,6 +109,10 @@ fun ItemEntity.toDto(moshi: Moshi): ItemDto {
         identifiers = adapter.fromJson(identifiersJson) ?: emptyMap(),
         attrs = adapter.fromJson(attrsJson) ?: emptyMap(),
         depleted = depleted,
+        purchased_at = purchasedAt,
+        use_by_date = useByDate,
+        date_frozen = dateFrozen,
+        date_opened = dateOpened,
     )
 }
 

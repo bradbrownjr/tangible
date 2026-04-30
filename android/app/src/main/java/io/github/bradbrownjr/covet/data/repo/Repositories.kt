@@ -16,6 +16,7 @@ import io.github.bradbrownjr.covet.data.remote.ItemCreate
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.ItemPatch
 import io.github.bradbrownjr.covet.data.remote.PhotoDto
+import io.github.bradbrownjr.covet.data.remote.RestockRequest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -158,6 +159,27 @@ class ItemRepository @Inject constructor(
         val updated = api.patchItem(id, patch)
         dao.upsertAll(listOf(updated.toEntity(moshi)))
         return updated
+    }
+
+    suspend fun update(id: String, depleted: Boolean? = null): ItemDto {
+        val patch = ItemPatch(depleted = depleted)
+        return update(id, patch)
+    }
+
+    suspend fun groceryList(): List<ItemDto> {
+        return api.getGroceryList()
+    }
+
+    suspend fun restock(itemId: String, quantity: Int = 1, useByDate: String? = null) {
+        api.restockItem(
+            itemId,
+            RestockRequest(
+                quantity = quantity,
+                purchased_at = java.time.OffsetDateTime.now().toString(),
+                use_by_date = useByDate,
+                mark_in_stock = true,
+            ),
+        )
     }
 
     suspend fun delete(id: String) {

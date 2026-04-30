@@ -23,8 +23,12 @@
         }
     }
 
-    async function markInStock(item: Item) {
-        await api.patch(`/items/${item.id}`, { depleted: false });
+    async function markPurchased(item: Item) {
+        await api.post(`/items/${item.id}/restock`, {
+            quantity: 1,
+            purchased_at: new Date().toISOString(),
+            use_by_date: item.use_by_date,
+        });
         items = items.filter((i) => i.id !== item.id);
     }
 
@@ -64,8 +68,8 @@
                     </td>
                     <td class="muted">{item.category_slug ?? ''}</td>
                     <td>
-                        <button type="button" onclick={() => markInStock(item)}>
-                            Mark in stock
+                        <button type="button" onclick={() => markPurchased(item)}>
+                            Mark purchased
                         </button>
                     </td>
                 </tr>

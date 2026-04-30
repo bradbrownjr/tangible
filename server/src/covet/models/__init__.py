@@ -11,6 +11,7 @@ from covet.models.contact import Contact
 from covet.models.document import Document
 from covet.models.invitation import Invitation
 from covet.models.item import Item
+from covet.models.item_lot import ItemLot
 from covet.models.item_template import ItemTemplate
 from covet.models.loan import Loan
 from covet.models.maintenance import MaintenanceTask
@@ -39,6 +40,7 @@ __all__ = [
     "Document",
     "Invitation",
     "Item",
+    "ItemLot",
     "ItemTag",
     "ItemTemplate",
     "Loan",

@@ -28,6 +28,8 @@
     let editFields = $state<TemplateField[]>([]);
     let editAdvancedOpen = $state(false);
     let editAdvancedJson = $state('[]');
+    let deleteTemplateId = $state<string | null>(null);
+    let deleteTemplateName = $state('');
 
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
@@ -136,10 +138,17 @@
         }
     }
 
-    async function removeTemplate(t: ItemTemplate) {
-        if (!confirm(`Delete template "${t.name}"? Items using it keep their attrs.`)) return;
+    function requestRemoveTemplate(t: ItemTemplate) {
+        deleteTemplateId = t.id;
+        deleteTemplateName = t.name;
+    }
+
+    async function removeTemplateConfirmed() {
+        if (!deleteTemplateId) return;
         try {
-            await api.delete(`/templates/${t.id}`);
+            await api.delete(`/templates/${deleteTemplateId}`);
+            deleteTemplateId = null;
+            deleteTemplateName = '';
             await load();
         } catch (e) {
             error = (e as Error).message;
@@ -411,7 +420,7 @@
                                     else startEditTemplate(t);
                                 }}>{editingTemplateId === t.id ? 'Cancel' : 'Edit'}</button>
                                 <button class="secondary" onclick={() => cloneTemplate(t)}>Clone</button>
-                                <button class="danger" onclick={() => removeTemplate(t)}>Delete</button>
+                                <button class="danger" onclick={() => requestRemoveTemplate(t)}>Delete</button>
                             </td>
                         {/if}
                     </tr>
@@ -472,6 +481,19 @@
     <p class="error">Collection not found.</p>
 {/if}
 
+{#if deleteTemplateId}
+    <div class="modal-backdrop" role="presentation" onclick={() => (deleteTemplateId = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-template-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="delete-template-title">Delete template?</h3>
+            <p class="muted">Delete template "{deleteTemplateName}"? Items using it keep existing attrs.</p>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (deleteTemplateId = null)}>Cancel</button>
+                <button type="button" class="danger" onclick={removeTemplateConfirmed}>Delete</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
 <style>
     .subnav {
         display: flex;
@@ -501,6 +523,29 @@
         background: var(--accent);
         color: var(--accent-fg, white);
         border-color: var(--accent);
+    }
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        z-index: 40;
+    }
+    .modal {
+        width: min(34rem, 100%);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+        display: grid;
+        gap: 0.75rem;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
     }
     .stack {
         display: grid;

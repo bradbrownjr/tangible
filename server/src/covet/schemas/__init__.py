@@ -29,6 +29,13 @@ from covet.schemas.invitation import (
     InvitationPreview,
     InvitationRead,
 )
+from covet.schemas.inventory import (
+    DueAlertRead,
+    ItemLotCreate,
+    ItemLotRead,
+    ItemLotUpdate,
+    RestockRequest,
+)
 from covet.schemas.item import ItemCreate, ItemRead, ItemUpdate
 from covet.schemas.item_template import (
     ItemTemplateCreate,
@@ -71,6 +78,9 @@ __all__ = [
     "InvitationCreated",
     "InvitationPreview",
     "InvitationRead",
+    "ItemLotCreate",
+    "ItemLotRead",
+    "ItemLotUpdate",
     "ItemCreate",
     "ItemRead",
     "ItemTemplateCreate",
@@ -94,6 +104,7 @@ __all__ = [
     "PhotoRead",
     "PhotoUpdate",
     "RegisterRequest",
+    "RestockRequest",
     "SessionInfo",
     "ShareLinkCreate",
     "ShareLinkRead",
@@ -108,6 +119,7 @@ __all__ = [
     "TagCreate",
     "TagRead",
     "TagUpdate",
+    "DueAlertRead",
     "TemplateField",
     "TokenInfo",
     "UserCreate",

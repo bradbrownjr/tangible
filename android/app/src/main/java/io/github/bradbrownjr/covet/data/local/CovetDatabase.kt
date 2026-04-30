@@ -65,6 +65,10 @@ data class ItemEntity(
     val identifiersJson: String,
     val attrsJson: String,
     val depleted: Boolean,
+    @ColumnInfo(name = "purchased_at") val purchasedAt: String?,
+    @ColumnInfo(name = "use_by_date") val useByDate: String?,
+    @ColumnInfo(name = "date_frozen") val dateFrozen: String?,
+    @ColumnInfo(name = "date_opened") val dateOpened: String?,
     @ColumnInfo(name = "cached_at") val cachedAt: Long,
 )
 
@@ -132,7 +136,7 @@ class Converters {
 
 @Database(
     entities = [CollectionEntity::class, CategoryEntity::class, ItemEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

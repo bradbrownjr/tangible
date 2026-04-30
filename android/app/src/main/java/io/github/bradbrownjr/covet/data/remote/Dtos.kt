@@ -108,6 +108,10 @@ data class ItemDto(
     val identifiers: Map<String, Any?> = emptyMap(),
     val attrs: Map<String, Any?> = emptyMap(),
     val depleted: Boolean = false,
+    val purchased_at: String? = null,
+    val use_by_date: String? = null,
+    val date_frozen: String? = null,
+    val date_opened: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -131,6 +135,28 @@ data class ItemPatch(
     val current_value: Double? = null,
     val currency: String? = null,
     val location: String? = null,
+    val depleted: Boolean? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class RestockRequest(
+    val label: String? = null,
+    val notes: String? = null,
+    val quantity: Int = 1,
+    val purchased_at: String? = null,
+    val use_by_date: String? = null,
+    val date_frozen: String? = null,
+    val date_opened: String? = null,
+    val mark_in_stock: Boolean = true,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemLotDto(
+    val id: String,
+    val item_id: String,
+    val collection_id: String,
+    val quantity: Int,
+    val is_active: Boolean,
 )
 
 @JsonClass(generateAdapter = true)
@@ -145,4 +171,17 @@ data class PhotoDto(
     val sort_order: Int,
     val is_primary: Boolean,
     val created_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class DueAlertDto(
+    val id: String,
+    val kind: String,
+    val severity: String,
+    val title: String,
+    val collection_id: String,
+    val item_id: String? = null,
+    val lot_id: String? = null,
+    val due_at: String,
+    val details: String? = null,
 )
