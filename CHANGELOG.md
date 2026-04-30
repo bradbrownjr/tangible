@@ -6,6 +6,16 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.16.1] — 2026-04-30
+
+### Fixed
+
+- **Android: Obtanium still showed two APKs in v0.16.0.** The CI workflow
+  now uploads only the signed release APK (`covet-{version}.apk`) on tagged
+  releases, so Obtanium offers a single installable update. Debug APKs are
+  still built for every commit but only attached to workflow artifacts, not
+  to GitHub Releases.
+
 ## [0.16.0] — 2026-04-30
 
 ### Added
