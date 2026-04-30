@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.bradbrownjr.covet.ui.screen.collection.CollectionDetailScreen
 import io.github.bradbrownjr.covet.ui.screen.collections.CollectionListScreen
+import io.github.bradbrownjr.covet.ui.screen.item.ItemDetailScreen
 import io.github.bradbrownjr.covet.ui.screen.login.LoginScreen
 import io.github.bradbrownjr.covet.ui.screen.scan.ScannerScreen
 import io.github.bradbrownjr.covet.ui.screen.settings.SettingsScreen
@@ -21,6 +22,8 @@ object Routes {
     const val COLLECTIONS = "collections"
     const val COLLECTION_DETAIL = "collection/{id}"
     fun collectionDetail(id: String) = "collection/$id"
+    const val ITEM_DETAIL = "item/{itemId}"
+    fun itemDetail(id: String) = "item/$id"
     const val SCANNER = "scanner"
     const val SETTINGS = "settings"
 }
@@ -64,8 +67,12 @@ fun CovetApp() {
                     collectionId = id,
                     scannedBarcode = scannedBarcode,
                     onScan = { nav.navigate(Routes.SCANNER) },
+                    onItem = { itemId -> nav.navigate(Routes.itemDetail(itemId)) },
                     onBack = { nav.popBackStack() },
                 )
+            }
+            composable(Routes.ITEM_DETAIL) {
+                ItemDetailScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.SCANNER) {
                 ScannerScreen(onResult = { code ->

@@ -3,6 +3,7 @@ package io.github.bradbrownjr.covet.data.remote
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -46,6 +47,12 @@ interface CovetApi {
 
     @POST("items")
     suspend fun createItem(@Body body: ItemCreate): ItemDto
+
+    @PATCH("items/{id}")
+    suspend fun patchItem(@Path("id") id: String, @Body body: ItemPatch): ItemDto
+
+    @GET("items/{id}")
+    suspend fun getItem(@Path("id") id: String): ItemDto
 
     @DELETE("items/{id}")
     suspend fun deleteItem(@Path("id") id: String)

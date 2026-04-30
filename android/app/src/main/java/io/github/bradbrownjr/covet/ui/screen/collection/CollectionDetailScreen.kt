@@ -6,16 +6,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -45,6 +50,8 @@ data class DetailUi(
     val error: String? = null,
     // Pull-to-refresh indicator (separate from initial load spinner).
     val refreshing: Boolean = false,
+    // Search
+    val searchQuery: String = "",
     // Add-item dialog
     val showCreate: Boolean = false,
     val allCategories: List<CategoryDto> = emptyList(),
@@ -155,6 +162,31 @@ class CollectionDetailViewModel @Inject constructor(
 
     fun setFilter(cat: CategoryDto?) {
         _state.value = _state.value.copy(activeFilter = cat)
+    }
+
+    fun setSearchQuery(query: String) {
+        _state.value = _state.value.copy(searchQuery = query)
+    }
+
+    fun search() {
+        val s = _state.value
+        _state.value = s.copy(loading = true, error = null)
+        viewModelScope.launch {
+            try {
+                val list = items.list(
+                    collectionId,
+                    search = s.searchQuery.takeIf { it.isNotBlank() },
+                )
+                _state.value = _state.value.copy(items = list, loading = false)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(loading = false, error = t.message)
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _state.value = _state.value.copy(searchQuery = "")
+        refresh()
     }
 
     fun setNewTitle(v: String) { _state.value = _state.value.copy(newTitle = v) }
@@ -274,6 +306,7 @@ fun CollectionDetailScreen(
     collectionId: String,
     onScan: (() -> Unit)? = null,
     onBack: () -> Unit,
+    onItem: (String) -> Unit = {},
     scannedBarcode: String? = null,
     vm: CollectionDetailViewModel = hiltViewModel(),
 ) {
@@ -349,6 +382,14 @@ fun CollectionDetailScreen(
                             )
                         }
                     }
+                    item {
+                        SearchBar(
+                            query = s.searchQuery,
+                            onQueryChange = vm::setSearchQuery,
+                            onSearch = { vm.search() },
+                            onClear = vm::clearSearch,
+                        )
+                    }
                     if (displayItems.isEmpty()) {
                         item {
                             Text(
@@ -366,6 +407,7 @@ fun CollectionDetailScreen(
                                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                                     }
                                 },
+                                modifier = Modifier.clickable { onItem(item.id) },
                             )
                             HorizontalDivider()
                         }
@@ -544,4 +586,32 @@ private fun CategoryFilterBar(
             )
         }
     }
+}
+
+@Composable
+private fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onClear: () -> Unit,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Search items…") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = onClear) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                }
+            }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    )
 }

@@ -67,11 +67,7 @@ class CollectionRepository @Inject constructor(
 
     suspend fun delete(id: String) {
         api.deleteCollection(id)
-        dao.deleteMissing(emptyList<String>().also {
-            // Remove just this one without a full refresh.
-        })
-        // Simpler: just clear and rely on next list() to repopulate.
-        // We filter out only this id from cache.
+        dao.deleteById(id)
     }
 }
 
@@ -139,6 +135,18 @@ class ItemRepository @Inject constructor(
         )
         dao.upsertAll(listOf(created.toEntity(moshi)))
         return created
+    }
+
+    suspend fun get(id: String): ItemDto {
+        val fresh = api.getItem(id)
+        dao.upsertAll(listOf(fresh.toEntity(moshi)))
+        return fresh
+    }
+
+    suspend fun update(id: String, patch: io.github.bradbrownjr.covet.data.remote.ItemPatch): ItemDto {
+        val updated = api.patchItem(id, patch)
+        dao.upsertAll(listOf(updated.toEntity(moshi)))
+        return updated
     }
 
     suspend fun delete(id: String) {

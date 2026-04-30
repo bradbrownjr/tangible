@@ -84,6 +84,9 @@ interface CollectionDao {
     @Query("DELETE FROM collections WHERE id NOT IN (:keep)")
     suspend fun deleteMissing(keep: List<String>)
 
+    @Query("DELETE FROM collections WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     @Query("DELETE FROM collections")
     suspend fun clear()
 }

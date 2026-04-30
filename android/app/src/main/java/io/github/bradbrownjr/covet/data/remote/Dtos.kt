@@ -110,3 +110,16 @@ data class ItemCreate(
     val notes: String? = null,
     val identifiers: Map<String, String> = emptyMap(),
 )
+
+@JsonClass(generateAdapter = true)
+data class ItemPatch(
+    val title: String? = null,
+    val subtitle: String? = null,
+    val notes: String? = null,
+    val condition: String? = null,
+    val quantity: Int? = null,
+    val purchase_price: Double? = null,
+    val current_value: Double? = null,
+    val currency: String? = null,
+    val location: String? = null,
+)
