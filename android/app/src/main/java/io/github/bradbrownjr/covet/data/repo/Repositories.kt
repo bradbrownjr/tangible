@@ -14,6 +14,11 @@ import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.remote.ItemCreate
 import io.github.bradbrownjr.covet.data.remote.ItemDto
+import io.github.bradbrownjr.covet.data.remote.ItemPatch
+import io.github.bradbrownjr.covet.data.remote.PhotoDto
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -155,3 +160,17 @@ class ItemRepository @Inject constructor(
     }
 }
 
+@Singleton
+class PhotoRepository @Inject constructor(
+    private val api: CovetApi,
+) {
+    suspend fun list(itemId: String): List<PhotoDto> = api.listPhotos(itemId)
+
+    suspend fun delete(photoId: String) = api.deletePhoto(photoId)
+
+    suspend fun upload(itemId: String, bytes: ByteArray, mimeType: String): List<PhotoDto> {
+        val body = bytes.toRequestBody(mimeType.toMediaType())
+        val part = MultipartBody.Part.createFormData("files", "photo.jpg", body)
+        return api.uploadPhotos(itemId, part)
+    }
+}

@@ -88,6 +88,7 @@ data class ItemDto(
     val collection_id: String,
     val category_id: String,
     val category_slug: String? = null,
+    val primary_photo_id: String? = null,
     val title: String,
     val subtitle: String? = null,
     val notes: String? = null,
@@ -122,4 +123,18 @@ data class ItemPatch(
     val current_value: Double? = null,
     val currency: String? = null,
     val location: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class PhotoDto(
+    val id: String,
+    val item_id: String,
+    val sha256: String,
+    val mime_type: String,
+    val width: Int? = null,
+    val height: Int? = null,
+    val byte_size: Int,
+    val sort_order: Int,
+    val is_primary: Boolean,
+    val created_at: String,
 )

@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
+from sqlalchemy.orm import selectinload
 
 from covet.api.item_templates import validate_attrs
 from covet.auth.deps import (
@@ -91,7 +92,7 @@ def list_items(
     if search:
         like = f"%{search.lower()}%"
         stmt = stmt.where(Item.title.ilike(like))
-    stmt = stmt.order_by(Item.title).limit(limit).offset(offset)
+    stmt = stmt.options(selectinload(Item.photos)).order_by(Item.title).limit(limit).offset(offset)
     return [ItemRead.model_validate(item) for item in db.scalars(stmt)]
 
 

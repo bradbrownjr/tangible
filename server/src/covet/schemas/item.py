@@ -68,6 +68,7 @@ class ItemRead(ItemBase):
     collection_id: str
     category_id: str
     category_slug: str | None = None
+    primary_photo_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -78,4 +79,10 @@ class ItemRead(ItemBase):
         instance = super().model_validate(obj, *args, **kwargs)
         if slug is not None:
             instance.category_slug = slug
+        # Pull primary photo id from the pre-loaded photos relationship (if any).
+        photos = getattr(obj, "photos", None)
+        if photos is not None:
+            primary = next((p for p in photos if p.is_primary), None)
+            if primary is not None:
+                instance.primary_photo_id = primary.id
         return instance

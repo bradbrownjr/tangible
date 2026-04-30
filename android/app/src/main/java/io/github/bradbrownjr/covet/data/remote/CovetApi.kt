@@ -1,10 +1,13 @@
 package io.github.bradbrownjr.covet.data.remote
 
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -63,4 +66,18 @@ interface CovetApi {
 
     @POST("metadata/barcode")
     suspend fun barcodeLookup(@Body body: BarcodeLookupRequest): BarcodeLookupResponse
+
+    // --- Photos ---
+    @GET("items/{id}/photos")
+    suspend fun listPhotos(@Path("id") itemId: String): List<PhotoDto>
+
+    @Multipart
+    @POST("items/{id}/photos")
+    suspend fun uploadPhotos(
+        @Path("id") itemId: String,
+        @Part file: MultipartBody.Part,
+    ): List<PhotoDto>
+
+    @DELETE("photos/{id}")
+    suspend fun deletePhoto(@Path("id") id: String)
 }

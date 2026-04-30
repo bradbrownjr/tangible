@@ -4,6 +4,23 @@ All notable changes to **Covet** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Android: list / grid view toggle in collection detail.** A toggle button
+  in the toolbar switches between the familiar item list and a 2-column photo
+  card grid. Each card shows the item's cover photo (if any), category badge,
+  title, and subtitle.
+- **Android: photo support on item detail.** The item detail screen now shows
+  a horizontal photo strip beneath the toolbar. Tap a thumbnail to open a
+  full-screen viewer; tap the trash icon to delete it; tap the "+" card to
+  pick an image from the device gallery and upload it.
+- **Server: `primary_photo_id` on item list.** The `/items` API response now
+  includes the primary photo ID for each item (populated in one extra IN query
+  via `selectinload`), enabling the Android grid view to display cover photos
+  without extra per-item requests.
+
 ## [0.15.1] — 2026-04-30
 
 ### Fixed

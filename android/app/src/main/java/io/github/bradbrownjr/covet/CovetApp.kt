@@ -3,13 +3,18 @@ package io.github.bradbrownjr.covet
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import dagger.hilt.android.HiltAndroidApp
 import io.github.bradbrownjr.covet.data.sync.SyncWorker
 import javax.inject.Inject
 
 @HiltAndroidApp
-class CovetApp : Application(), Configuration.Provider {
+class CovetApp : Application(), Configuration.Provider, ImageLoaderFactory {
     @Inject lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var imageLoader: ImageLoader
+
+    override fun newImageLoader(): ImageLoader = imageLoader
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()

@@ -4,15 +4,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -20,8 +26,11 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -43,6 +52,8 @@ import io.github.bradbrownjr.covet.data.repo.CollectionRepository
 import io.github.bradbrownjr.covet.data.repo.ItemRepository
 import javax.inject.Inject
 
+enum class ViewMode { LIST, GRID }
+
 data class DetailUi(
     val collection: CollectionDto? = null,
     val items: List<ItemDto> = emptyList(),
@@ -52,6 +63,8 @@ data class DetailUi(
     val refreshing: Boolean = false,
     // Search
     val searchQuery: String = "",
+    // List vs grid view toggle
+    val viewMode: ViewMode = ViewMode.LIST,
     // Add-item dialog
     val showCreate: Boolean = false,
     val allCategories: List<CategoryDto> = emptyList(),
@@ -187,6 +200,11 @@ class CollectionDetailViewModel @Inject constructor(
     fun clearSearch() {
         _state.value = _state.value.copy(searchQuery = "")
         refresh()
+    }
+
+    fun toggleViewMode() {
+        val next = if (_state.value.viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+        _state.value = _state.value.copy(viewMode = next)
     }
 
     fun setNewTitle(v: String) { _state.value = _state.value.copy(newTitle = v) }
@@ -328,6 +346,12 @@ fun CollectionDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = vm::toggleViewMode) {
+                        Icon(
+                            if (s.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
+                            contentDescription = if (s.viewMode == ViewMode.LIST) "Grid view" else "List view",
+                        )
+                    }
                     if (onScan != null) {
                         IconButton(onClick = onScan) {
                             Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode")
@@ -371,9 +395,9 @@ fun CollectionDetailScreen(
                 s.items.isEmpty() -> Text(
                     "No items yet.", Modifier.align(Alignment.Center).padding(16.dp),
                 )
-                else -> LazyColumn(Modifier.fillMaxSize()) {
-                    if (filterCats.size > 1) {
-                        item {
+                else -> {
+                    val headerContent: @Composable () -> Unit = {
+                        if (filterCats.size > 1) {
                             CategoryFilterBar(
                                 categories = filterCats,
                                 allCategories = s.allCategories,
@@ -381,8 +405,6 @@ fun CollectionDetailScreen(
                                 onFilter = vm::setFilter,
                             )
                         }
-                    }
-                    item {
                         SearchBar(
                             query = s.searchQuery,
                             onQueryChange = vm::setSearchQuery,
@@ -390,31 +412,61 @@ fun CollectionDetailScreen(
                             onClear = vm::clearSearch,
                         )
                     }
-                    if (displayItems.isEmpty()) {
-                        item {
-                            Text(
-                                "No items in this category.",
-                                modifier = Modifier.padding(16.dp),
-                            )
+                    if (s.viewMode == ViewMode.GRID) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                                headerContent()
+                            }
+                            if (displayItems.isEmpty()) {
+                                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                                    Text("No items in this category.", modifier = Modifier.padding(8.dp))
+                                }
+                            } else {
+                                items(displayItems, key = { it.id }) { item ->
+                                    ItemCard(
+                                        item = item,
+                                        onClick = { onItem(item.id) },
+                                        onDelete = { vm.delete(item.id) },
+                                    )
+                                }
+                            }
                         }
                     } else {
-                        items(displayItems, key = { it.id }) { item ->
-                            ListItem(
-                                headlineContent = { Text(item.title) },
-                                supportingContent = item.category_slug?.let { { Text(it) } },
-                                trailingContent = {
-                                    IconButton(onClick = { vm.delete(item.id) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
-                                    }
-                                },
-                                modifier = Modifier.clickable { onItem(item.id) },
-                            )
-                            HorizontalDivider()
-                        }
-                    }
-                }
-            }
-        }
+                        LazyColumn(Modifier.fillMaxSize()) {
+                            item { headerContent() }
+                            if (displayItems.isEmpty()) {
+                                item {
+                                    Text(
+                                        "No items in this category.",
+                                        modifier = Modifier.padding(16.dp),
+                                    )
+                                }
+                            } else {
+                                items(displayItems, key = { it.id }) { item ->
+                                    ListItem(
+                                        headlineContent = { Text(item.title) },
+                                        supportingContent = item.category_slug?.let { { Text(it) } },
+                                        trailingContent = {
+                                            IconButton(onClick = { vm.delete(item.id) }) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                            }
+                                        },
+                                        modifier = Modifier.clickable { onItem(item.id) },
+                                    )
+                                    HorizontalDivider()
+                                }
+                            }
+                        } // end LazyColumn
+                    } // end else (list mode)
+                } // end else -> when branch
+            } // end when
+        } // end PullToRefreshBox
         // Barcode lookup in progress — show a non-blocking overlay before any dialog opens.
         if (s.scraping && !s.showCreate && !s.showCandidatePicker) {
             Box(
@@ -553,6 +605,78 @@ private fun CategoryDropdown(
                     text = { Text(cat.name) },
                     onClick = { onSelect(cat); expanded = false },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ItemCard(
+    item: ItemDto,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column {
+            // Cover photo or placeholder
+            Box(
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+            ) {
+                if (item.primary_photo_id != null) {
+                    AsyncImage(
+                        model = "http://localhost/api/photos/${item.primary_photo_id}/download",
+                        contentDescription = item.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Image,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.size(40.dp),
+                        )
+                    }
+                }
+            }
+            Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                item.category_slug?.let { slug ->
+                    Text(
+                        slug.substringAfterLast('.'),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Text(
+                    item.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                item.subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(16.dp))
+                }
             }
         }
     }

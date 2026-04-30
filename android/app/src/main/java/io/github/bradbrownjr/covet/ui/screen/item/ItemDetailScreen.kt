@@ -1,27 +1,43 @@
 package io.github.bradbrownjr.covet.ui.screen.item
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil.compose.AsyncImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.ItemPatch
+import io.github.bradbrownjr.covet.data.remote.PhotoDto
 import io.github.bradbrownjr.covet.data.repo.ItemRepository
+import io.github.bradbrownjr.covet.data.repo.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +51,10 @@ data class ItemDetailUi(
     val editing: Boolean = false,
     val error: String? = null,
     val saved: Boolean = false,
+    // Photos
+    val photos: List<PhotoDto> = emptyList(),
+    val photosLoading: Boolean = false,
+    val fullScreenPhoto: PhotoDto? = null,
     // Editable fields (mirrors item when editing starts)
     val title: String = "",
     val subtitle: String = "",
@@ -50,6 +70,7 @@ data class ItemDetailUi(
 @HiltViewModel
 class ItemDetailViewModel @Inject constructor(
     private val items: ItemRepository,
+    private val photos: PhotoRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val itemId: String = savedState.get<String>("itemId").orEmpty()
@@ -58,16 +79,59 @@ class ItemDetailViewModel @Inject constructor(
 
     init { load() }
 
-    private fun load() {
+    fun load() {
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             try {
                 val item = items.get(itemId)
                 _state.value = _state.value.copy(item = item, loading = false)
+                loadPhotos()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(loading = false, error = t.message)
             }
         }
+    }
+
+    fun loadPhotos() {
+        _state.value = _state.value.copy(photosLoading = true)
+        viewModelScope.launch {
+            try {
+                val list = photos.list(itemId)
+                _state.value = _state.value.copy(photos = list, photosLoading = false)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(photosLoading = false)
+            }
+        }
+    }
+
+    fun deletePhoto(photoId: String) {
+        viewModelScope.launch {
+            try {
+                photos.delete(photoId)
+                loadPhotos()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun uploadPhoto(bytes: ByteArray, mimeType: String) {
+        viewModelScope.launch {
+            try {
+                photos.upload(itemId, bytes, mimeType)
+                loadPhotos()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun openFullScreen(photo: PhotoDto) {
+        _state.value = _state.value.copy(fullScreenPhoto = photo)
+    }
+
+    fun closeFullScreen() {
+        _state.value = _state.value.copy(fullScreenPhoto = null)
     }
 
     fun startEditing() {
@@ -175,38 +239,154 @@ fun ItemDetailScreen(
             ) {
                 Text(s.error!!, color = MaterialTheme.colorScheme.error)
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = vm::startEditing) { Text("Retry") }
+                OutlinedButton(onClick = vm::load) { Text("Retry") }
             }
             s.editing -> EditForm(s, vm, Modifier.padding(padding))
-            else -> DetailView(s.item!!, Modifier.padding(padding))
+            else -> DetailView(s, vm, Modifier.padding(padding))
+        }
+
+        // Full-screen photo viewer
+        s.fullScreenPhoto?.let { photo ->
+            Dialog(
+                onDismissRequest = vm::closeFullScreen,
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AsyncImage(
+                        model = "http://localhost/api/photos/${photo.id}/download",
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    IconButton(
+                        onClick = vm::closeFullScreen,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.ui.graphics.Color.White)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun DetailView(item: ItemDto, modifier: Modifier = Modifier) {
+private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifier = Modifier) {
+    val item = s.item ?: return
+    val context = LocalContext.current
+
+    // Gallery picker for photo upload
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        val cr = context.contentResolver
+        val mimeType = cr.getType(uri) ?: "image/jpeg"
+        val bytes = cr.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
+        vm.uploadPhoto(bytes, mimeType)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .verticalScroll(rememberScrollState()),
     ) {
-        item.subtitle?.takeIf { it.isNotBlank() }?.let {
-            Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item.category_slug?.let { Field("Category", it) }
-        Field("Quantity", item.quantity.toString())
-        item.condition?.takeIf { it.isNotBlank() }?.let { Field("Condition", it) }
-        item.location?.takeIf { it.isNotBlank() }?.let { Field("Location", it) }
-        item.purchase_price?.let { Field("Purchase price", formatPrice(it, item.currency)) }
-        item.current_value?.let { Field("Current value", formatPrice(it, item.currency)) }
-        item.notes?.takeIf { it.isNotBlank() }?.let {
-            Spacer(Modifier.height(4.dp))
-            Text("Notes", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(it, style = MaterialTheme.typography.bodyMedium)
+        // Photo strip
+        PhotoStrip(
+            photos = s.photos,
+            loading = s.photosLoading,
+            onPhotoClick = vm::openFullScreen,
+            onPhotoDelete = { photo ->
+                if (photo.id.isNotEmpty()) vm.deletePhoto(photo.id)
+            },
+            onAddPhoto = { galleryLauncher.launch("image/*") },
+        )
+
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item.subtitle?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            item.category_slug?.let { Field("Category", it) }
+            Field("Quantity", item.quantity.toString())
+            item.condition?.takeIf { it.isNotBlank() }?.let { Field("Condition", it) }
+            item.location?.takeIf { it.isNotBlank() }?.let { Field("Location", it) }
+            item.purchase_price?.let { Field("Purchase price", formatPrice(it, item.currency)) }
+            item.current_value?.let { Field("Current value", formatPrice(it, item.currency)) }
+            item.notes?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(4.dp))
+                Text("Notes", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
+}
+
+@Composable
+private fun PhotoStrip(
+    photos: List<PhotoDto>,
+    loading: Boolean,
+    onPhotoClick: (PhotoDto) -> Unit,
+    onPhotoDelete: (PhotoDto) -> Unit,
+    onAddPhoto: () -> Unit,
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(photos, key = { it.id }) { photo ->
+            Box(
+                modifier = Modifier
+                    .size(108.dp)
+                    .clickable { onPhotoClick(photo) },
+            ) {
+                AsyncImage(
+                    model = "http://localhost/api/photos/${photo.id}/download",
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                IconButton(
+                    onClick = { onPhotoDelete(photo) },
+                    modifier = Modifier.align(Alignment.TopEnd).size(28.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete photo",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
+        item {
+            if (loading) {
+                Box(Modifier.size(108.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+            } else {
+                OutlinedButton(
+                    onClick = onAddPhoto,
+                    modifier = Modifier.size(108.dp),
+                    contentPadding = PaddingValues(0.dp),
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
+                    }
+                }
+            }
+        }
+    }
+    HorizontalDivider()
 }
 
 @Composable
