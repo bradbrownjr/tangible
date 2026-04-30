@@ -1,12 +1,10 @@
-"""URL metadata scraper.
+"""URL metadata scraper + barcode lookup.
 
 Pluggable adapter registry. Each adapter inspects a URL and, if it
 matches, fetches and normalises a small dict of suggested item fields.
 
-The default ``OpenGraphAdapter`` handles any URL by parsing OpenGraph /
-``<title>`` / ``<meta name="description">`` tags. Source-specific
-adapters (Discogs, Open Library, IGDB, ...) can be added by registering
-with :func:`register_adapter`.
+A separate ``BarcodeAdapter`` registry handles raw UPC/EAN/ISBN lookups
+and returns a ranked list of candidates so the client can offer a picker.
 
 SSRF protection: only public IPs reachable over http/https are allowed.
 """
@@ -46,12 +44,23 @@ class ScrapeResult:
     attrs: dict[str, Any] = field(default_factory=dict)
 
 
+# ---------------------------------------------------------------------------
+# Adapter protocols
+# ---------------------------------------------------------------------------
+
+
 class Adapter(Protocol):
     name: str
 
     def matches(self, url: str) -> bool: ...
 
     def fetch(self, url: str, *, client: httpx.Client) -> ScrapeResult: ...
+
+
+class BarcodeAdapter(Protocol):
+    name: str
+
+    def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]: ...
 
 
 # ---------------------------------------------------------------------------
@@ -221,15 +230,213 @@ class OpenLibraryAdapter:
 
 
 # ---------------------------------------------------------------------------
+# Barcode adapters
+# ---------------------------------------------------------------------------
+
+
+class OpenLibraryBarcodeAdapter:
+    name = "openlibrary"
+
+    def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]:
+        isbn = re.sub(r"[^0-9Xx]", "", barcode)
+        if len(isbn) not in (10, 13):
+            return []
+        api = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
+        resp = client.get(api, follow_redirects=True)
+        if resp.status_code != 200:
+            return []
+        data = resp.json().get(f"ISBN:{isbn}") or {}
+        if not data:
+            return []
+        title = data.get("title")
+        if not title:
+            return []
+        authors = ", ".join(a.get("name", "") for a in data.get("authors", []))
+        cover = (data.get("cover") or {}).get("medium")
+        attrs: dict[str, Any] = {"isbn": isbn}
+        if authors:
+            attrs["creator"] = authors
+        if data.get("number_of_pages"):
+            attrs["pages"] = data["number_of_pages"]
+        if data.get("publish_date"):
+            attrs["published"] = data["publish_date"]
+        return [ScrapeResult(
+            provider=self.name,
+            url=f"https://openlibrary.org/isbn/{isbn}",
+            title=title,
+            description=authors or None,
+            image_url=cover,
+            item_type="book",
+            category="books.print",
+            attrs=attrs,
+        )]
+
+
+class MusicBrainzBarcodeAdapter:
+    name = "musicbrainz"
+
+    def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]:
+        code = re.sub(r"\D", "", barcode)
+        if len(code) < 8:
+            return []
+        settings = get_settings()
+        ua = settings.musicbrainz_user_agent or USER_AGENT
+        resp = client.get(
+            f"https://musicbrainz.org/ws/2/release?barcode={code}&fmt=json&limit=5",
+            headers={"User-Agent": ua},
+            follow_redirects=True,
+        )
+        if resp.status_code != 200:
+            return []
+        releases = resp.json().get("releases") or []
+        results = []
+        for r in releases[:5]:
+            title = r.get("title")
+            if not title:
+                continue
+            artist = "".join(
+                (c.get("name") or c.get("artist", {}).get("name", "")) + c.get("joinphrase", "")
+                for c in (r.get("artist-credit") or [])
+                if isinstance(c, dict)
+            ).strip()
+            attrs: dict[str, Any] = {"barcode": code}
+            if r.get("date"):
+                attrs["published"] = r["date"]
+            if r.get("id"):
+                attrs["musicbrainz_id"] = r["id"]
+            results.append(ScrapeResult(
+                provider=self.name,
+                url=f"https://musicbrainz.org/release/{r.get('id', '')}",
+                title=title,
+                description=artist or None,
+                item_type="music",
+                category="music.cd",
+                attrs=attrs,
+            ))
+        return results
+
+
+class OpenFoodFactsBarcodeAdapter:
+    name = "openfoodfacts"
+
+    def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]:
+        code = re.sub(r"\D", "", barcode)
+        if len(code) < 8:
+            return []
+        resp = client.get(
+            f"https://world.openfoodfacts.org/api/v2/product/{code}.json",
+            follow_redirects=True,
+        )
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+        if data.get("status") != 1:
+            return []
+        product = data.get("product") or {}
+        title = product.get("product_name") or product.get("product_name_en")
+        if not title:
+            return []
+        brand = product.get("brands", "")
+        image = product.get("image_front_url") or product.get("image_url")
+        attrs: dict[str, Any] = {"barcode": code}
+        if brand:
+            attrs["creator"] = brand
+        if product.get("quantity"):
+            attrs["quantity_label"] = product["quantity"]
+        return [ScrapeResult(
+            provider=self.name,
+            url=f"https://world.openfoodfacts.org/product/{code}",
+            title=title,
+            description=brand or None,
+            image_url=image,
+            attrs=attrs,
+        )]
+
+
+class GoogleBooksAdapter:
+    name = "google_books"
+
+    def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]:
+        isbn = re.sub(r"[^0-9Xx]", "", barcode)
+        if len(isbn) not in (10, 13):
+            return []
+        settings = get_settings()
+        params: dict[str, str] = {"q": f"isbn:{isbn}", "maxResults": "5"}
+        if settings.google_books_api_key:
+            params["key"] = settings.google_books_api_key
+        resp = client.get("https://www.googleapis.com/books/v1/volumes", params=params)
+        if resp.status_code != 200:
+            return []
+        results = []
+        for item in (resp.json().get("items") or [])[:5]:
+            info = item.get("volumeInfo") or {}
+            title = info.get("title")
+            if not title:
+                continue
+            authors = ", ".join(info.get("authors") or [])
+            description = (info.get("description") or "")[:200] or None
+            image = (info.get("imageLinks") or {}).get("thumbnail")
+            if image:
+                image = image.replace("http://", "https://")
+            attrs: dict[str, Any] = {"isbn": isbn}
+            if authors:
+                attrs["creator"] = authors
+            if info.get("publishedDate"):
+                attrs["published"] = info["publishedDate"]
+            if info.get("pageCount"):
+                attrs["pages"] = info["pageCount"]
+            results.append(ScrapeResult(
+                provider=self.name,
+                url=f"https://books.google.com/books?isbn={isbn}",
+                title=title,
+                description=description or authors or None,
+                image_url=image,
+                item_type="book",
+                category="books.print",
+                attrs=attrs,
+            ))
+        return results
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
 _ADAPTERS: list[Adapter] = [OpenLibraryAdapter(), OpenGraphAdapter()]
+_BARCODE_ADAPTERS: list[BarcodeAdapter] = [
+    OpenLibraryBarcodeAdapter(),
+    MusicBrainzBarcodeAdapter(),
+    OpenFoodFactsBarcodeAdapter(),
+    GoogleBooksAdapter(),
+]
 
 
 def register_adapter(adapter: Adapter) -> None:
     # Prepend so custom adapters win over OpenGraph fallback.
     _ADAPTERS.insert(0, adapter)
+
+
+def barcode_lookup(barcode: str, *, client: httpx.Client | None = None) -> list[ScrapeResult]:
+    """Query all enabled barcode adapters and return a deduplicated candidate list."""
+    own = client is None
+    if client is None:
+        client = httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
+    seen_titles: set[str] = set()
+    results: list[ScrapeResult] = []
+    try:
+        for adapter in _BARCODE_ADAPTERS:
+            try:
+                for r in adapter.lookup(barcode, client=client):
+                    key = (r.provider, (r.title or "").lower())
+                    if key not in seen_titles:
+                        seen_titles.add(key)
+                        results.append(r)
+            except Exception:
+                continue
+    finally:
+        if own:
+            client.close()
+    return results
 
 
 def scrape(url: str, *, client: httpx.Client | None = None) -> ScrapeResult:

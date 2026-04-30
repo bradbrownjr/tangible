@@ -66,6 +66,23 @@ data class ScrapeResponse(
 data class ScrapeRequest(val url: String)
 
 @JsonClass(generateAdapter = true)
+data class BarcodeLookupRequest(val barcode: String)
+
+@JsonClass(generateAdapter = true)
+data class BarcodeCandidateDto(
+    val provider: String,
+    val url: String,
+    val title: String? = null,
+    val description: String? = null,
+    val image_url: String? = null,
+    val category: String? = null,
+    val attrs: Map<String, @JvmSuppressWildcards Any?> = emptyMap(),
+)
+
+@JsonClass(generateAdapter = true)
+data class BarcodeLookupResponse(val candidates: List<BarcodeCandidateDto>)
+
+@JsonClass(generateAdapter = true)
 data class ItemDto(
     val id: String,
     val collection_id: String,

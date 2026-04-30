@@ -1,5 +1,6 @@
 package io.github.bradbrownjr.covet.ui.screen.collection
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +27,8 @@ import kotlinx.coroutines.launch
 import io.github.bradbrownjr.covet.data.remote.CategoryDto
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.ItemDto
+import io.github.bradbrownjr.covet.data.remote.BarcodeCandidateDto
+import io.github.bradbrownjr.covet.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.covet.data.remote.ScrapeRequest
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.repo.CategoryRepository
@@ -48,6 +51,9 @@ data class DetailUi(
     val selectedLeaf: CategoryDto? = null,
     val newTitle: String = "",
     val scraping: Boolean = false,
+    // Barcode candidate picker
+    val showCandidatePicker: Boolean = false,
+    val candidates: List<BarcodeCandidateDto> = emptyList(),
 )
 
 @HiltViewModel
@@ -119,33 +125,72 @@ class CollectionDetailViewModel @Inject constructor(
 
     fun setNewTitle(v: String) { _state.value = _state.value.copy(newTitle = v) }
 
-    /** Called when a barcode is scanned. Attempts to scrape metadata from the server. */
+    /** Called when a barcode is scanned. Fans out to all barcode adapters via the server. */
     fun onBarcode(barcode: String) {
-        _state.value = _state.value.copy(showCreate = true, scraping = true, newTitle = "")
+        _state.value = _state.value.copy(scraping = true)
         viewModelScope.launch {
             try {
-                val url = "https://openlibrary.org/isbn/$barcode"
-                val result = api.scrape(ScrapeRequest(url))
-                val s = _state.value
-                // Try to select matching category leaf by slug.
-                val allCats = s.rootCategories + s.leafCategories
-                val matchedLeaf = result.category?.let { slug -> allCats.firstOrNull { it.slug == slug } }
-                val newRoot = if (matchedLeaf != null)
-                    s.rootCategories.firstOrNull { it.id == matchedLeaf.parent_id } ?: s.selectedRoot
-                else s.selectedRoot
-                val newLeaves = if (newRoot != null) allCats.filter { it.parent_id == newRoot.id } else s.leafCategories
-                _state.value = s.copy(
-                    newTitle = result.title.orEmpty(),
-                    selectedRoot = newRoot,
-                    leafCategories = newLeaves,
-                    selectedLeaf = matchedLeaf ?: newLeaves.firstOrNull() ?: s.selectedLeaf,
-                    scraping = false,
-                )
+                val response = api.barcodeLookup(BarcodeLookupRequest(barcode))
+                val candidates = response.candidates
+                when {
+                    candidates.isEmpty() -> {
+                        // Nothing found — open blank create dialog.
+                        _state.value = _state.value.copy(showCreate = true, scraping = false, newTitle = "")
+                    }
+                    candidates.size == 1 -> {
+                        // Single match — auto-fill and open create dialog.
+                        _applyCandidate(candidates.first())
+                    }
+                    else -> {
+                        // Multiple matches — show picker.
+                        _state.value = _state.value.copy(
+                            scraping = false,
+                            showCandidatePicker = true,
+                            candidates = candidates,
+                        )
+                    }
+                }
             } catch (t: Throwable) {
-                // Scrape failed — still open the dialog with an empty title.
-                _state.value = _state.value.copy(scraping = false)
+                // Lookup failed — still open the dialog with an empty title.
+                _state.value = _state.value.copy(showCreate = true, scraping = false, newTitle = "")
             }
         }
+    }
+
+    fun pickCandidate(candidate: BarcodeCandidateDto) {
+        _state.value = _state.value.copy(showCandidatePicker = false, candidates = emptyList())
+        _applyCandidate(candidate)
+    }
+
+    fun pickManually() {
+        _state.value = _state.value.copy(
+            showCandidatePicker = false,
+            candidates = emptyList(),
+            showCreate = true,
+            newTitle = "",
+        )
+    }
+
+    fun dismissCandidatePicker() {
+        _state.value = _state.value.copy(showCandidatePicker = false, candidates = emptyList())
+    }
+
+    private fun _applyCandidate(candidate: BarcodeCandidateDto) {
+        val s = _state.value
+        val allCats = s.rootCategories + s.leafCategories
+        val matchedLeaf = candidate.category?.let { slug -> allCats.firstOrNull { it.slug == slug } }
+        val newRoot = if (matchedLeaf != null)
+            s.rootCategories.firstOrNull { it.id == matchedLeaf.parent_id } ?: s.selectedRoot
+        else s.selectedRoot
+        val newLeaves = if (newRoot != null) allCats.filter { it.parent_id == newRoot.id } else s.leafCategories
+        _state.value = s.copy(
+            showCreate = true,
+            newTitle = candidate.title.orEmpty(),
+            selectedRoot = newRoot,
+            leafCategories = newLeaves,
+            selectedLeaf = matchedLeaf ?: newLeaves.firstOrNull() ?: s.selectedLeaf,
+            scraping = false,
+        )
     }
 
     fun create() {
@@ -201,7 +246,7 @@ fun CollectionDetailScreen(
     @Suppress("UNUSED_PARAMETER") val cid = collectionId // already in SavedStateHandle
     val s by vm.state.collectAsState()
 
-    // When a barcode arrives from the scanner, trigger the scrape flow.
+    // When a barcode arrives from the scanner, trigger the lookup flow.
     LaunchedEffect(scannedBarcode) {
         if (!scannedBarcode.isNullOrBlank()) vm.onBarcode(scannedBarcode)
     }
@@ -263,6 +308,40 @@ fun CollectionDetailScreen(
                     }
                 }
             }
+        }
+
+        if (s.showCandidatePicker) {
+            AlertDialog(
+                onDismissRequest = vm::dismissCandidatePicker,
+                title = { Text("Choose a match") },
+                text = {
+                    LazyColumn {
+                        items(s.candidates) { c ->
+                            ListItem(
+                                headlineContent = { Text(c.title ?: "(untitled)") },
+                                supportingContent = c.description?.let {
+                                    { Text(it, maxLines = 1, style = MaterialTheme.typography.bodySmall) }
+                                },
+                                trailingContent = {
+                                    Text(c.provider, style = MaterialTheme.typography.labelSmall)
+                                },
+                                modifier = Modifier.clickable { vm.pickCandidate(c) },
+                            )
+                            HorizontalDivider()
+                        }
+                        item {
+                            ListItem(
+                                headlineContent = { Text("Enter manually") },
+                                modifier = Modifier.clickable { vm.pickManually() },
+                            )
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = vm::dismissCandidatePicker) { Text("Cancel") }
+                },
+            )
         }
 
         if (s.showCreate) {

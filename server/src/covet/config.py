@@ -182,6 +182,7 @@ class Settings(BaseSettings):
     igdb_client_secret: str | None = None
     musicbrainz_user_agent: str | None = None
     upcitemdb_key: str | None = None
+    google_books_api_key: str | None = None
 
     # ---- validators / derived values -------------------------------------------------
 
@@ -211,6 +212,7 @@ class Settings(BaseSettings):
             "tmdb_api_key": "COVET_TMDB_API_KEY",
             "igdb_client_secret": "COVET_IGDB_CLIENT_SECRET",
             "upcitemdb_key": "COVET_UPCITEMDB_KEY",
+            "google_books_api_key": "COVET_GOOGLE_BOOKS_API_KEY",
         }
         for attr, env_name in secret_fields.items():
             if getattr(self, attr) is None:

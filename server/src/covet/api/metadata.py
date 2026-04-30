@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from covet.auth.deps import AuthContext, require_user
-from covet.services.metadata import ScrapeError, scrape
+from covet.services.metadata import ScrapeError, barcode_lookup, scrape
 
 router = APIRouter(prefix="/metadata", tags=["metadata"])
 
@@ -23,6 +23,36 @@ class ScrapeResponse(BaseModel):
     image_url: str | None = None
     category: str | None = None
     attrs: dict = {}
+
+
+class BarcodeLookupRequest(BaseModel):
+    barcode: str = Field(min_length=8, max_length=18, pattern=r"^[0-9Xx]+$")
+
+
+class BarcodeLookupResponse(BaseModel):
+    candidates: list[ScrapeResponse]
+
+
+@router.post("/barcode", response_model=BarcodeLookupResponse)
+def barcode_lookup_endpoint(
+    payload: BarcodeLookupRequest,
+    _: AuthContext = Depends(require_user),
+) -> BarcodeLookupResponse:
+    results = barcode_lookup(payload.barcode)
+    return BarcodeLookupResponse(
+        candidates=[
+            ScrapeResponse(
+                provider=r.provider,
+                url=r.url,
+                title=r.title,
+                description=r.description,
+                image_url=r.image_url,
+                category=r.category,
+                attrs=r.attrs,
+            )
+            for r in results
+        ]
+    )
 
 
 @router.post("/scrape", response_model=ScrapeResponse)

@@ -53,4 +53,7 @@ interface CovetApi {
     // --- Metadata ---
     @POST("metadata/scrape")
     suspend fun scrape(@Body body: ScrapeRequest): ScrapeResponse
+
+    @POST("metadata/barcode")
+    suspend fun barcodeLookup(@Body body: BarcodeLookupRequest): BarcodeLookupResponse
 }
