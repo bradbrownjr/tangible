@@ -149,6 +149,14 @@
         align-items: center;
         margin-left: auto;
     }
+    nav a {
+        color: var(--text);
+        font-size: 1rem;
+        text-decoration: none;
+    }
+    nav a:hover {
+        color: var(--accent);
+    }
     main {
         padding: 1.5rem;
         max-width: 1100px;
