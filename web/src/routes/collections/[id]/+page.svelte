@@ -242,6 +242,11 @@
         await load();
     }
 
+    async function toggleDepleted(item: Item) {
+        await api.patch(`/items/${item.id}`, { depleted: !item.depleted });
+        await load();
+    }
+
     async function deleteCollection() {
         if (!collection) return;
         const name = collection.name;
@@ -406,7 +411,7 @@
                         </div>
                     </div>
                 {:else}
-                    <div class="item-card">
+                    <div class="item-card" class:depleted-card={i.depleted}>
                         <div class="item-card-body">
                             {#if !isFocused && i.category_slug}
                                 <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
@@ -421,11 +426,17 @@
                             <div class="item-meta">
                                 {#if i.condition}<span>{i.condition}</span>{/if}
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
+                                {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
                             </div>
                         </div>
                         {#if canEdit}
                             <div class="item-card-actions">
                                 <button type="button" class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                <button
+                                    type="button"
+                                    class={i.depleted ? 'secondary' : 'warn'}
+                                    onclick={() => toggleDepleted(i)}
+                                >{i.depleted ? 'In stock' : 'Depleted'}</button>
                                 <button class="danger item-card-delete" onclick={() => removeItem(i.id)}>Delete</button>
                             </div>
                         {/if}
@@ -468,7 +479,7 @@
                             {/if}
                         </tr>
                     {:else}
-                        <tr>
+                        <tr class:depleted-row={i.depleted}>
                             {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
                             {#if collectionCreatorLabel}<td class="muted">{String(i.attrs?.creator ?? '')}</td>{/if}
                             <td>{i.title}{#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}</td>
@@ -478,6 +489,12 @@
                             {#if canEdit}
                                 <td class="row-actions">
                                     <button class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                    <button
+                                        type="button"
+                                        class={i.depleted ? 'secondary' : 'warn'}
+                                        onclick={() => toggleDepleted(i)}
+                                        title={i.depleted ? 'Mark as in stock' : 'Mark as depleted'}
+                                    >{i.depleted ? 'In stock' : 'Depleted'}</button>
                                     <button class="danger" onclick={() => removeItem(i.id)}>Delete</button>
                                 </td>
                             {/if}
@@ -700,5 +717,31 @@
         border-top: 1px solid var(--border);
         font-size: 0.8rem;
         padding: 0.4rem;
+    }
+    /* Depleted items */
+    .depleted-row td {
+        opacity: 0.55;
+        text-decoration: line-through;
+        text-decoration-color: var(--danger, #c00);
+    }
+    .depleted-card {
+        opacity: 0.6;
+    }
+    .depleted-card .item-title {
+        text-decoration: line-through;
+        text-decoration-color: var(--danger, #c00);
+    }
+    .depleted-badge {
+        color: var(--danger, #c00);
+        font-weight: 600;
+    }
+    button.warn {
+        background: color-mix(in srgb, orange 15%, var(--surface));
+        border-color: orange;
+        color: color-mix(in srgb, orange 60%, var(--fg));
+    }
+    button.warn:hover {
+        background: orange;
+        color: white;
     }
 </style>

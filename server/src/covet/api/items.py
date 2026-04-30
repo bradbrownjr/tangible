@@ -14,7 +14,7 @@ from covet.auth.deps import (
     require_user,
 )
 from covet.db import get_session
-from covet.models import Category, Item, ItemTemplate
+from covet.models import Category, CollectionMembership, Item, ItemTemplate
 from covet.schemas import ItemCreate, ItemRead, ItemUpdate
 from covet.services.categories import resolve_slug, subtree_ids
 
@@ -66,6 +66,7 @@ def list_items(
         description="Top-level category slug; matches the root and all of its children.",
     ),
     search: str | None = None,
+    depleted: bool | None = Query(default=None, description="Filter by depleted status."),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: DBSession = Depends(get_session),
@@ -92,7 +93,37 @@ def list_items(
     if search:
         like = f"%{search.lower()}%"
         stmt = stmt.where(Item.title.ilike(like))
+    if depleted is not None:
+        stmt = stmt.where(Item.depleted.is_(depleted))
     stmt = stmt.options(selectinload(Item.photos)).order_by(Item.title).limit(limit).offset(offset)
+    return [ItemRead.model_validate(item) for item in db.scalars(stmt)]
+
+
+@router.get("/grocery-list", response_model=list[ItemRead])
+def grocery_list(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    """Return all depleted items across every collection the user can access.
+
+    Any collection member can view this list — it forms the basis of a shared
+    household grocery / re-stock list.
+    """
+    # Subquery: collection IDs accessible to this user.
+    member_cids = db.scalars(
+        select(CollectionMembership.collection_id).where(
+            CollectionMembership.user_id == auth.user.id
+        )
+    ).all()
+    if not member_cids:
+        return []
+    stmt = (
+        select(Item)
+        .where(Item.collection_id.in_(member_cids))
+        .where(Item.depleted.is_(True))
+        .options(selectinload(Item.photos))
+        .order_by(Item.title)
+    )
     return [ItemRead.model_validate(item) for item in db.scalars(stmt)]
 
 

@@ -64,6 +64,7 @@ data class ItemEntity(
     /** JSON blob (Map<String, Any?>) — kept as text to avoid a converter explosion. */
     val identifiersJson: String,
     val attrsJson: String,
+    val depleted: Boolean,
     @ColumnInfo(name = "cached_at") val cachedAt: Long,
 )
 
@@ -131,7 +132,7 @@ class Converters {
 
 @Database(
     entities = [CollectionEntity::class, CategoryEntity::class, ItemEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

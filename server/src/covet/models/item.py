@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from covet.db import Base
@@ -46,6 +46,9 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     # JSON blobs for type-specific fields and external identifiers
     identifiers: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     attrs: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+    # Whether the item is depleted (e.g. a pantry item that ran out).
+    depleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Optional pointer to the CRDT document for this item.
     doc_id: Mapped[str | None] = mapped_column(

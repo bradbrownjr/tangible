@@ -27,6 +27,7 @@ class ItemBase(BaseModel):
     attrs: dict[str, Any] = Field(default_factory=dict)
     template_id: str | None = None
     parent_id: str | None = None
+    depleted: bool = False
 
 
 class ItemCreate(ItemBase):
@@ -59,6 +60,7 @@ class ItemUpdate(BaseModel):
     parent_id: str | None = None
     category_id: str | None = None
     category: str | None = None
+    depleted: bool | None = None
 
 
 class ItemRead(ItemBase):

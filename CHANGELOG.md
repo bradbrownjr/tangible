@@ -6,6 +6,24 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **"Spices & Pantry" category renamed to "Pantry".** The root category slug
+  (`spices`) is unchanged; only the display name is updated.
+
+### Added
+
+- **Depleted flag on items.** Any item can be marked as depleted (ran out /
+  needs restocking) via the Edit row actions in the collection detail view.
+  Depleted items appear dimmed with a strikethrough. Toggle back with "In stock".
+- **Grocery list page.** A new "Grocery List" link in the navigation shows all
+  depleted items across every collection you have access to — ideal for shared
+  household pantry collections where multiple members need to see what to restock.
+  Marking an item "In stock" from this page removes it from the list.
+- **`GET /items/grocery-list`** — server endpoint returning all depleted items
+  across the authenticated user's accessible collections.
+- **`GET /items?depleted=true/false`** — filter items by depleted status.
+
 ### Fixed
 
 - **Android: "What's new" now loads correctly.** The app was previously showing

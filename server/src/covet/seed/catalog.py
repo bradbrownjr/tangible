@@ -122,7 +122,7 @@ CATEGORY_TREE: list[CategorySeed] = [
     },
     {
         "slug": "spices",
-        "name": "Spices & Pantry",
+        "name": "Pantry",
         "description": "Pantry inventory with shelf-life tracking.",
         "children": [
             {"slug": "spices.spice", "name": "Spice"},

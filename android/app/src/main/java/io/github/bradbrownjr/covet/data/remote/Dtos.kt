@@ -107,6 +107,7 @@ data class ItemDto(
     val location: String? = null,
     val identifiers: Map<String, Any?> = emptyMap(),
     val attrs: Map<String, Any?> = emptyMap(),
+    val depleted: Boolean = false,
 )
 
 @JsonClass(generateAdapter = true)

@@ -114,6 +114,7 @@ export interface Item {
     location: string | null;
     identifiers: Record<string, unknown>;
     attrs: Record<string, unknown>;
+    depleted: boolean;
 }
 
 export interface Tag {

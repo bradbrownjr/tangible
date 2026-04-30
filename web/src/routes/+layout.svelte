@@ -82,6 +82,7 @@
     <nav>
         {#if $me}
             <a href="/">Collections</a>
+            <a href="/grocery-list">Grocery List</a>
             <a href="/import">Import</a>
             <a href="/settings">Settings</a>
             <a href="/profile" class="user" title="Edit your profile">{userLabel($me)}</a>
