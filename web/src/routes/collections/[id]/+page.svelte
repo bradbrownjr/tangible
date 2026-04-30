@@ -13,6 +13,7 @@
     let loading = $state(true);
     let error = $state('');
     let didSeedDefaults = $state(false);
+    let viewMode = $state<'list' | 'grid'>('list');
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
@@ -204,7 +205,14 @@
         }
     }
 
-    onMount(load);
+    onMount(() => {
+        viewMode = (localStorage.getItem('covet:viewMode') ?? 'list') as 'list' | 'grid';
+        load();
+    });
+
+    $effect(() => {
+        localStorage.setItem('covet:viewMode', viewMode);
+    });
 </script>
 
 {#if collection}
@@ -295,12 +303,53 @@
                 {/each}
             </select>
         {/if}
+        <div class="view-toggle" role="group" aria-label="View mode">
+            <button type="button" class="toggle-btn" class:active={viewMode === 'list'} onclick={() => viewMode = 'list'} title="List view" aria-label="List view">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                    <rect x="0" y="2" width="16" height="2" rx="1"/>
+                    <rect x="0" y="7" width="16" height="2" rx="1"/>
+                    <rect x="0" y="12" width="16" height="2" rx="1"/>
+                </svg>
+            </button>
+            <button type="button" class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'} title="Grid view" aria-label="Grid view">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                    <rect x="0" y="0" width="7" height="7" rx="1"/>
+                    <rect x="9" y="0" width="7" height="7" rx="1"/>
+                    <rect x="0" y="9" width="7" height="7" rx="1"/>
+                    <rect x="9" y="9" width="7" height="7" rx="1"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     {#if loading}
         <p class="muted">Loading…</p>
     {:else if items.length === 0}
         <p class="muted">No items yet.</p>
+    {:else if viewMode === 'grid'}
+        <div class="item-grid">
+            {#each items as i (i.id)}
+                <div class="item-card">
+                    <div class="item-card-body">
+                        {#if !isFocused && i.category_slug}
+                            <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
+                        {/if}
+                        {#if i.attrs?.creator}
+                            <p class="item-creator">{String(i.attrs.creator)}</p>
+                        {/if}
+                        <p class="item-title">{i.title}</p>
+                        {#if i.subtitle}
+                            <p class="item-subtitle">{i.subtitle}</p>
+                        {/if}
+                        <div class="item-meta">
+                            {#if i.condition}<span>{i.condition}</span>{/if}
+                            {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
+                        </div>
+                    </div>
+                    <button class="danger item-card-delete" onclick={() => removeItem(i.id)}>Delete</button>
+                </div>
+            {/each}
+        </div>
     {:else}
         <table>
             <thead>
@@ -412,8 +461,102 @@
         display: flex;
         gap: 0.5rem;
         margin-bottom: 1rem;
+        align-items: center;
     }
     .filters > input {
         flex: 1;
+    }
+    .view-toggle {
+        display: flex;
+        gap: 0;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.6rem;
+        background: var(--surface);
+        border: none;
+        border-radius: 0;
+        color: var(--text-muted, #888);
+        cursor: pointer;
+    }
+    .toggle-btn:hover {
+        color: var(--accent);
+    }
+    .toggle-btn.active {
+        background: var(--accent);
+        color: var(--accent-fg, white);
+    }
+    /* Grid / card view */
+    .item-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+    }
+    .item-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .item-card-body {
+        flex: 1;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .category-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        border-radius: 4px;
+        padding: 0.15em 0.45em;
+        align-self: flex-start;
+    }
+    .item-creator {
+        font-size: 0.8rem;
+        color: var(--text-muted, #888);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .item-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.3;
+    }
+    .item-subtitle {
+        font-size: 0.8rem;
+        color: var(--text-muted, #888);
+        margin: 0;
+    }
+    .item-meta {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-muted, #888);
+        margin-top: auto;
+        padding-top: 0.25rem;
+    }
+    .item-card-delete {
+        width: 100%;
+        border-radius: 0;
+        border-top: 1px solid var(--border);
+        font-size: 0.8rem;
+        padding: 0.4rem;
     }
 </style>

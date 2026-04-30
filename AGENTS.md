@@ -293,12 +293,14 @@ the affected file column is preserved.**
 | Observability (access log, metrics) | `server/src/covet/observability.py`, `api/meta.py` | `AccessLogMiddleware`, `/metrics`, `covet_http_requests_total` |
 | Health / readiness | `server/src/covet/api/meta.py` | `/healthz`, `/readyz` |
 | Web auth flow (login, register, gating) | `web/src/routes/{login,register,+layout.svelte}`, `lib/session.ts` | `me`, `refreshMe`, `logout` |
-| Web collections list / detail | `web/src/routes/collections/...` | — |
+| Web collections list / detail | `web/src/routes/collections/...` | list view + card grid view, `viewMode` localStorage toggle |
+| Web item creator + subtitle fields | `web/src/routes/collections/[id]/+page.svelte` | `newCreator`, `newSubtitle`, Enter-key flow, `attrs.creator` in table |
 | Web import wizard | `web/src/routes/import/+page.svelte` | CLZ + CSV + JSON restore |
 | Web settings + tokens | `web/src/routes/settings/+page.svelte` | `tokens`, `revoke`, theme toggle |
 | Web theme (light/dark/system) | `web/src/lib/theme.ts`, `lib/styles.css`, `app.html` | `initTheme`, `data-theme`, `meta[name=theme-color]`, pre-hydration script |
 | Android auth (URL + creds → token) | `android/.../ui/screen/login/LoginScreen.kt`, `data/auth/SessionStore.kt`, `data/repo/AuthRepository.kt` | `SessionStore.baseUrl`, `apiFor` |
 | Android collections / items list / add / delete | `android/.../ui/screen/{collections,collection}/...` | `CollectionListViewModel`, `CollectionDetailViewModel` |
+| Android pull-to-refresh | `android/.../ui/screen/collection/CollectionDetailScreen.kt` | `PullToRefreshBox`, `pullRefresh()`, `DetailUi.refreshing` |
 | Android barcode scanner | `android/.../ui/screen/scan/ScannerScreen.kt` | CameraX + ML Kit `BarcodeScanning` |
 | Android Room cache (offline reads) | `android/.../data/local/{CovetDatabase,Mappers}.kt`, `di/DatabaseModule.kt`, `data/repo/Repositories.kt` | `CollectionEntity`, `ItemEntity`, `observe()`, `deleteMissing` |
 | Android sync worker (15-min refresh) | `android/.../data/sync/SyncWorker.kt`, `CovetApp.kt` | `SyncWorker.schedule`, `UNIQUE_NAME`, `KEEP` policy |
@@ -310,3 +312,41 @@ the affected file column is preserved.**
 | CI: auto-publish Release on tag | `.github/workflows/release.yml` | extracts `## [X.Y.Z]` from `CHANGELOG.md`; `prerelease` for `0.x` |
 
 Update this table whenever a new feature lands or an existing feature moves.
+
+---
+
+## Roadmap
+
+Tracked ideas and planned features that are **not yet built**. Update when
+work begins or the idea is abandoned.
+
+### Template editing & cloning
+- Server has `ItemTemplate` model + CRUD API (`api/item_templates.py`); items
+  have an optional `template_id` foreign key.
+- Missing: role-based access check (currently no permission guard on template
+  endpoints), a `POST /item-templates/{id}/clone` endpoint, and all UI (web
+  template management page, Android template picker).
+- The `Membership` model has `viewer/editor/owner` roles — enforce
+  `editor`+ for create/edit/clone, any member for read.
+
+### Real-time / live updates
+- The app currently polls (15-min Android SyncWorker, manual web refresh).
+- No WebSocket or SSE endpoint exists.
+- Future: add `GET /collections/{id}/events` SSE stream; push item-added /
+  item-updated / item-deleted events; web auto-refreshes item list;
+  Android subscribes while the app is in the foreground.
+
+### Collection themes
+- Visual skins for the collection detail view, inspired by the physical
+  environment of each category.
+- **Bookshelf** — wood-grain shelf texture behind box art tiles; books stand
+  upright as spine thumbnails.
+- **Game room** — dark ambient background with neon-accent category badges;
+  cartridge / box art prominently shown.
+- **Movie room** — cinematic widescreen header; poster-style grid with rating
+  stars.
+- Implementation plan (future): add a `theme` field to `Collection` model;
+  web collection detail page reads `collection.theme` and applies a
+  `data-theme` attribute or CSS class to the root; per-theme CSS modules;
+  Android collection detail screen switches background/color tokens.
+  Requires photo thumbnails to be exposed in the items list API response.

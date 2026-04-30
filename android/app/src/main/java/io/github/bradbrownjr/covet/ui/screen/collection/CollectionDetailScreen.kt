@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +38,8 @@ data class DetailUi(
     val items: List<ItemDto> = emptyList(),
     val loading: Boolean = true,
     val error: String? = null,
+    // Pull-to-refresh indicator (separate from initial load spinner).
+    val refreshing: Boolean = false,
     // Add-item dialog
     val showCreate: Boolean = false,
     val rootCategories: List<CategoryDto> = emptyList(),
@@ -160,6 +163,23 @@ class CollectionDetailViewModel @Inject constructor(
         }
     }
 
+    fun pullRefresh() {
+        _state.value = _state.value.copy(refreshing = true, error = null)
+        viewModelScope.launch {
+            try {
+                val c = collections.get(collectionId)
+                val list = items.list(collectionId)
+                _state.value = _state.value.copy(
+                    collection = c,
+                    items = list,
+                    refreshing = false,
+                )
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(refreshing = false, error = t.message)
+            }
+        }
+    }
+
     fun delete(id: String) {
         viewModelScope.launch {
             try { items.delete(id); refresh() } catch (t: Throwable) {
@@ -210,7 +230,11 @@ fun CollectionDetailScreen(
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        PullToRefreshBox(
+            isRefreshing = s.refreshing,
+            onRefresh = vm::pullRefresh,
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
             when {
                 s.loading && s.items.isEmpty() -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 s.error != null && s.items.isEmpty() -> Text(

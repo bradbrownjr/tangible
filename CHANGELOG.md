@@ -6,6 +6,17 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Grid view for collections (web).** A toggle button in the collection
+  detail filter bar switches between the existing list/table view and a
+  tiled card grid. Each card shows the creator, title, series/subtitle,
+  condition, and category badge at a glance. The chosen view persists in
+  `localStorage`.
+- **Pull to refresh (Android).** Swipe down on the collection item list to
+  immediately sync the latest items from the server without waiting for the
+  background sync worker.
+
 ## [0.13.4] — 2026-04-29
 
 ### Fixed
