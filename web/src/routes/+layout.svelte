@@ -149,9 +149,6 @@
         align-items: center;
         margin-left: auto;
     }
-    .user {
-        font-size: 0.875rem;
-    }
     main {
         padding: 1.5rem;
         max-width: 1100px;

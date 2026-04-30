@@ -33,11 +33,11 @@ export function getCachedCategories(): Category[] {
 }
 
 export function rootCategories(rows: Category[]): Category[] {
-    return rows.filter((c) => c.parent_id === null);
+    return rows.filter((c) => c.parent_id === null).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function childrenOf(rows: Category[], parentId: string): Category[] {
-    return rows.filter((c) => c.parent_id === parentId);
+    return rows.filter((c) => c.parent_id === parentId).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function findBySlug(rows: Category[], slug: string): Category | undefined {
