@@ -44,19 +44,34 @@
         const lines = src.split(/\r?\n/);
         const out: string[] = [];
         let inList = false;
+        let currentLi: string | null = null;
         let para: string[] = [];
+
         const flushPara = () => {
             if (para.length) {
                 out.push(`<p>${inline(para.join(' '))}</p>`);
                 para = [];
             }
         };
+        const flushLi = () => {
+            if (currentLi !== null) {
+                // Add a line break after a leading bold title ("**Foo.**  rest...")
+                const liHtml = inline(currentLi).replace(
+                    /^(<strong>[^<]+<\/strong>)\s+/,
+                    '$1<br>'
+                );
+                out.push(`<li>${liHtml}</li>`);
+                currentLi = null;
+            }
+        };
         const closeList = () => {
             if (inList) {
+                flushLi();
                 out.push('</ul>');
                 inList = false;
             }
         };
+
         for (const raw of lines) {
             const line = raw.trimEnd();
             if (!line.trim()) {
@@ -75,11 +90,17 @@
             const bullet = /^\s*[-*]\s+(.*)$/.exec(line);
             if (bullet) {
                 flushPara();
+                flushLi();
                 if (!inList) {
                     out.push('<ul>');
                     inList = true;
                 }
-                out.push(`<li>${inline(bullet[1])}</li>`);
+                currentLi = bullet[1];
+                continue;
+            }
+            // Continuation line for a multi-line list item
+            if (inList && currentLi !== null) {
+                currentLi += ' ' + line.trim();
                 continue;
             }
             closeList();
@@ -192,7 +213,7 @@
         padding-left: 1.25rem;
     }
     .body :global(li) {
-        margin: 0.2rem 0;
+        margin: 0.5rem 0;
     }
     .body :global(p) {
         margin: 0.4rem 0;
