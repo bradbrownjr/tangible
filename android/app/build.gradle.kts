@@ -82,6 +82,7 @@ dependencies {
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.moshi)
+    implementation(libs.retrofit.converter.scalars)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.okhttp.urlconnection)

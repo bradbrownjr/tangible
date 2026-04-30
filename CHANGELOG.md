@@ -6,6 +6,23 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **Android: "What's new" now loads correctly.** The app was previously showing
+  a "malformed JSON" error when tapping "What's new" in the About screen because
+  the changelog endpoint returns plain text but Retrofit was trying to parse it
+  as JSON. The `ScalarsConverterFactory` is now registered so plain-text
+  responses are handled correctly.
+
+### Added
+
+- **Android: delete a collection.** Owners can now delete a collection from the
+  collection detail screen. A trash icon appears in the toolbar for owners; tapping
+  it shows a confirmation dialog listing how many items will be permanently deleted.
+- **Android: copy diagnostics.** A "Copy diagnostics" button in the About screen
+  copies app version, Android version, device model, server URL, username, and
+  recent log output to the clipboard for easy bug reporting.
+
 ## [0.16.1] — 2026-04-30
 
 ### Fixed

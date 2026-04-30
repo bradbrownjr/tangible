@@ -85,6 +85,9 @@ data class DetailUi(
     val editName: String = "",
     val editDescription: String = "",
     val editSaving: Boolean = false,
+    // Collection delete confirmation dialog
+    val showDeleteConfirm: Boolean = false,
+    val deleted: Boolean = false,
 )
 
 @HiltViewModel
@@ -357,6 +360,21 @@ class CollectionDetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun startDeleteCollection() { _state.value = _state.value.copy(showDeleteConfirm = true) }
+    fun cancelDeleteCollection() { _state.value = _state.value.copy(showDeleteConfirm = false) }
+
+    fun confirmDeleteCollection() {
+        _state.value = _state.value.copy(showDeleteConfirm = false)
+        viewModelScope.launch {
+            try {
+                collections.delete(collectionId)
+                _state.value = _state.value.copy(deleted = true)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -371,6 +389,11 @@ fun CollectionDetailScreen(
 ) {
     @Suppress("UNUSED_PARAMETER") val cid = collectionId // already in SavedStateHandle
     val s by vm.state.collectAsState()
+
+    // Navigate back when the collection is successfully deleted.
+    LaunchedEffect(s.deleted) {
+        if (s.deleted) onBack()
+    }
 
     // When a barcode arrives from the scanner, trigger the lookup flow.
     LaunchedEffect(scannedBarcode) {
@@ -390,6 +413,11 @@ fun CollectionDetailScreen(
                     if (s.collection?.my_role == "owner" || s.collection?.my_role == "editor") {
                         IconButton(onClick = vm::startEdit) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit collection")
+                        }
+                    }
+                    if (s.collection?.my_role == "owner") {
+                        IconButton(onClick = vm::startDeleteCollection) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete collection")
                         }
                     }
                     IconButton(onClick = vm::toggleViewMode) {
@@ -598,6 +626,30 @@ fun CollectionDetailScreen(
                     ) { Text(if (s.editSaving) "Saving…" else "Save") }
                 },
                 dismissButton = { TextButton(onClick = vm::cancelEdit) { Text("Cancel") } },
+            )
+        }
+
+        if (s.showDeleteConfirm) {
+            val name = s.collection?.name ?: "this collection"
+            val count = s.items.size
+            AlertDialog(
+                onDismissRequest = vm::cancelDeleteCollection,
+                title = { Text("Delete $name?") },
+                text = {
+                    Text(
+                        "This will permanently delete $count item${if (count != 1) "s" else ""} " +
+                            "in this collection. This cannot be undone.",
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = vm::confirmDeleteCollection,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Delete") }
+                },
+                dismissButton = { TextButton(onClick = vm::cancelDeleteCollection) { Text("Cancel") } },
             )
         }
 

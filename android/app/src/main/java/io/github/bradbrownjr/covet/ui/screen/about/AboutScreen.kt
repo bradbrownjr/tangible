@@ -1,7 +1,11 @@
 package io.github.bradbrownjr.covet.ui.screen.about
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,10 +28,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.covet.BuildConfig
+import io.github.bradbrownjr.covet.data.auth.SessionStore
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,11 +45,14 @@ data class AboutUi(
     val helpText: String = "",
     val helpLoading: Boolean = false,
     val showHelp: Boolean = false,
+    // Non-null when diagnostics text is ready to be copied by the UI.
+    val diagnosticsReady: String? = null,
 )
 
 @HiltViewModel
 class AboutViewModel @Inject constructor(
     private val api: CovetApi,
+    private val session: SessionStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AboutUi())
     val state: StateFlow<AboutUi> = _state.asStateFlow()
@@ -75,6 +84,36 @@ class AboutViewModel @Inject constructor(
 
     fun showHelp() { _state.value = _state.value.copy(showHelp = true) }
     fun dismissHelp() { _state.value = _state.value.copy(showHelp = false) }
+
+    fun prepareDiagnostics() {
+        viewModelScope.launch {
+            val baseUrl = session.baseUrl.first() ?: "—"
+            val username = session.username.first() ?: "—"
+            val logLines = try {
+                val pid = android.os.Process.myPid()
+                val proc = Runtime.getRuntime().exec(
+                    arrayOf("logcat", "-d", "-t", "100", "--pid=$pid"),
+                )
+                proc.inputStream.bufferedReader().readText()
+            } catch (_: Exception) {
+                "(logcat unavailable)"
+            }
+            val text = buildString {
+                appendLine("=== Covet Diagnostics ===")
+                appendLine("App version : ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                appendLine("Android     : ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
+                appendLine("Device      : ${Build.MANUFACTURER} ${Build.MODEL}")
+                appendLine("Server      : $baseUrl")
+                appendLine("User        : $username")
+                appendLine()
+                appendLine("--- Recent logs ---")
+                append(logLines)
+            }
+            _state.value = _state.value.copy(diagnosticsReady = text)
+        }
+    }
+
+    fun clearDiagnostics() { _state.value = _state.value.copy(diagnosticsReady = null) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,6 +124,16 @@ fun AboutScreen(
 ) {
     val s by vm.state.collectAsState()
     val ctx = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Copy diagnostics to clipboard when the ViewModel has them ready.
+    LaunchedEffect(s.diagnosticsReady) {
+        val text = s.diagnosticsReady ?: return@LaunchedEffect
+        val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("Covet diagnostics", text))
+        snackbarHostState.showSnackbar("Diagnostics copied to clipboard")
+        vm.clearDiagnostics()
+    }
 
     Scaffold(
         topBar = {
@@ -96,7 +145,8 @@ fun AboutScreen(
                     }
                 },
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -156,6 +206,12 @@ fun AboutScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Help / User guide")
+            }
+            OutlinedButton(
+                onClick = vm::prepareDiagnostics,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Copy diagnostics")
             }
         }
     }

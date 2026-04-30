@@ -13,6 +13,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import io.github.bradbrownjr.covet.BuildConfig
 import io.github.bradbrownjr.covet.data.auth.SessionStore
 import io.github.bradbrownjr.covet.data.remote.AuthInterceptor
@@ -54,6 +55,7 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl("http://localhost/api/")
             .client(client)
+            .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
@@ -73,6 +75,7 @@ object NetworkModule {
         Retrofit.Builder()
             .baseUrl("${baseUrl.trimEnd('/')}/api/")
             .client(client)
+            .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(CovetApi::class.java)
