@@ -58,19 +58,42 @@ events are written to the audit log (visible to owners).
 
 ## Items
 
-Click **New item** in a collection. The form starts with a **type**
-picker (vinyl, CD, tape, movie, game, console, Funko, Pokémon card,
-book, tool, spice, generic). Each type has tailored default fields and
-identifiers; the **generic** type lets you fill out anything.
+Click **Add item** (or press the + button) inside a collection. The form
+shows a cascading **category picker**: first choose a root category (Music,
+Movies, Books, Games, Tabletop, Tools, Collectibles, …) then a
+sub-category (Vinyl LP, Cassette, Blu-ray, …). Collections created with
+the setup wizard pre-select the right root for you.
+
+Depending on the category, extra fields appear:
+
+- **Creator** — Artist/Band for music, Author for books, Director for
+  movies, Developer for games, Designer for tabletop games.
+- **Series / subtitle** — shown for books, movies, and games.
+
+Hit **Enter** in each field to advance to the next; after the last field
+Enter submits the row and focus returns to the first field, so you can
+add a whole pile of records without touching the mouse.
+
+The list supports both a **table view** and a **grid/tile view** — toggle
+between them with the icon buttons in the filter bar. Your choice is
+remembered in the browser.
+
+### Viewing and editing items
+
+Each item row has an **Edit** button (visible to editors and owners) that
+expands an inline form for title, creator, series/subtitle, condition, and
+quantity. Viewers see the collection read-only.
 
 ### Quick creation tricks
 
 - **Scrape URL** — paste a product URL (Open Library ISBN page, a
   publisher's product page) and Covet will pre-fill `title`,
   `description`, `image_url`, etc. via the metadata scraper.
-- **Apply a template** — pick a template defined for the collection
-  to inherit a custom-field schema. Required fields are validated on
-  save; `select` fields are constrained to their option list.
+- **Scan a barcode** (web or Android) — type or paste an ISBN/EAN and
+  Covet looks it up via Open Library and fills in the title and category.
+- **Apply a template** — pick a template from the collection's
+  **Templates** tab to inherit a custom-field schema. Required fields are
+  validated on save; `select` fields are constrained to their option list.
 - **Pick a parent** — set `parent_id` to make this item a child of
   another (e.g. a lens that belongs to a "Camera kit" parent).
   Cycles and cross-collection parents are blocked by the server.
@@ -112,6 +135,21 @@ all your collections.
 Mark an item as **lent out** to a contact. Set an optional due date.
 Loans are returned by closing them; loan history stays on the item.
 
+## Templates
+
+Templates live under the **Templates** tab of each collection. They let
+you attach a consistent set of custom fields (Pressing year, Catalog #,
+Condition grade, …) to items of a particular category.
+
+- **Editors and owners** can create, edit, and delete templates.
+- **Clone** duplicates a template within the same collection — useful
+  when two sub-categories share most of the same fields.
+- **Viewers** can see templates but not modify them.
+
+Field types: `text`, `number`, `boolean`, `date`, `url`, `select` (with
+an option list). Each field can be marked **required**. An Advanced JSON
+editor is available for bulk editing.
+
 ## Tags and search
 
 - Add tags from the item editor or the collection's **Tags** page.
@@ -148,7 +186,10 @@ The Android app is offline-first:
 4. **Add items** including from the **Barcode scanner** (CameraX +
    ML Kit). Scanning an EAN/UPC pre-fills the identifier; combine with
    the URL scraper on the web side to enrich later.
-5. A **sync worker** runs every 15 minutes (and immediately when you
+5. **Pull to refresh** — swipe down on any collection's item list to
+   immediately fetch the latest items from the server, without waiting
+   for the background worker.
+6. A **sync worker** runs every 15 minutes (and immediately when you
    open the app) to push your local edits and pull server changes
    through the CRDT sync engine.
 

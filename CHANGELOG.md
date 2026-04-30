@@ -16,6 +16,23 @@ All notable changes to **Covet** are documented here. Format follows
 - **Pull to refresh (Android).** Swipe down on the collection item list to
   immediately sync the latest items from the server without waiting for the
   background sync worker.
+- **Creator and subtitle fields when adding items (web).** The add-item
+  form now shows a context-aware creator field (Artist/Band, Author,
+  Director, Developer, or Designer depending on category) and a
+  Series/subtitle field for books, movies, and games. Enter in each field
+  moves focus to the next, and after adding an item focus returns to the
+  first field for rapid bulk entry.
+- **Inline item editing (web).** Items can now be edited directly in the
+  list and grid views without navigating away. An Edit button per row
+  expands an inline form for title, creator, series/subtitle, condition,
+  and quantity.
+- **Template editing and cloning (web).** The Templates tab now has per-row
+  Edit and Clone buttons (editor/owner only). Edit expands an inline field
+  builder. Clone duplicates the template within the same collection.
+- **Role-gated web UI.** The server now returns `my_role` on every
+  collection response. Viewers see the collection read-only (no Add, Edit,
+  or Delete buttons). Editors can add, edit, and delete items and templates.
+  The Delete collection button is owner-only.
 
 ## [0.13.4] — 2026-04-29
 
