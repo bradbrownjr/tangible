@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { api, type Category, type Collection, type Item } from '$lib/api';
@@ -18,7 +18,29 @@
     let newRoot = $state('other');
     let newLeaf = $state('other.generic');
     let newQuery = $state(''); // smart input: URL / ISBN / EAN / Title
+    let newCreator = $state('');
+    let newSubtitle = $state('');
     let scraping = $state(false);
+
+    let creatorInput: HTMLInputElement | undefined;
+    let titleInput: HTMLInputElement | undefined;
+    let subtitleInput: HTMLInputElement | undefined;
+
+    // Label for the creator field based on leaf category; null = hide the field.
+    const creatorLabel = $derived.by(() => {
+        if (newLeaf.startsWith('music.')) return 'Artist / Band';
+        if (newLeaf.startsWith('books.')) return 'Author';
+        if (newLeaf.startsWith('movies.')) return 'Director';
+        if (newLeaf.startsWith('games.')) return 'Developer';
+        if (newLeaf.startsWith('tabletop.')) return 'Designer';
+        return null;
+    });
+    // Label for the subtitle/series field; null = hide.
+    const subtitleLabel = $derived.by(() => {
+        if (newLeaf.startsWith('books.') || newLeaf.startsWith('movies.') || newLeaf.startsWith('games.'))
+            return 'Series / subtitle (optional)';
+        return null;
+    });
 
     const cid = $derived(page.params.id ?? '');
     const roots = $derived(rootCategories(categories));
@@ -82,8 +104,9 @@
         }
     }
 
-    function applyScrapeResult(res: { title?: string; category?: string }) {
+    function applyScrapeResult(res: { title?: string; category?: string; attrs?: Record<string, unknown> }) {
         if (res.title) newQuery = res.title;
+        if (res.attrs?.authors) newCreator = String(res.attrs.authors);
         if (res.category) {
             const leaf = categories.find((c) => c.slug === res.category);
             if (leaf?.parent_id) {
@@ -119,11 +142,9 @@
         }
     }
 
-    async function addItem(e: Event) {
-        e.preventDefault();
+    async function performAdd() {
         const q = newQuery.trim();
         if (!q) return;
-        // If the input is a URL or barcode, scrape first; otherwise use as title.
         if (detected !== 'title') {
             await lookupAndPrefill();
         }
@@ -137,14 +158,27 @@
         const orig_kind = detectKind(q);
         if (orig_kind === 'isbn') identifiers.isbn = original;
         else if (orig_kind === 'ean') identifiers.ean = original;
+        const attrs: Record<string, string> = {};
+        if (newCreator.trim()) attrs.creator = newCreator.trim();
         await api.post('/items', {
             collection_id: cid,
             category: newLeaf,
             title,
+            subtitle: newSubtitle.trim() || undefined,
+            attrs: Object.keys(attrs).length ? attrs : undefined,
             identifiers
         });
         newQuery = '';
+        newCreator = '';
+        newSubtitle = '';
         await load();
+        await tick();
+        (creatorLabel ? creatorInput : titleInput)?.focus();
+    }
+
+    async function addItem(e: Event) {
+        e.preventDefault();
+        await performAdd();
     }
 
     async function removeItem(id: string) {
@@ -189,7 +223,7 @@
             Add an item
             <span class="muted">— paste a URL, scan a barcode, type an ISBN/EAN, or just a title</span>
         </label>
-        <div class="add-grid">
+        <div class="add-row">
             {#if !isFocused}
                 <select bind:value={newRoot} title="Category root">
                     {#each roots as r (r.id)}
@@ -202,12 +236,41 @@
                     <option value={l.slug}>{l.name}</option>
                 {/each}
             </select>
+            {#if creatorLabel}
+                <input
+                    bind:this={creatorInput}
+                    bind:value={newCreator}
+                    placeholder={creatorLabel}
+                    autocomplete="off"
+                    class="creator-field"
+                    onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); titleInput?.focus(); } }}
+                />
+            {/if}
             <input
                 id="addq"
+                bind:this={titleInput}
                 bind:value={newQuery}
                 placeholder="URL · ISBN · EAN · or title…"
                 autocomplete="off"
+                class="title-field"
+                onkeydown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (subtitleLabel && subtitleInput) subtitleInput.focus();
+                        else performAdd();
+                    }
+                }}
             />
+            {#if subtitleLabel}
+                <input
+                    bind:this={subtitleInput}
+                    bind:value={newSubtitle}
+                    placeholder={subtitleLabel}
+                    autocomplete="off"
+                    class="subtitle-field"
+                    onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); performAdd(); } }}
+                />
+            {/if}
             {#if detected !== 'title' && newQuery.trim()}
                 <button type="button" onclick={lookupAndPrefill} disabled={scraping}>
                     {scraping ? 'Looking up…' : `Look up ${detected.toUpperCase()}`}
@@ -254,8 +317,8 @@
                     <tr>
                         {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
                         <td>
-                            {i.title}
-                            {#if i.subtitle}<span class="muted">— {i.subtitle}</span>{/if}
+                            {#if i.attrs?.creator}<span class="creator-tag">{i.attrs.creator} — </span>{/if}{i.title}
+                            {#if i.subtitle}<span class="muted"> · {i.subtitle}</span>{/if}
                         </td>
                         <td>{i.quantity}</td>
                         <td>{i.condition ?? ''}</td>
@@ -318,19 +381,32 @@
         margin-bottom: 0.5rem;
         font-weight: 500;
     }
-    .add-grid {
-        display: grid;
-        grid-template-columns: minmax(140px, 200px) minmax(140px, 200px) 1fr auto auto;
+    .add-row {
+        display: flex;
         gap: 0.5rem;
         align-items: center;
+        flex-wrap: wrap;
     }
-    @media (max-width: 700px) {
-        .add-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-        .add-grid > input {
-            grid-column: 1 / -1;
-        }
+    .add-row select {
+        flex: 0 0 auto;
+        min-width: 130px;
+        max-width: 180px;
+    }
+    .creator-field {
+        flex: 1 1 150px;
+        min-width: 120px;
+        max-width: 210px;
+    }
+    .title-field {
+        flex: 2 1 180px;
+        min-width: 140px;
+    }
+    .subtitle-field {
+        flex: 2 1 180px;
+        min-width: 140px;
+    }
+    .creator-tag {
+        font-weight: 500;
     }
     .filters {
         display: flex;
