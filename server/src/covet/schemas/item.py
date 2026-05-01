@@ -28,6 +28,7 @@ class ItemBase(BaseModel):
     template_id: str | None = None
     parent_id: str | None = None
     depleted: bool = False
+    wanted: bool = False
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
     date_frozen: datetime | None = None
@@ -65,6 +66,7 @@ class ItemUpdate(BaseModel):
     category_id: str | None = None
     category: str | None = None
     depleted: bool | None = None
+    wanted: bool | None = None
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
     date_frozen: datetime | None = None

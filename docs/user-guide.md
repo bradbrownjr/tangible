@@ -184,6 +184,9 @@ ready-to-use templates for that collection.
 - The collection view supports live **title search**, category filters,
   and **sort controls** for title, current value, acquisition date, or a
   custom attribute key such as `creator`.
+- Use the **ownership filter** to switch between all items, owned-only,
+  and wanted-only rows/cards. Editors/owners can toggle an item between
+  **Wanted** and **Owned** inline.
 - Filter by tag from the collection page.
 
 ## Importing your existing inventory

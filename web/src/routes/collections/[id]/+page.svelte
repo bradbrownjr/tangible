@@ -12,6 +12,7 @@
     let categories = $state<Category[]>([]);
     let search = $state('');
     let rootFilter = $state(''); // only used when collection has no default category
+    let wantedFilter = $state<'all' | 'wanted' | 'owned'>('all');
     let sortBy = $state<'title' | 'value' | 'acquired_at' | 'attr'>('title');
     let sortDir = $state<'asc' | 'desc'>('asc');
     let sortAttr = $state('');
@@ -219,6 +220,8 @@
             const params = new URLSearchParams({ collection_id: cid });
             if (search) params.set('search', search);
             if (rootFilter) params.set('category_subtree', rootFilter);
+            if (wantedFilter === 'wanted') params.set('wanted', 'true');
+            if (wantedFilter === 'owned') params.set('wanted', 'false');
             params.set('sort_by', sortBy);
             params.set('sort_dir', sortDir);
             if (sortBy === 'attr' && sortAttr.trim()) params.set('sort_attr', sortAttr.trim());
@@ -426,6 +429,11 @@
         await load();
     }
 
+    async function toggleWanted(item: Item) {
+        await api.patch(`/items/${item.id}`, { wanted: !item.wanted });
+        await load();
+    }
+
     function requestFlagItem(item: Item) {
         pendingFlagItemId = item.id;
         pendingFlagItemTitle = item.title;
@@ -465,6 +473,7 @@
             identifiers: { ...item.identifiers },
             attrs: { ...item.attrs },
             depleted: item.depleted,
+            wanted: item.wanted,
             purchased_at: item.purchased_at,
             use_by_date: item.use_by_date,
             date_frozen: item.date_frozen,
@@ -623,6 +632,11 @@
             <option value="acquired_at">Sort: Acquisition date</option>
             <option value="attr">Sort: Custom field</option>
         </select>
+        <select bind:value={wantedFilter} onchange={() => load()} title="Wanted status">
+            <option value="all">All ownership states</option>
+            <option value="owned">Owned only</option>
+            <option value="wanted">Wanted only</option>
+        </select>
         <select bind:value={sortDir} onchange={() => load()} title="Sort direction">
             <option value="asc">Ascending</option>
             <option value="desc">Descending</option>
@@ -675,7 +689,7 @@
                         </div>
                     </div>
                 {:else}
-                    <div class="item-card" class:depleted-card={i.depleted}>
+                    <div class="item-card" class:depleted-card={i.depleted} class:wanted-card={i.wanted}>
                         <div class="item-card-body">
                             {#if !isFocused && i.category_slug}
                                 <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
@@ -702,6 +716,7 @@
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
                                 {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
+                                {#if i.wanted}<span class="wanted-badge">Wanted</span>{/if}
                                 {#if i.flagged_at}
                                     <span class="flagged-badge" title={i.flagged_note ?? 'Flagged for review'}>
                                         Flagged
@@ -722,6 +737,11 @@
                                     class={i.depleted ? 'secondary' : 'warn'}
                                     onclick={() => toggleDepleted(i)}
                                 >{i.depleted ? 'In stock' : 'Depleted'}</button>
+                                <button
+                                    type="button"
+                                    class={i.wanted ? 'secondary' : 'warn'}
+                                    onclick={() => toggleWanted(i)}
+                                >{i.wanted ? 'Owned' : 'Wanted'}</button>
                                 <button
                                     type="button"
                                     class="secondary"
@@ -783,7 +803,7 @@
                             </tr>
                         {/if}
                     {:else}
-                        <tr class:depleted-row={i.depleted}>
+                        <tr class:depleted-row={i.depleted} class:wanted-row={i.wanted}>
                             {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
                             {#if collectionCreatorLabel}<td class="muted">{String(i.attrs?.creator ?? '')}</td>{/if}
                             <td>
@@ -791,6 +811,9 @@
                                 {#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
                                 {#if i.flagged_at}
                                     <span class="flagged-inline" title={i.flagged_note ?? 'Flagged for review'}>Flagged</span>
+                                {/if}
+                                {#if i.wanted}
+                                    <span class="wanted-inline" title="Marked as wanted / not currently owned">Wanted</span>
                                 {/if}
                                 {#if relationEntries(i).length}
                                     <div class="relation-inline-list">
@@ -817,6 +840,12 @@
                                         onclick={() => toggleDepleted(i)}
                                         title={i.depleted ? 'Mark as in stock' : 'Mark as depleted'}
                                     >{i.depleted ? 'In stock' : 'Depleted'}</button>
+                                    <button
+                                        type="button"
+                                        class={i.wanted ? 'secondary' : 'warn'}
+                                        onclick={() => toggleWanted(i)}
+                                        title={i.wanted ? 'Mark as owned' : 'Mark as wanted'}
+                                    >{i.wanted ? 'Owned' : 'Wanted'}</button>
                                     <button
                                         type="button"
                                         class="secondary"
@@ -1153,6 +1182,9 @@
         text-decoration: line-through;
         text-decoration-color: var(--danger, #c00);
     }
+    .wanted-row td {
+        background: color-mix(in srgb, #2c7a7b 8%, transparent);
+    }
     .flagged-badge {
         display: inline-flex;
         align-items: center;
@@ -1173,6 +1205,9 @@
     .depleted-card {
         opacity: 0.6;
     }
+    .wanted-card {
+        border-color: color-mix(in srgb, #2c7a7b 35%, var(--border));
+    }
     .depleted-card .item-title {
         text-decoration: line-through;
         text-decoration-color: var(--danger, #c00);
@@ -1180,6 +1215,15 @@
     .depleted-badge {
         color: var(--danger, #c00);
         font-weight: 600;
+    }
+    .wanted-badge,
+    .wanted-inline {
+        color: #2c7a7b;
+        font-weight: 600;
+    }
+    .wanted-inline {
+        margin-left: 0.4rem;
+        font-size: 0.72rem;
     }
     .date-badge {
         font-size: 0.7rem;

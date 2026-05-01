@@ -61,6 +61,9 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     # Whether the item is depleted (e.g. a pantry item that ran out).
     depleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Whether the item is on the wishlist (not yet owned).
+    wanted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     # Optional pointer to the CRDT document for this item.
     doc_id: Mapped[str | None] = mapped_column(
         String(26), ForeignKey("automerge_docs.id", ondelete="SET NULL"), nullable=True

@@ -151,6 +151,7 @@ def list_items(
     ),
     search: str | None = None,
     depleted: bool | None = Query(default=None, description="Filter by depleted status."),
+    wanted: bool | None = Query(default=None, description="Filter by wanted status."),
     flagged: bool | None = Query(default=None, description="Filter by review flag status."),
     sort_by: str = Query(
         default="title",
@@ -190,6 +191,8 @@ def list_items(
         stmt = stmt.where(Item.title.ilike(like))
     if depleted is not None:
         stmt = stmt.where(Item.depleted.is_(depleted))
+    if wanted is not None:
+        stmt = stmt.where(Item.wanted.is_(wanted))
     if flagged is not None:
         if flagged:
             stmt = stmt.where(Item.flagged_at.is_not(None))

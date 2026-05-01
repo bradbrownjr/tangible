@@ -117,6 +117,7 @@ export interface Item {
     attrs: Record<string, unknown>;
     template_id: string | null;
     depleted: boolean;
+    wanted: boolean;
     flagged_note: string | null;
     flagged_at: string | null;
     purchased_at: string | null;

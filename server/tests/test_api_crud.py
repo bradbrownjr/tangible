@@ -253,3 +253,43 @@ def test_item_flagging_requires_editor_role(client) -> None:
 
     denied_unflag = client.delete(f"/api/items/{item_id}/flag")
     assert denied_unflag.status_code == 403
+
+
+def test_item_wanted_flag_and_filter(client) -> None:
+    _signup_and_login(client, "wanted")
+    cid = client.post("/api/collections", json={"name": "Wishlist"}).json()["id"]
+
+    owned = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Owned Game"},
+    )
+    assert owned.status_code == 201, owned.text
+
+    wanted = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "movies.dvd",
+            "title": "Wanted Game",
+            "wanted": True,
+        },
+    )
+    assert wanted.status_code == 201, wanted.text
+    wanted_id = wanted.json()["id"]
+    assert wanted.json()["wanted"] is True
+
+    listed_wanted = client.get("/api/items", params={"collection_id": cid, "wanted": "true"})
+    assert listed_wanted.status_code == 200, listed_wanted.text
+    assert [x["title"] for x in listed_wanted.json()] == ["Wanted Game"]
+
+    listed_owned = client.get("/api/items", params={"collection_id": cid, "wanted": "false"})
+    assert listed_owned.status_code == 200, listed_owned.text
+    assert [x["title"] for x in listed_owned.json()] == ["Owned Game"]
+
+    patched = client.patch(f"/api/items/{wanted_id}", json={"wanted": False})
+    assert patched.status_code == 200, patched.text
+    assert patched.json()["wanted"] is False
+
+    listed_after = client.get("/api/items", params={"collection_id": cid, "wanted": "true"})
+    assert listed_after.status_code == 200, listed_after.text
+    assert listed_after.json() == []

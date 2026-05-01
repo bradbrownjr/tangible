@@ -201,6 +201,8 @@ require new environment variables or reverse-proxy changes:
    (`same_collection` / `any_collection`) and server-side target-item validation.
 - Community scraper registry discovery/import endpoints:
    `GET /metadata/registry` and `POST /metadata/registry/import`.
+- Wanted-item tracking (`wanted` boolean on items) plus
+   `GET /items?wanted=true/false` filtering and inline Wanted/Owned toggles in web.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.
