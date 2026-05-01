@@ -95,7 +95,7 @@ bottleneck. This phase is about scaling the UX.
 - **Item flagging** ✅ — mark items for review ("verify location",
   "needs photo", "check warranty") without editing them; flag is
   cleared on next edit or explicit dismiss.
-- **Relation field type (in progress)** — a new template field type that points to
+- **Relation field type** ✅ — a new template field type that points to
   another item in the same (or any) collection. Enables "sequel to",
   "accessory for", "compatible battery", "intended fuel container"
   relationships without freeform text. Renders as a linked item card.

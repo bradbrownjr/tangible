@@ -2,11 +2,13 @@
     import { onMount, tick } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { api, type Category, type Collection, type Item } from '$lib/api';
+    import { api, type Category, type Collection, type Item, type ItemTemplate } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
+    let templates = $state<ItemTemplate[]>([]);
+    let relatedItemTitles = $state<Record<string, string>>({});
     let categories = $state<Category[]>([]);
     let search = $state('');
     let rootFilter = $state(''); // only used when collection has no default category
@@ -107,6 +109,11 @@
         const root = (collection?.default_category_slug ?? '').split('.')[0];
         return root === 'books' || root === 'movies' || root === 'games';
     });
+    const templateById = $derived.by(() => {
+        const byId = new Map<string, ItemTemplate>();
+        for (const t of templates) byId.set(t.id, t);
+        return byId;
+    });
 
     $effect(() => {
         if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
@@ -140,6 +147,56 @@
         }
     }
 
+    type RelationEntry = { key: string; label: string; targetId: string };
+
+    function relationEntries(i: Item): RelationEntry[] {
+        if (!i.template_id) return [];
+        const tmpl = templateById.get(i.template_id);
+        if (!tmpl) return [];
+        const entries: RelationEntry[] = [];
+        for (const f of tmpl.fields) {
+            if (f.type !== 'relation') continue;
+            const raw = i.attrs?.[f.key];
+            if (typeof raw !== 'string') continue;
+            const targetId = raw.trim();
+            if (!targetId) continue;
+            entries.push({ key: f.key, label: f.label || f.key, targetId });
+        }
+        return entries;
+    }
+
+    function relationTitle(targetId: string): string {
+        const local = items.find((x) => x.id === targetId);
+        if (local) return local.title;
+        return relatedItemTitles[targetId] ?? targetId;
+    }
+
+    async function hydrateRelatedItemTitles(currentItems: Item[]) {
+        const wanted = new Set<string>();
+        for (const i of currentItems) {
+            for (const rel of relationEntries(i)) {
+                wanted.add(rel.targetId);
+            }
+        }
+        const missing = [...wanted].filter(
+            (id) => !currentItems.some((x) => x.id === id) && !relatedItemTitles[id]
+        );
+        if (missing.length === 0) return;
+
+        const nextTitles = { ...relatedItemTitles };
+        await Promise.allSettled(
+            missing.map(async (id) => {
+                try {
+                    const target = await api.get<Item>(`/items/${id}`);
+                    nextTitles[id] = target.title;
+                } catch {
+                    nextTitles[id] = id;
+                }
+            })
+        );
+        relatedItemTitles = nextTitles;
+    }
+
     async function load() {
         loading = true;
         try {
@@ -165,7 +222,13 @@
             params.set('sort_by', sortBy);
             params.set('sort_dir', sortDir);
             if (sortBy === 'attr' && sortAttr.trim()) params.set('sort_attr', sortAttr.trim());
-            items = await api.get<Item[]>(`/items?${params.toString()}`);
+            const [fetchedItems, fetchedTemplates] = await Promise.all([
+                api.get<Item[]>(`/items?${params.toString()}`),
+                api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
+            ]);
+            items = fetchedItems;
+            templates = fetchedTemplates;
+            await hydrateRelatedItemTitles(fetchedItems);
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -624,6 +687,16 @@
                             {#if i.subtitle}
                                 <p class="item-subtitle">{i.subtitle}</p>
                             {/if}
+                            {#if relationEntries(i).length}
+                                <div class="relation-list">
+                                    {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
+                                        <div class="relation-card" title={rel.targetId}>
+                                            <span class="relation-label">{rel.label}</span>
+                                            <span class="relation-target">{relationTitle(rel.targetId)}</span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
                             <div class="item-meta">
                                 {#if i.condition}<span>{i.condition}</span>{/if}
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
@@ -718,6 +791,16 @@
                                 {#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
                                 {#if i.flagged_at}
                                     <span class="flagged-inline" title={i.flagged_note ?? 'Flagged for review'}>Flagged</span>
+                                {/if}
+                                {#if relationEntries(i).length}
+                                    <div class="relation-inline-list">
+                                        {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
+                                            <div class="relation-inline-card" title={rel.targetId}>
+                                                <span class="relation-label">{rel.label}</span>
+                                                <span class="relation-target">{relationTitle(rel.targetId)}</span>
+                                            </div>
+                                        {/each}
+                                    </div>
                                 {/if}
                             </td>
                             {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
@@ -1022,6 +1105,40 @@
         color: var(--text-muted, #888);
         margin-top: auto;
         padding-top: 0.25rem;
+    }
+    .relation-list {
+        display: grid;
+        gap: 0.3rem;
+        margin-top: 0.2rem;
+    }
+    .relation-card,
+    .relation-inline-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.45rem;
+        align-items: baseline;
+        border: 1px solid var(--border);
+        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+        border-radius: 6px;
+        padding: 0.2rem 0.4rem;
+    }
+    .relation-inline-list {
+        display: grid;
+        gap: 0.2rem;
+        margin-top: 0.3rem;
+        max-width: 32rem;
+    }
+    .relation-label {
+        font-size: 0.72rem;
+        color: var(--text-muted, #888);
+        white-space: nowrap;
+    }
+    .relation-target {
+        font-size: 0.8rem;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .item-card-delete {
         width: 100%;

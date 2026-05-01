@@ -115,6 +115,7 @@ export interface Item {
     location: string | null;
     identifiers: Record<string, unknown>;
     attrs: Record<string, unknown>;
+    template_id: string | null;
     depleted: boolean;
     flagged_note: string | null;
     flagged_at: string | null;
