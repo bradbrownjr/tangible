@@ -11,6 +11,7 @@ import io.github.bradbrownjr.covet.data.local.CategoryDao
 import io.github.bradbrownjr.covet.data.local.CollectionDao
 import io.github.bradbrownjr.covet.data.local.CovetDatabase
 import io.github.bradbrownjr.covet.data.local.ItemDao
+import io.github.bradbrownjr.covet.data.local.LocationDao
 import javax.inject.Singleton
 
 @Module
@@ -26,4 +27,5 @@ object DatabaseModule {
     @Provides fun collectionDao(db: CovetDatabase): CollectionDao = db.collections()
     @Provides fun categoryDao(db: CovetDatabase): CategoryDao = db.categories()
     @Provides fun itemDao(db: CovetDatabase): ItemDao = db.items()
+    @Provides fun locationDao(db: CovetDatabase): LocationDao = db.locations()
 }

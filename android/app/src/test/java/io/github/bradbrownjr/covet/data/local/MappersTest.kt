@@ -42,7 +42,8 @@ class MappersTest {
             purchase_price = 19.99,
             current_value = null,
             currency = "USD",
-            location = "Shelf A",
+            location_id = "loc1",
+            location_path = listOf("Home", "Office", "Shelf A"),
             identifiers = mapOf("upc" to "074646493427"),
             attrs = mapOf("year" to 1959.0),
         )
@@ -52,6 +53,8 @@ class MappersTest {
         assertEquals(dto.category_slug, back.category_slug)
         assertEquals(dto.identifiers["upc"], back.identifiers["upc"])
         assertEquals(dto.purchase_price, back.purchase_price)
+        assertEquals(dto.location_id, back.location_id)
+        assertEquals(dto.location_path, back.location_path)
         assertNull(back.notes)
     }
 }

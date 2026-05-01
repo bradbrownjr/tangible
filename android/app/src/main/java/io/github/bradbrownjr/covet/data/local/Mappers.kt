@@ -5,6 +5,7 @@ import com.squareup.moshi.Types
 import io.github.bradbrownjr.covet.data.remote.CategoryDto
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.ItemDto
+import io.github.bradbrownjr.covet.data.remote.LocationDto
 
 /**
  * Conversion between Retrofit DTOs and Room entities.
@@ -17,7 +18,12 @@ private val mapType = Types.newParameterizedType(
     Any::class.java,
 )
 
+private val stringListType =
+    Types.newParameterizedType(List::class.java, String::class.java)
+
 private fun Moshi.mapAdapter() = adapter<Map<String, Any?>>(mapType)
+
+private fun Moshi.stringListAdapter() = adapter<List<String>>(stringListType)
 
 fun CollectionDto.toEntity(now: Long = System.currentTimeMillis()): CollectionEntity =
     CollectionEntity(
@@ -65,6 +71,7 @@ fun CategoryEntity.toDto(): CategoryDto =
 
 fun ItemDto.toEntity(moshi: Moshi, now: Long = System.currentTimeMillis()): ItemEntity {
     val adapter = moshi.mapAdapter()
+    val pathAdapter = moshi.stringListAdapter()
     return ItemEntity(
         id = id,
         collectionId = collection_id,
@@ -78,7 +85,8 @@ fun ItemDto.toEntity(moshi: Moshi, now: Long = System.currentTimeMillis()): Item
         purchasePrice = purchase_price,
         currentValue = current_value,
         currency = currency,
-        location = location,
+        locationId = location_id,
+        locationPathJson = location_path?.let { pathAdapter.toJson(it) },
         identifiersJson = adapter.toJson(identifiers),
         attrsJson = adapter.toJson(attrs),
         depleted = depleted,
@@ -92,6 +100,7 @@ fun ItemDto.toEntity(moshi: Moshi, now: Long = System.currentTimeMillis()): Item
 
 fun ItemEntity.toDto(moshi: Moshi): ItemDto {
     val adapter = moshi.mapAdapter()
+    val pathAdapter = moshi.stringListAdapter()
     return ItemDto(
         id = id,
         collection_id = collectionId,
@@ -105,7 +114,8 @@ fun ItemEntity.toDto(moshi: Moshi): ItemDto {
         purchase_price = purchasePrice,
         current_value = currentValue,
         currency = currency,
-        location = location,
+        location_id = locationId,
+        location_path = locationPathJson?.let { pathAdapter.fromJson(it) },
         identifiers = adapter.fromJson(identifiersJson) ?: emptyMap(),
         attrs = adapter.fromJson(attrsJson) ?: emptyMap(),
         depleted = depleted,
@@ -114,5 +124,47 @@ fun ItemEntity.toDto(moshi: Moshi): ItemDto {
         date_frozen = dateFrozen,
         date_opened = dateOpened,
     )
+}
+
+/**
+ * Flatten a tree of LocationDto into a list of LocationEntity (drops children).
+ * The tree shape is rebuilt in-memory via parent_id when needed.
+ */
+fun List<LocationDto>.flattenToEntities(now: Long = System.currentTimeMillis()): List<LocationEntity> {
+    val out = mutableListOf<LocationEntity>()
+    fun walk(node: LocationDto) {
+        out.add(
+            LocationEntity(
+                id = node.id,
+                collectionId = node.collection_id,
+                parentId = node.parent_id,
+                name = node.name,
+                kind = node.kind,
+                notes = node.notes,
+                qrSlug = node.qr_slug,
+                itemCount = node.item_count,
+                cachedAt = now,
+            ),
+        )
+        node.children.forEach(::walk)
+    }
+    forEach(::walk)
+    return out
+}
+
+fun List<LocationEntity>.toTreeDtos(): List<LocationDto> {
+    val byParent = groupBy { it.parentId }
+    fun build(entity: LocationEntity): LocationDto = LocationDto(
+        id = entity.id,
+        collection_id = entity.collectionId,
+        parent_id = entity.parentId,
+        name = entity.name,
+        kind = entity.kind,
+        notes = entity.notes,
+        qr_slug = entity.qrSlug,
+        item_count = entity.itemCount,
+        children = (byParent[entity.id] ?: emptyList()).map(::build),
+    )
+    return (byParent[null] ?: emptyList()).map(::build)
 }
 

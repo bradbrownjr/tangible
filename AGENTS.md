@@ -31,6 +31,45 @@ large refactors don't silently regress them.
   get alignment before writing code.
 - Treat every user question as requiring a direct answer; do not silently
   skip questions to start coding.
+- No emoji in code, comments, commit messages, or generated docs unless
+  explicitly requested.
+- No em-dashes in source code or generated text — use commas, periods,
+  or parentheses.
+
+## Engineering Principles
+
+- **DRY** — Extract shared logic; don't duplicate.
+- **SOLID** — Single-responsibility, open/closed, dependency-inversion.
+- **KISS** — Clarity over cleverness. Simple, explicit, maintainable.
+- Match the patterns already established in the codebase.
+- Progressive cleanup — remove dead imports / commented blocks as you go.
+
+## Implementation Discipline
+
+- Only make changes that are directly requested or clearly necessary.
+- Don't add features, refactor code, or make "improvements" beyond scope.
+- Don't add docstrings, comments, or type annotations to code you didn't
+  change.
+- Don't add error handling for scenarios that can't happen. Validate at
+  system boundaries only.
+- Don't create helpers or abstractions for one-time operations.
+
+## Subagent Usage
+
+- Prefer subagents (e.g., `Explore`) for read-only multi-step research
+  to avoid cluttering the main conversation. Safe to call in parallel.
+- Specify thoroughness explicitly (quick / medium / thorough).
+- Subagents are stateless — give them complete context in the prompt
+  and tell them exactly what to return.
+
+## Validate Locally Before Pushing
+
+- CI ping-pong (push → wait → fix → push) is the slowest feedback loop.
+- If a toolchain is missing locally (JDK, Android SDK, etc.), install it
+  once rather than firefighting per CI run. See the local Android build
+  block under "Repo-Specific Gotchas" for the one-time setup.
+- Symptom of falling into the trap: "fix one error, push, new error,
+  fix, push" cycle. Stop and audit holistically.
 
 ## Root-Cause Policy
 
@@ -305,6 +344,7 @@ the affected file column is preserved.**
 | Sessions / cookie auth | `server/src/covet/auth/session.py`, `api/auth.py` | `SessionInfoDto`, cookie name from settings |
 | Collections CRUD | `server/src/covet/api/collections.py`, `models/collection.py` | `GET/POST/PATCH/DELETE /collections` |
 | Items CRUD + filtering | `server/src/covet/api/items.py`, `models/item.py` | `GET/POST/PATCH/DELETE /items`, `?search`, `?type` |
+| Location hierarchy (tree, item.location_id) | `server/src/covet/api/locations.py`, `models/location.py`, `web/src/routes/collections/[id]/locations/+page.svelte`, android `data/local/CovetDatabase.kt` (`LocationEntity`/`LocationDao`) | `GET/POST/PATCH/DELETE /collections/{id}/locations`, `home\|floor\|room\|zone\|container`, `Item.location_id` |
 | Tags / item-tags | `server/src/covet/api/tags.py`, `models/tag.py` | `tag`, `item_tag` |
 | Contacts + loans | `server/src/covet/api/loans.py`, `models/{contact,loan}.py` | `loan`, `contact` |
 | Photos (multipart, sha256 dedupe) | `server/src/covet/api/photos.py`, `models/photo.py` | `POST /photos`, `_photo_path` |

@@ -8,6 +8,14 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Location hierarchy.** Flat `item.location` text is replaced with a
+  proper location tree (`home → floor → room → zone → container`, arbitrary
+  depth). Manage locations from the new **Locations** tab on each
+  collection, then assign items via a dropdown picker in create / edit /
+  duplicate / bulk-move flows. Existing free-text locations are migrated
+  automatically into per-collection `room` nodes. Android client picks up
+  locations through the offline Room cache and exposes the same dropdowns
+  in the item detail screen and bulk-move sheet.
 - **Phase 11 wave 3 categories (API + web picker).** Sports & Recreation root
   added with Fitness Equipment, Outdoor Gear, and Sports Equipment leaves.
   No new roots for Tools and Pantry (already existed), but scaffold templates

@@ -6,8 +6,11 @@ import kotlinx.coroutines.flow.map
 import io.github.bradbrownjr.covet.data.local.CategoryDao
 import io.github.bradbrownjr.covet.data.local.CollectionDao
 import io.github.bradbrownjr.covet.data.local.ItemDao
+import io.github.bradbrownjr.covet.data.local.LocationDao
+import io.github.bradbrownjr.covet.data.local.flattenToEntities
 import io.github.bradbrownjr.covet.data.local.toDto
 import io.github.bradbrownjr.covet.data.local.toEntity
+import io.github.bradbrownjr.covet.data.local.toTreeDtos
 import io.github.bradbrownjr.covet.data.remote.CategoryDto
 import io.github.bradbrownjr.covet.data.remote.ContactDto
 import io.github.bradbrownjr.covet.data.remote.CollectionCreate
@@ -22,6 +25,9 @@ import io.github.bradbrownjr.covet.data.remote.ItemBulkRestoreRequest
 import io.github.bradbrownjr.covet.data.remote.ItemBulkTagRequest
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.ItemPatch
+import io.github.bradbrownjr.covet.data.remote.LocationCreate
+import io.github.bradbrownjr.covet.data.remote.LocationDto
+import io.github.bradbrownjr.covet.data.remote.LocationPatch
 import io.github.bradbrownjr.covet.data.remote.PhotoDto
 import io.github.bradbrownjr.covet.data.remote.RestockRequest
 import io.github.bradbrownjr.covet.data.remote.TagDto
@@ -204,7 +210,7 @@ class ItemRepository @Inject constructor(
         itemIds: List<String>,
         depleted: Boolean? = null,
         wanted: Boolean? = null,
-        location: String? = null,
+        locationId: String? = null,
     ) {
         if (itemIds.isEmpty()) return
         api.bulkPatchItems(
@@ -213,18 +219,18 @@ class ItemRepository @Inject constructor(
                 item_ids = itemIds,
                 depleted = depleted,
                 wanted = wanted,
-                location = location,
+                location_id = locationId,
             ),
         )
     }
 
-    suspend fun bulkMoveLocation(collectionId: String, itemIds: List<String>, location: String?) {
+    suspend fun bulkMoveLocation(collectionId: String, itemIds: List<String>, locationId: String?) {
         if (itemIds.isEmpty()) return
         api.bulkPatchItems(
             ItemBulkPatchRequest(
                 collection_id = collectionId,
                 item_ids = itemIds,
-                location = location,
+                location_id = locationId,
             ),
         )
     }
@@ -286,5 +292,64 @@ class PhotoRepository @Inject constructor(
         val body = bytes.toRequestBody(mimeType.toMediaType())
         val part = MultipartBody.Part.createFormData("files", "photo.jpg", body)
         return api.uploadPhotos(itemId, part)
+    }
+}
+
+@Singleton
+class LocationRepository @Inject constructor(
+    private val api: CovetApi,
+    private val dao: LocationDao,
+) {
+    fun observeTree(collectionId: String): Flow<List<LocationDto>> =
+        dao.observeForCollection(collectionId).map { rows -> rows.toTreeDtos() }
+
+    suspend fun listTree(collectionId: String): List<LocationDto> {
+        val remote = api.listLocations(collectionId)
+        val flat = remote.flattenToEntities()
+        dao.upsertAll(flat)
+        dao.deleteMissingIn(collectionId, flat.map { it.id })
+        return remote
+    }
+
+    suspend fun create(
+        collectionId: String,
+        name: String,
+        kind: String = "container",
+        parentId: String? = null,
+        notes: String? = null,
+    ): LocationDto {
+        val created = api.createLocation(
+            LocationCreate(
+                collection_id = collectionId,
+                name = name,
+                kind = kind,
+                parent_id = parentId,
+                notes = notes,
+            ),
+        )
+        listTree(collectionId)
+        return created
+    }
+
+    suspend fun update(
+        id: String,
+        collectionId: String,
+        name: String? = null,
+        kind: String? = null,
+        parentId: String? = null,
+        notes: String? = null,
+    ): LocationDto {
+        val updated = api.patchLocation(
+            id,
+            LocationPatch(name = name, kind = kind, parent_id = parentId, notes = notes),
+        )
+        listTree(collectionId)
+        return updated
+    }
+
+    suspend fun delete(id: String, collectionId: String) {
+        api.deleteLocation(id)
+        dao.delete(id)
+        listTree(collectionId)
     }
 }

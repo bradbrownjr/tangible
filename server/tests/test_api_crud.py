@@ -497,26 +497,35 @@ def test_item_bulk_move_location_and_category(client) -> None:
     id_a = first.json()["id"]
     id_b = second.json()["id"]
 
+    loc = client.post(
+        "/api/locations",
+        json={"collection_id": cid, "name": "Garage shelf A", "kind": "container"},
+    )
+    assert loc.status_code == 201, loc.text
+    loc_id = loc.json()["id"]
+
     moved = client.post(
         "/api/items/bulk-patch",
         json={
             "collection_id": cid,
             "item_ids": [id_a, id_b],
-            "location": "Garage shelf A",
+            "location_id": loc_id,
             "category": "tools.power",
         },
     )
     assert moved.status_code == 200, moved.text
     assert [x["id"] for x in moved.json()] == [id_a, id_b]
-    assert all(x["location"] == "Garage shelf A" for x in moved.json())
+    assert all(x["location_id"] == loc_id for x in moved.json())
+    assert all(x["location_path"] == ["Garage shelf A"] for x in moved.json())
     assert all(x["category_slug"] == "tools.power" for x in moved.json())
 
     cleared = client.post(
         "/api/items/bulk-patch",
-        json={"collection_id": cid, "item_ids": [id_b], "location": ""},
+        json={"collection_id": cid, "item_ids": [id_b], "location_id": None},
     )
     assert cleared.status_code == 200, cleared.text
-    assert cleared.json()[0]["location"] is None
+    assert cleared.json()[0]["location_id"] is None
+    assert cleared.json()[0]["location_path"] is None
 
 
 def test_item_bulk_lend_creates_loans(client) -> None:

@@ -2,7 +2,7 @@
     import { onMount, tick } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type Tag } from '$lib/api';
+    import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type LocationNode, type Tag } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
     let collection = $state<Collection | null>(null);
@@ -55,7 +55,8 @@
     let archiveDispositionNote = $state('');
     let bulkBusy = $state(false);
     let selectedBulkTagId = $state('');
-    let bulkMoveLocation = $state('');
+    let bulkMoveLocationId = $state('');
+    let locations = $state<LocationNode[]>([]);
     let selectedBulkContactId = $state('');
     let bulkLoanDueAt = $state('');
 
@@ -101,6 +102,17 @@
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
     );
+    const locationOptions = $derived.by(() => {
+        const out: { id: string; label: string }[] = [];
+        const walk = (nodes: LocationNode[], depth: number) => {
+            for (const n of nodes) {
+                out.push({ id: n.id, label: `${'\u00a0\u00a0'.repeat(depth)}${n.name}` });
+                walk(n.children, depth + 1);
+            }
+        };
+        walk(locations, 0);
+        return out;
+    });
     const leaves = $derived.by(() => {
         const root = categories.find((c) => c.slug === newRoot);
         if (!root) return [];
@@ -272,16 +284,18 @@
             params.set('sort_by', sortBy);
             params.set('sort_dir', sortDir);
             if (sortBy === 'attr' && sortAttr.trim()) params.set('sort_attr', sortAttr.trim());
-            const [fetchedItems, fetchedTemplates, fetchedTags, fetchedContacts] = await Promise.all([
+            const [fetchedItems, fetchedTemplates, fetchedTags, fetchedContacts, fetchedLocations] = await Promise.all([
                 api.get<Item[]>(`/items?${params.toString()}`),
                 api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
                 api.get<Tag[]>('/tags'),
                 api.get<Contact[]>('/contacts'),
+                api.get<LocationNode[]>(`/locations?collection_id=${cid}`),
             ]);
             items = fetchedItems;
             templates = fetchedTemplates;
             tags = fetchedTags;
             contacts = fetchedContacts;
+            locations = fetchedLocations;
             if (selectedBulkTagId && !fetchedTags.some((t) => t.id === selectedBulkTagId)) {
                 selectedBulkTagId = '';
             }
@@ -393,19 +407,18 @@
 
     async function runBulkMoveLocation(clear = false) {
         if (!selectedItemIds.length) return;
-        const location = clear ? '' : bulkMoveLocation.trim();
-        if (!clear && !location) return;
+        if (!clear && !bulkMoveLocationId) return;
         bulkBusy = true;
         error = '';
         try {
             await api.post('/items/bulk-patch', {
                 collection_id: cid,
                 item_ids: selectedItemIds,
-                location,
+                location_id: clear ? null : bulkMoveLocationId,
             });
             await load();
             clearSelection();
-            if (clear) bulkMoveLocation = '';
+            if (clear) bulkMoveLocationId = '';
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -718,7 +731,7 @@
             purchase_price: item.purchase_price,
             current_value: item.current_value,
             currency: item.currency,
-            location: item.location,
+            location_id: item.location_id,
             identifiers: { ...item.identifiers },
             attrs: { ...item.attrs },
             depleted: item.depleted,
@@ -774,6 +787,7 @@
     <nav class="subnav" aria-label="Collection sections">
         <a class="tab tab-active" href="/collections/{cid}" aria-current="page">Items</a>
         <a class="tab" href="/collections/{cid}/templates">Templates</a>
+        <a class="tab" href="/collections/{cid}/locations">Locations</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
         {#if collection.my_role === 'owner'}
             <button type="button" class="tab tab-danger" onclick={requestDeleteCollection}>Delete</button>
@@ -942,8 +956,13 @@
             </select>
             <button type="button" class="secondary" onclick={() => bulkTag('add')} disabled={!selectedItemIds.length || !selectedBulkTagId || bulkBusy}>Bulk add tag</button>
             <button type="button" class="secondary" onclick={() => bulkTag('remove')} disabled={!selectedItemIds.length || !selectedBulkTagId || bulkBusy}>Bulk remove tag</button>
-            <input bind:value={bulkMoveLocation} placeholder="Location (e.g. Garage shelf A)" title="Bulk location move" />
-            <button type="button" class="secondary" onclick={() => runBulkMoveLocation(false)} disabled={!selectedItemIds.length || !bulkMoveLocation.trim() || bulkBusy}>Bulk move location</button>
+            <select bind:value={bulkMoveLocationId} disabled={bulkBusy || locationOptions.length === 0} title="Bulk location move">
+                <option value="">Move to location…</option>
+                {#each locationOptions as opt (opt.id)}
+                    <option value={opt.id}>{opt.label}</option>
+                {/each}
+            </select>
+            <button type="button" class="secondary" onclick={() => runBulkMoveLocation(false)} disabled={!selectedItemIds.length || !bulkMoveLocationId || bulkBusy}>Bulk move location</button>
             <button type="button" class="secondary" onclick={() => runBulkMoveLocation(true)} disabled={!selectedItemIds.length || bulkBusy}>Clear location</button>
             <select bind:value={selectedBulkContactId} disabled={bulkBusy || contacts.length === 0} title="Contact for bulk lend">
                 <option value="">Lend to…</option>
@@ -1025,6 +1044,7 @@
                                 {#if i.condition}<span>{i.condition}</span>{/if}
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
                                 {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
+                                {#if i.location_path && i.location_path.length}<span class="location-badge" title="Location">{i.location_path.join(' / ')}</span>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
                                 {#if i.wanted}<span class="wanted-badge">Wanted</span>{/if}
                                 {#if i.archived_at}<span class="archived-badge">Archived</span>{/if}

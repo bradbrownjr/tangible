@@ -60,7 +60,9 @@ data class ItemEntity(
     @ColumnInfo(name = "purchase_price") val purchasePrice: Double?,
     @ColumnInfo(name = "current_value") val currentValue: Double?,
     val currency: String?,
-    val location: String?,
+    @ColumnInfo(name = "location_id") val locationId: String?,
+    /** JSON-encoded List<String> root-first path; null when unassigned. */
+    @ColumnInfo(name = "location_path_json") val locationPathJson: String?,
     /** JSON blob (Map<String, Any?>) — kept as text to avoid a converter explosion. */
     val identifiersJson: String,
     val attrsJson: String,
@@ -69,6 +71,19 @@ data class ItemEntity(
     @ColumnInfo(name = "use_by_date") val useByDate: String?,
     @ColumnInfo(name = "date_frozen") val dateFrozen: String?,
     @ColumnInfo(name = "date_opened") val dateOpened: String?,
+    @ColumnInfo(name = "cached_at") val cachedAt: Long,
+)
+
+@Entity(tableName = "locations")
+data class LocationEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "collection_id", index = true) val collectionId: String,
+    @ColumnInfo(name = "parent_id") val parentId: String?,
+    val name: String,
+    val kind: String,
+    val notes: String?,
+    @ColumnInfo(name = "qr_slug") val qrSlug: String?,
+    @ColumnInfo(name = "item_count") val itemCount: Int,
     @ColumnInfo(name = "cached_at") val cachedAt: Long,
 )
 
@@ -129,14 +144,40 @@ interface ItemDao {
     suspend fun clear()
 }
 
+@Dao
+interface LocationDao {
+    @Query("SELECT * FROM locations WHERE collection_id = :collectionId ORDER BY name COLLATE NOCASE ASC")
+    fun observeForCollection(collectionId: String): Flow<List<LocationEntity>>
+
+    @Query("SELECT * FROM locations WHERE collection_id = :collectionId ORDER BY name COLLATE NOCASE ASC")
+    suspend fun listForCollection(collectionId: String): List<LocationEntity>
+
+    @Upsert
+    suspend fun upsertAll(rows: List<LocationEntity>)
+
+    @Query("DELETE FROM locations WHERE collection_id = :collectionId AND id NOT IN (:keep)")
+    suspend fun deleteMissingIn(collectionId: String, keep: List<String>)
+
+    @Query("DELETE FROM locations WHERE id = :id")
+    suspend fun delete(id: String)
+
+    @Query("DELETE FROM locations")
+    suspend fun clear()
+}
+
 class Converters {
     @TypeConverter fun fromBoolean(v: Boolean): Int = if (v) 1 else 0
     @TypeConverter fun toBoolean(v: Int): Boolean = v != 0
 }
 
 @Database(
-    entities = [CollectionEntity::class, CategoryEntity::class, ItemEntity::class],
-    version = 4,
+    entities = [
+        CollectionEntity::class,
+        CategoryEntity::class,
+        ItemEntity::class,
+        LocationEntity::class,
+    ],
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -144,6 +185,7 @@ abstract class CovetDatabase : RoomDatabase() {
     abstract fun collections(): CollectionDao
     abstract fun categories(): CategoryDao
     abstract fun items(): ItemDao
+    abstract fun locations(): LocationDao
 }
 
 /** Convenience for upsert callers that supply OnConflictStrategy explicitly. */

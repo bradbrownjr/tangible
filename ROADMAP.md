@@ -151,14 +151,16 @@ eventually makes and then stops maintaining.
   Boat/PWC, Trailer, and Bicycle/E-Bike scaffold templates for the remaining
   vehicle subcategories (all 6 vehicles roots now have dedicated templates).
 
-**Remaining Phase 11 Features — ⏳ PENDING**
-- **Location hierarchy (planned)** — replace flat location text with true
-  location tree: `Home → Floor → Room → Zone → Container`. Each node is an
-  entity with its own photo and QR label. Moving a container moves contents.
-  This is a major data model change with cascading implications (item cascade
-  deletion, location-based filters, UI for tree navigation, mobile QR scanner
-  integration). Scope: database schema, migrations, API endpoints (CRUD trees,
-  item relocation), web tree UI, Android integration.
+**Remaining Phase 11 Features**
+- **Location hierarchy** ✅ — flat `item.location` text replaced with a
+  self-referential `Location` tree (`home → floor → room → zone → container`,
+  arbitrary depth). Server: new `location` table + `Item.location_id` FK,
+  full CRUD API at `/collections/{id}/locations`, item create/update/bulk
+  patch accept `location_id`, JSON backup round-trips locations by path.
+  Web: dedicated `/collections/[id]/locations` tree manager, location picker
+  in item create / edit / duplicate / bulk-move, location path shown in card
+  + table views. Android: Room cache (`LocationEntity` + `LocationDao`,
+  schema v2), location dropdown in item detail and bulk-move sheet.
 - **Manual/asset bundles (planned)** — beyond per-item document uploads,
   add a reusable manual library that can store a primary manual plus
   related assets (diagrams, firmware, service sheets, parts lists), then

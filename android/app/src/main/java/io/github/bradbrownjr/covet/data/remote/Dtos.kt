@@ -133,7 +133,8 @@ data class ItemDto(
     val current_value: Double? = null,
     val rollup_current_value: Double? = null,
     val currency: String? = null,
-    val location: String? = null,
+    val location_id: String? = null,
+    val location_path: List<String>? = null,
     val identifiers: Map<String, Any?> = emptyMap(),
     val attrs: Map<String, Any?> = emptyMap(),
     val depleted: Boolean = false,
@@ -165,7 +166,7 @@ data class ItemPatch(
     val purchase_price: Double? = null,
     val current_value: Double? = null,
     val currency: String? = null,
-    val location: String? = null,
+    val location_id: String? = null,
     val depleted: Boolean? = null,
     val wanted: Boolean? = null,
 )
@@ -176,7 +177,7 @@ data class ItemBulkPatchRequest(
     val item_ids: List<String>,
     val depleted: Boolean? = null,
     val wanted: Boolean? = null,
-    val location: String? = null,
+    val location_id: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -265,4 +266,34 @@ data class DueAlertDto(
     val lot_id: String? = null,
     val due_at: String,
     val details: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class LocationDto(
+    val id: String,
+    val collection_id: String,
+    val parent_id: String? = null,
+    val name: String,
+    val kind: String = "container",
+    val notes: String? = null,
+    val qr_slug: String? = null,
+    val item_count: Int = 0,
+    val children: List<LocationDto> = emptyList(),
+)
+
+@JsonClass(generateAdapter = true)
+data class LocationCreate(
+    val collection_id: String,
+    val name: String,
+    val kind: String = "container",
+    val parent_id: String? = null,
+    val notes: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class LocationPatch(
+    val name: String? = null,
+    val kind: String? = null,
+    val parent_id: String? = null,
+    val notes: String? = null,
 )

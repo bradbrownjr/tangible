@@ -54,12 +54,14 @@ import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.BarcodeCandidateDto
 import io.github.bradbrownjr.covet.data.remote.BarcodeLookupRequest
+import io.github.bradbrownjr.covet.data.remote.LocationDto
 import io.github.bradbrownjr.covet.data.remote.ScrapeRequest
 import io.github.bradbrownjr.covet.data.remote.TagDto
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.repo.CategoryRepository
 import io.github.bradbrownjr.covet.data.repo.CollectionRepository
 import io.github.bradbrownjr.covet.data.repo.ItemRepository
+import io.github.bradbrownjr.covet.data.repo.LocationRepository
 import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
@@ -105,7 +107,8 @@ data class DetailUi(
     val contacts: List<ContactDto> = emptyList(),
     val selectedBulkTagId: String = "",
     val selectedBulkContactId: String = "",
-    val bulkMoveLocation: String = "",
+    val locations: List<LocationDto> = emptyList(),
+    val bulkMoveLocationId: String = "",
 )
 
 private fun formatItemValue(item: ItemDto): String? {
@@ -120,11 +123,33 @@ private fun formatItemValue(item: ItemDto): String? {
     }
 }
 
+/** Flatten a Location tree into (depth, node) pairs in display order. */
+internal fun flattenLocations(tree: List<LocationDto>): List<LocationDto> {
+    val out = mutableListOf<LocationDto>()
+    fun walk(node: LocationDto) {
+        out.add(node)
+        node.children.forEach(::walk)
+    }
+    tree.forEach(::walk)
+    return out
+}
+
+internal fun flattenLocationsWithDepth(tree: List<LocationDto>): List<Pair<Int, LocationDto>> {
+    val out = mutableListOf<Pair<Int, LocationDto>>()
+    fun walk(node: LocationDto, depth: Int) {
+        out.add(depth to node)
+        node.children.forEach { walk(it, depth + 1) }
+    }
+    tree.forEach { walk(it, 0) }
+    return out
+}
+
 @HiltViewModel
 class CollectionDetailViewModel @Inject constructor(
     private val collections: CollectionRepository,
     private val categories: CategoryRepository,
     private val items: ItemRepository,
+    private val locations: LocationRepository,
     private val api: CovetApi,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -143,6 +168,7 @@ class CollectionDetailViewModel @Inject constructor(
                 val cats = categories.load()
                 val tags = items.listTags()
                 val contacts = items.listContacts()
+                val locs = try { locations.listTree(collectionId) } catch (_: Throwable) { emptyList() }
                 val roots = cats.filter { it.parent_id == null }
                 // Only pre-select a category when the collection has an explicit default.
                 // Collections without a default get no pre-selection so the user must choose.
@@ -165,11 +191,15 @@ class CollectionDetailViewModel @Inject constructor(
                     selectedLeaf = defaultLeaf,
                     tags = tags,
                     contacts = contacts,
+                    locations = locs,
                     selectedBulkTagId = _state.value.selectedBulkTagId.takeIf { id ->
                         id.isNotBlank() && tags.any { it.id == id }
                     } ?: "",
                     selectedBulkContactId = _state.value.selectedBulkContactId.takeIf { id ->
                         id.isNotBlank() && contacts.any { it.id == id }
+                    } ?: "",
+                    bulkMoveLocationId = _state.value.bulkMoveLocationId.takeIf { id ->
+                        id.isNotBlank() && flattenLocations(locs).any { it.id == id }
                     } ?: "",
                 )
             } catch (t: Throwable) {
@@ -459,21 +489,21 @@ class CollectionDetailViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedBulkContactId = contactId)
     }
 
-    fun setBulkMoveLocation(location: String) {
-        _state.value = _state.value.copy(bulkMoveLocation = location)
+    fun setBulkMoveLocation(locationId: String) {
+        _state.value = _state.value.copy(bulkMoveLocationId = locationId)
     }
 
     fun bulkMoveLocation(clear: Boolean = false) {
         val ids = _state.value.selectedItemIds.toList()
         if (ids.isEmpty()) return
-        val location = if (clear) null else _state.value.bulkMoveLocation.trim().ifEmpty { null }
-        if (!clear && location == null) return
+        val locationId = if (clear) null else _state.value.bulkMoveLocationId.ifBlank { null }
+        if (!clear && locationId == null) return
         viewModelScope.launch {
             try {
-                items.bulkMoveLocation(collectionId, ids, location)
+                items.bulkMoveLocation(collectionId, ids, locationId)
                 _state.value = _state.value.copy(
                     selectedItemIds = emptySet(),
-                    bulkMoveLocation = if (clear) "" else _state.value.bulkMoveLocation,
+                    bulkMoveLocationId = if (clear) "" else _state.value.bulkMoveLocationId,
                 )
                 refresh()
             } catch (t: Throwable) {
@@ -717,9 +747,10 @@ fun CollectionDetailScreen(
                             allVisibleSelected = allVisibleSelected,
                             tags = s.tags,
                             contacts = s.contacts,
+                            locations = s.locations,
                             selectedBulkTagId = s.selectedBulkTagId,
                             selectedBulkContactId = s.selectedBulkContactId,
-                            bulkMoveLocation = s.bulkMoveLocation,
+                            bulkMoveLocationId = s.bulkMoveLocationId,
                             onSetBulkTag = vm::setBulkTag,
                             onSetBulkContact = vm::setBulkContact,
                             onSetBulkMoveLocation = vm::setBulkMoveLocation,
@@ -1107,9 +1138,10 @@ private fun BulkActionBar(
     allVisibleSelected: Boolean,
     tags: List<TagDto>,
     contacts: List<ContactDto>,
+    locations: List<LocationDto>,
     selectedBulkTagId: String,
     selectedBulkContactId: String,
-    bulkMoveLocation: String,
+    bulkMoveLocationId: String,
     onSetBulkTag: (String) -> Unit,
     onSetBulkContact: (String) -> Unit,
     onSetBulkMoveLocation: (String) -> Unit,
@@ -1130,8 +1162,13 @@ private fun BulkActionBar(
 ) {
     var tagMenuOpen by remember { mutableStateOf(false) }
     var contactMenuOpen by remember { mutableStateOf(false) }
+    var locationMenuOpen by remember { mutableStateOf(false) }
     val selectedTagName = tags.firstOrNull { it.id == selectedBulkTagId }?.name ?: "Tag…"
     val selectedContactName = contacts.firstOrNull { it.id == selectedBulkContactId }?.name ?: "Lend to…"
+    val flatLocations = remember(locations) { flattenLocationsWithDepth(locations) }
+    val selectedLocationName = flatLocations
+        .firstOrNull { it.second.id == bulkMoveLocationId }
+        ?.second?.name ?: "Location…"
 
     Row(
         modifier = Modifier
@@ -1174,16 +1211,25 @@ private fun BulkActionBar(
             onClick = onBulkTagRemove,
             enabled = selectedCount > 0 && selectedBulkTagId.isNotBlank(),
         ) { Text("Remove tag") }
-        OutlinedTextField(
-            value = bulkMoveLocation,
-            onValueChange = onSetBulkMoveLocation,
-            label = { Text("Location") },
-            singleLine = true,
-            modifier = Modifier.width(220.dp),
-        )
+        Box {
+            OutlinedButton(onClick = { locationMenuOpen = true }, enabled = flatLocations.isNotEmpty()) {
+                Text(selectedLocationName)
+            }
+            DropdownMenu(expanded = locationMenuOpen, onDismissRequest = { locationMenuOpen = false }) {
+                flatLocations.forEach { (depth, loc) ->
+                    DropdownMenuItem(
+                        text = { Text("${"  ".repeat(depth)}${loc.name}") },
+                        onClick = {
+                            onSetBulkMoveLocation(loc.id)
+                            locationMenuOpen = false
+                        },
+                    )
+                }
+            }
+        }
         OutlinedButton(
             onClick = onBulkMoveLocation,
-            enabled = selectedCount > 0 && bulkMoveLocation.isNotBlank(),
+            enabled = selectedCount > 0 && bulkMoveLocationId.isNotBlank(),
         ) { Text("Move") }
         OutlinedButton(
             onClick = onBulkClearLocation,

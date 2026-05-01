@@ -30,6 +30,7 @@ from covet.models import (
     ItemTag,
     ItemTemplate,
     Loan,
+    Location,
     Tag,
 )
 from covet.schemas import (
@@ -89,6 +90,15 @@ def _validate_parent(
             )
         seen.add(cursor.parent_id)
         cursor = db.get(Item, cursor.parent_id)
+
+
+def _validate_location(db: DBSession, location_id: str, collection_id: str) -> None:
+    loc = db.get(Location, location_id)
+    if loc is None or loc.collection_id != collection_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Location not found in this collection",
+        )
 
 
 def _apply_sort(
@@ -442,6 +452,8 @@ def create_item(
         )
     if data.get("parent_id"):
         _validate_parent(db, data["parent_id"], payload.collection_id, child_id=None)
+    if data.get("location_id"):
+        _validate_location(db, data["location_id"], payload.collection_id)
     if data.get("template_id"):
         tmpl = db.get(ItemTemplate, data["template_id"])
         if tmpl is None or tmpl.collection_id != payload.collection_id:
@@ -475,8 +487,8 @@ def bulk_patch_items(
         updates["depleted"] = payload.depleted
     if payload.wanted is not None:
         updates["wanted"] = payload.wanted
-    if "location" in payload.model_fields_set:
-        updates["location"] = (payload.location or "").strip() or None
+    if "location_id" in payload.model_fields_set:
+        updates["location_id"] = payload.location_id
     if "category_id" in payload.model_fields_set or "category" in payload.model_fields_set:
         category_id = payload.category_id
         if not category_id and payload.category:
@@ -852,6 +864,8 @@ def update_item(
         )
     if updates.get("parent_id"):
         _validate_parent(db, updates["parent_id"], item.collection_id, child_id=item.id)
+    if updates.get("location_id"):
+        _validate_location(db, updates["location_id"], item.collection_id)
     new_template_id = updates.get("template_id", item.template_id)
     if ("attrs" in updates or ("template_id" in updates and new_template_id)) and new_template_id:
         tmpl = db.get(ItemTemplate, new_template_id)

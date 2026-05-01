@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from covet.models.contact import Contact
     from covet.models.item_lot import ItemLot
     from covet.models.loan import Loan
+    from covet.models.location import Location
     from covet.models.photo import Photo
     from covet.models.tag import ItemTag
 
@@ -43,7 +44,12 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     acquired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    location: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    location_id: Mapped[str | None] = mapped_column(
+        String(26),
+        ForeignKey("locations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # Consumable-specific dates for FIFO management (e.g. pantry items).
     purchased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -94,6 +100,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     collection: Mapped[Collection] = relationship(back_populates="items")
     category: Mapped[Category] = relationship(lazy="joined")
     buyer: Mapped[Contact | None] = relationship()
+    location: Mapped[Location | None] = relationship(lazy="joined")
     photos: Mapped[list[Photo]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
     )

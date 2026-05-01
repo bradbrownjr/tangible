@@ -40,6 +40,8 @@ def _check_collection_read(db: DBSession, auth: AuthContext, collection_id: str)
 def _persist_items(
     db: DBSession, *, collection_id: str, items_data: list[dict]
 ) -> int:
+    from covet.api.locations import resolve_or_create as _resolve_loc
+
     count = 0
     slug_cache: dict[str, str] = {}
     ref_to_item: dict[str, Item] = {}
@@ -53,6 +55,10 @@ def _persist_items(
         item_ref = identifiers.pop("__csv_item_ref", None)
         parent_ref = identifiers.pop("__csv_parent_ref", None)
 
+        location_id = _resolve_loc(
+            db, collection_id=collection_id, name=raw.get("location")
+        )
+
         item = Item(
             collection_id=collection_id,
             category_id=slug_cache[slug],
@@ -64,7 +70,7 @@ def _persist_items(
             purchase_price=raw.get("purchase_price"),
             current_value=raw.get("current_value"),
             currency=raw.get("currency"),
-            location=raw.get("location"),
+            location_id=location_id,
             identifiers=identifiers,
             attrs=raw.get("attrs", {}) or {},
         )
@@ -140,7 +146,7 @@ def export_csv(
                 item.notes or "",
                 item.quantity,
                 item.condition or "",
-                item.location or "",
+                (item.location.name if item.location else ""),
                 item.currency or "",
                 item.purchase_price if item.purchase_price is not None else "",
                 item.current_value if item.current_value is not None else "",

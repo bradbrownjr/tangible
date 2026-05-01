@@ -112,7 +112,8 @@ export interface Item {
     current_value: number | null;
     rollup_current_value: number | null;
     currency: string | null;
-    location: string | null;
+    location_id: string | null;
+    location_path: string[] | null;
     identifiers: Record<string, unknown>;
     attrs: Record<string, unknown>;
     template_id: string | null;
@@ -189,6 +190,20 @@ export interface InvitationPreview {
     role: string;
     email: string | null;
     expires_at: string | null;
+}
+
+export type LocationKind = 'home' | 'floor' | 'room' | 'zone' | 'container';
+
+export interface LocationNode {
+    id: string;
+    collection_id: string;
+    name: string;
+    kind: LocationKind;
+    parent_id: string | null;
+    notes: string | null;
+    qr_slug: string | null;
+    item_count: number;
+    children: LocationNode[];
 }
 
 export interface AuditLogEntry {

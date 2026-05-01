@@ -35,8 +35,10 @@ import coil.compose.AsyncImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.ItemPatch
+import io.github.bradbrownjr.covet.data.remote.LocationDto
 import io.github.bradbrownjr.covet.data.remote.PhotoDto
 import io.github.bradbrownjr.covet.data.repo.ItemRepository
+import io.github.bradbrownjr.covet.data.repo.LocationRepository
 import io.github.bradbrownjr.covet.data.repo.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,13 +66,15 @@ data class ItemDetailUi(
     val purchasePrice: String = "",
     val currentValue: String = "",
     val currency: String = "",
-    val location: String = "",
+    val locationId: String = "",
+    val locations: List<LocationDto> = emptyList(),
 )
 
 @HiltViewModel
 class ItemDetailViewModel @Inject constructor(
     private val items: ItemRepository,
     private val photos: PhotoRepository,
+    private val locations: LocationRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val itemId: String = savedState.get<String>("itemId").orEmpty()
@@ -146,8 +150,14 @@ class ItemDetailViewModel @Inject constructor(
             purchasePrice = item.purchase_price?.toString().orEmpty(),
             currentValue = item.current_value?.toString().orEmpty(),
             currency = item.currency.orEmpty(),
-            location = item.location.orEmpty(),
+            locationId = item.location_id.orEmpty(),
         )
+        viewModelScope.launch {
+            try {
+                val locs = locations.listTree(item.collection_id)
+                _state.value = _state.value.copy(locations = locs)
+            } catch (_: Throwable) { /* keep empty list */ }
+        }
     }
 
     fun cancelEditing() {
@@ -175,7 +185,7 @@ class ItemDetailViewModel @Inject constructor(
                         purchase_price = s.purchasePrice.toDoubleOrNull(),
                         current_value = s.currentValue.toDoubleOrNull(),
                         currency = s.currency.trim().ifEmpty { null },
-                        location = s.location.trim().ifEmpty { null },
+                        location_id = s.locationId.ifBlank { null },
                     ),
                 )
                 _state.value = _state.value.copy(item = updated, saving = false, editing = false)
@@ -315,7 +325,7 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
             item.category_slug?.let { Field("Category", it) }
             Field("Quantity", item.quantity.toString())
             item.condition?.takeIf { it.isNotBlank() }?.let { Field("Condition", it) }
-            item.location?.takeIf { it.isNotBlank() }?.let { Field("Location", it) }
+            item.location_path?.takeIf { it.isNotEmpty() }?.let { Field("Location", it.joinToString(" / ")) }
             item.purchase_price?.let { Field("Purchase price", formatPrice(it, item.currency)) }
             item.current_value?.let { Field("Current value", formatPrice(it, item.currency)) }
             item.notes?.takeIf { it.isNotBlank() }?.let {
@@ -449,13 +459,47 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
                 modifier = Modifier.width(72.dp),
             )
         }
-        OutlinedTextField(
-            value = s.location,
-            onValueChange = { vm.update { copy(location = it) } },
-            label = { Text("Location") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        var locationMenuOpen by remember { mutableStateOf(false) }
+        val flat = remember(s.locations) {
+            val out = mutableListOf<Pair<Int, LocationDto>>()
+            fun walk(node: LocationDto, depth: Int) {
+                out.add(depth to node)
+                node.children.forEach { walk(it, depth + 1) }
+            }
+            s.locations.forEach { walk(it, 0) }
+            out
+        }
+        val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name
+            ?: "— No location —"
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { locationMenuOpen = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Location: $selectedName")
+            }
+            DropdownMenu(
+                expanded = locationMenuOpen,
+                onDismissRequest = { locationMenuOpen = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text("— No location —") },
+                    onClick = {
+                        vm.update { copy(locationId = "") }
+                        locationMenuOpen = false
+                    },
+                )
+                flat.forEach { (depth, loc) ->
+                    DropdownMenuItem(
+                        text = { Text("${"  ".repeat(depth)}${loc.name}") },
+                        onClick = {
+                            vm.update { copy(locationId = loc.id) }
+                            locationMenuOpen = false
+                        },
+                    )
+                }
+            }
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = s.purchasePrice,

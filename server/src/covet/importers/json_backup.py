@@ -57,6 +57,37 @@ def _model_to_dict(obj, fields: list[str]) -> dict[str, Any]:
     return {f: _serialize(getattr(obj, f)) for f in fields}
 
 
+def _location_path(item: Item) -> list[str]:
+    """Return the root-first chain of location names for an item."""
+    chain: list[str] = []
+    cursor = item.location
+    seen: set[str] = set()
+    while cursor is not None and cursor.id not in seen:
+        chain.append(cursor.name)
+        seen.add(cursor.id)
+        cursor = cursor.parent
+    return list(reversed(chain))
+
+
+def _resolve_location(
+    db: DBSession, collection_id: str, raw: dict[str, Any]
+) -> str | None:
+    """Resolve a backup payload's location reference to a Location id.
+
+    Accepts new-format ``location_path`` (list of names, root-first) or the
+    legacy v1 ``location`` text field (treated as a single top-level node).
+    """
+    from covet.api.locations import resolve_or_create, resolve_path_or_create
+
+    path = raw.get("location_path")
+    if isinstance(path, list) and path:
+        return resolve_path_or_create(db, collection_id=collection_id, path=path)
+    legacy = raw.get("location")
+    if isinstance(legacy, str):
+        return resolve_or_create(db, collection_id=collection_id, name=legacy)
+    return None
+
+
 _COLLECTION_FIELDS = ["id", "name", "description", "icon", "is_public"]
 _ITEM_FIELDS = [
     "id",
@@ -70,7 +101,6 @@ _ITEM_FIELDS = [
     "current_value",
     "currency",
     "acquired_at",
-    "location",
     "identifiers",
     "attrs",
 ]
@@ -152,7 +182,11 @@ def export_user(db: DBSession, *, user: User) -> dict[str, Any]:
         "exported_for": user.username,
         "collections": [_model_to_dict(c, _COLLECTION_FIELDS) for c in collections],
         "items": [
-            {**_model_to_dict(i, _ITEM_FIELDS), "category_slug": i.category.slug}
+            {
+                **_model_to_dict(i, _ITEM_FIELDS),
+                "category_slug": i.category.slug,
+                "location_path": _location_path(i),
+            }
             for i in items
         ],
         "photos": [_model_to_dict(p, _PHOTO_FIELDS) for p in photos],
@@ -237,7 +271,9 @@ def import_backup(
                 purchase_price=raw.get("purchase_price"),
                 current_value=raw.get("current_value"),
                 currency=raw.get("currency"),
-                location=raw.get("location"),
+                location_id=_resolve_location(
+                    db, coll_id_map[old_cid], raw
+                ),
                 identifiers=raw.get("identifiers", {}) or {},
                 attrs=raw.get("attrs", {}) or {},
             )

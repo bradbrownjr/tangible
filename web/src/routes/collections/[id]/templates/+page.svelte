@@ -286,6 +286,7 @@
         <a class="tab tab-active" href="/collections/{cid}/templates" aria-current="page">
             Templates
         </a>
+        <a class="tab" href="/collections/{cid}/locations">Locations</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
     </nav>
 

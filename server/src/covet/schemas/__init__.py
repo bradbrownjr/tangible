@@ -57,6 +57,7 @@ from covet.schemas.item_template import (
     TemplateField,
 )
 from covet.schemas.loan import LoanCreate, LoanRead, LoanUpdate
+from covet.schemas.location import LocationCreate, LocationKind, LocationRead, LocationUpdate
 from covet.schemas.maintenance import (
     MaintenanceTaskCreate,
     MaintenanceTaskRead,
@@ -77,9 +78,9 @@ from covet.schemas.tag import TagCreate, TagRead, TagUpdate
 from covet.schemas.user import UserCreate, UserRead, UserUpdate
 from covet.schemas.webhook import (
     WebhookCreate,
+    WebhookDeliveryRead,
     WebhookRead,
     WebhookUpdate,
-    WebhookDeliveryRead,
 )
 
 __all__ = [
@@ -119,6 +120,10 @@ __all__ = [
     "LoanCreate",
     "LoanRead",
     "LoanUpdate",
+    "LocationCreate",
+    "LocationKind",
+    "LocationRead",
+    "LocationUpdate",
     "LoginRequest",
     "MaintenanceTaskCreate",
     "MaintenanceTaskRead",
@@ -154,7 +159,7 @@ __all__ = [
     "UserRead",
     "UserUpdate",
     "WebhookCreate",
+    "WebhookDeliveryRead",
     "WebhookRead",
     "WebhookUpdate",
-    "WebhookDeliveryRead",
 ]

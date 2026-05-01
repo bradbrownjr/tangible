@@ -52,6 +52,19 @@ interface CovetApi {
     @GET("contacts")
     suspend fun listContacts(): List<ContactDto>
 
+    // --- Locations ---
+    @GET("locations")
+    suspend fun listLocations(@Query("collection_id") collectionId: String): List<LocationDto>
+
+    @POST("locations")
+    suspend fun createLocation(@Body body: LocationCreate): LocationDto
+
+    @PATCH("locations/{id}")
+    suspend fun patchLocation(@Path("id") id: String, @Body body: LocationPatch): LocationDto
+
+    @DELETE("locations/{id}")
+    suspend fun deleteLocation(@Path("id") id: String)
+
     // --- Items ---
     @GET("items")
     suspend fun listItems(

@@ -22,7 +22,7 @@ class ItemBase(BaseModel):
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     acquired_at: datetime | None = None
     expires_at: datetime | None = None
-    location: str | None = None
+    location_id: str | None = None
     identifiers: dict[str, Any] = Field(default_factory=dict)
     attrs: dict[str, Any] = Field(default_factory=dict)
     template_id: str | None = None
@@ -65,7 +65,7 @@ class ItemUpdate(BaseModel):
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     acquired_at: datetime | None = None
     expires_at: datetime | None = None
-    location: str | None = None
+    location_id: str | None = None
     identifiers: dict[str, Any] | None = None
     attrs: dict[str, Any] | None = None
     template_id: str | None = None
@@ -94,6 +94,7 @@ class ItemRead(ItemBase):
     collection_id: str
     category_id: str
     category_slug: str | None = None
+    location_path: list[str] | None = None
     primary_photo_id: str | None = None
     flagged_note: str | None = None
     flagged_at: datetime | None = None
@@ -108,6 +109,17 @@ class ItemRead(ItemBase):
         instance = super().model_validate(obj, *args, **kwargs)
         if slug is not None:
             instance.category_slug = slug
+        # Materialize the location path (root-first list of names) for display.
+        loc = getattr(obj, "location", None)
+        if loc is not None:
+            chain: list[str] = []
+            cursor = loc
+            seen: set[str] = set()
+            while cursor is not None and cursor.id not in seen:
+                chain.append(cursor.name)
+                seen.add(cursor.id)
+                cursor = cursor.parent
+            instance.location_path = list(reversed(chain))
         # Pull primary photo id from the pre-loaded photos relationship (if any).
         photos = getattr(obj, "photos", None)
         if photos is not None:
@@ -135,7 +147,7 @@ class ItemBulkPatchRequest(BaseModel):
     item_ids: list[str] = Field(min_length=1, max_length=500)
     depleted: bool | None = None
     wanted: bool | None = None
-    location: str | None = None
+    location_id: str | None = None
     category_id: str | None = None
     category: str | None = None
 
