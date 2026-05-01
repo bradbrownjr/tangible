@@ -111,6 +111,21 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
   user-oriented (no internal refactor noise).
 - Committed and pushed; CI green on `main`.
 
+## Phase Completion Guardrail ⚠️
+
+**CRITICAL: Never change a phase from "in progress" to "✅ COMPLETE" without explicit audit:**
+
+1. **Read the full ROADMAP section** for the phase top-to-bottom.
+2. **Check for "pending", "planned", or "deferred"** — If any requirements remain in those states, the phase is NOT complete.
+3. **Verify implementation** — For each listed requirement, confirm:
+   - Code exists and is in the repo
+   - Tests pass locally (`pytest`, `npm run check`, etc.)
+   - ROADMAP, CHANGELOG, and code descriptions match
+4. **Before marking done, ask the user:** "Ready to mark Phase X complete?" rather than auto-completing. This is a checkpoint to prevent premature closure (happens too easily with large multi-part phases).
+5. **If in doubt, stop short** — Leave the phase "in progress" and summarize what's done vs. pending. The user will clarify scope.
+
+This is a learned rule: Phase 10 and early Phase 11 were marked complete prematurely, causing wasted tokens on audit and rework. The guardrail prevents repeating that pattern.
+
 ---
 
 ## Project Layout
