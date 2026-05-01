@@ -50,7 +50,28 @@ export const api = {
     post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
     patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
     put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
-    delete: <T>(path: string) => request<T>('DELETE', path)
+    delete: <T>(path: string) => request<T>('DELETE', path),
+    upload: async <T>(path: string, formData: FormData): Promise<T> => {
+        const res = await fetch('/api' + path, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { Accept: 'application/json' },
+            body: formData
+        });
+        const text = await res.text();
+        let parsed: unknown = null;
+        if (text) {
+            try { parsed = JSON.parse(text); } catch { parsed = text; }
+        }
+        if (!res.ok) {
+            const message =
+                (parsed && typeof parsed === 'object' && 'detail' in parsed
+                    ? String((parsed as { detail: unknown }).detail)
+                    : res.statusText) || `HTTP ${res.status}`;
+            throw new ApiError(res.status, parsed, message);
+        }
+        return parsed as T;
+    }
 };
 
 // --- Domain types (mirror server schemas) --------------------------------
@@ -204,6 +225,34 @@ export interface LocationNode {
     qr_slug: string | null;
     item_count: number;
     children: LocationNode[];
+}
+
+export type BundleAssetKind = 'manual' | 'diagram' | 'firmware' | 'service' | 'parts' | 'other';
+
+export interface BundleAsset {
+    id: string;
+    bundle_id: string;
+    sha256: string;
+    mime_type: string;
+    byte_size: number;
+    filename: string;
+    label: string | null;
+    kind: BundleAssetKind;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ManualBundle {
+    id: string;
+    collection_id: string;
+    title: string;
+    description: string | null;
+    primary_asset_id: string | null;
+    created_at: string;
+    updated_at: string;
+    assets: BundleAsset[];
+    item_ids: string[];
 }
 
 export interface AuditLogEntry {

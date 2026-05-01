@@ -132,4 +132,14 @@ interface CovetApi {
 
     @DELETE("photos/{id}")
     suspend fun deletePhoto(@Path("id") id: String)
+
+    // --- Manual / asset bundles ---
+    @GET("collections/{cid}/bundles")
+    suspend fun listBundles(@Path("cid") collectionId: String): List<ManualBundleDto>
+
+    @GET("items/{id}/bundles")
+    suspend fun listItemBundles(@Path("id") itemId: String): List<ManualBundleDto>
+
+    @GET("bundles/{id}")
+    suspend fun getBundle(@Path("id") bundleId: String): ManualBundleDto
 }

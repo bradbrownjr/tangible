@@ -16,6 +16,7 @@ from covet.models.item_template import ItemTemplate
 from covet.models.loan import Loan
 from covet.models.location import Location
 from covet.models.maintenance import MaintenanceTask
+from covet.models.manual_bundle import BundleAsset, BundleItem, ManualBundle
 from covet.models.metadata_cache import MetadataCacheEntry
 from covet.models.photo import Photo
 from covet.models.scraper_registry_pin import ScraperRegistryPin
@@ -36,6 +37,8 @@ __all__ = [
     "AuditLogEntry",
     "AutomergeChange",
     "AutomergeDoc",
+    "BundleAsset",
+    "BundleItem",
     "Category",
     "Collection",
     "CollectionMembership",
@@ -49,6 +52,7 @@ __all__ = [
     "Loan",
     "Location",
     "MaintenanceTask",
+    "ManualBundle",
     "MetadataCacheEntry",
     "OIDCIdentity",
     "Photo",

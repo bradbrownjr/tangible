@@ -63,6 +63,13 @@ from covet.schemas.maintenance import (
     MaintenanceTaskRead,
     MaintenanceTaskUpdate,
 )
+from covet.schemas.manual_bundle import (
+    BundleAssetRead,
+    BundleAssetUpdate,
+    ManualBundleCreate,
+    ManualBundleRead,
+    ManualBundleUpdate,
+)
 from covet.schemas.photo import PhotoFromUrl, PhotoRead, PhotoUpdate
 from covet.schemas.sync import (
     SyncChange,
@@ -85,6 +92,8 @@ from covet.schemas.webhook import (
 
 __all__ = [
     "AuditLogRead",
+    "BundleAssetRead",
+    "BundleAssetUpdate",
     "CategoryRead",
     "CollectionCreate",
     "CollectionRead",
@@ -128,6 +137,9 @@ __all__ = [
     "MaintenanceTaskCreate",
     "MaintenanceTaskRead",
     "MaintenanceTaskUpdate",
+    "ManualBundleCreate",
+    "ManualBundleRead",
+    "ManualBundleUpdate",
     "MeUpdate",
     "MembershipCreate",
     "MembershipDetail",

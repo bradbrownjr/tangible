@@ -8,6 +8,13 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Manual / asset bundles.** A new collection-scoped "manual library"
+  lets you upload a primary manual plus related assets (diagrams,
+  firmware, service sheets, parts lists) once and link the bundle to
+  many items. Manage bundles from the new **Bundles** tab on each
+  collection: create, upload assets by kind, mark a primary asset,
+  link/unlink items. The Android client surfaces linked bundles on
+  the item detail screen.
 - **Location hierarchy.** Flat `item.location` text is replaced with a
   proper location tree (`home → floor → room → zone → container`, arbitrary
   depth). Manage locations from the new **Locations** tab on each

@@ -16,6 +16,7 @@ from covet.api import items as items_router
 from covet.api import loans as loans_router
 from covet.api import locations as locations_router
 from covet.api import maintenance as maintenance_router
+from covet.api import manual_bundles as manual_bundles_router
 from covet.api import meta as meta_router
 from covet.api import metadata as metadata_router
 from covet.api import photos as photos_router
@@ -46,6 +47,7 @@ api_router.include_router(metadata_router.router)
 api_router.include_router(documents_router.router)
 api_router.include_router(maintenance_router.router)
 api_router.include_router(photos_router.router)
+api_router.include_router(manual_bundles_router.router)
 api_router.include_router(system_router.router)
 api_router.include_router(webhooks_router.router)
 

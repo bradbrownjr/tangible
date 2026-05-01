@@ -297,3 +297,31 @@ data class LocationPatch(
     val parent_id: String? = null,
     val notes: String? = null,
 )
+
+@JsonClass(generateAdapter = true)
+data class BundleAssetDto(
+    val id: String,
+    val bundle_id: String,
+    val sha256: String,
+    val mime_type: String,
+    val byte_size: Long,
+    val filename: String,
+    val label: String? = null,
+    val kind: String = "other",
+    val sort_order: Int = 0,
+    val created_at: String,
+    val updated_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class ManualBundleDto(
+    val id: String,
+    val collection_id: String,
+    val title: String,
+    val description: String? = null,
+    val primary_asset_id: String? = null,
+    val created_at: String,
+    val updated_at: String,
+    val assets: List<BundleAssetDto> = emptyList(),
+    val item_ids: List<String> = emptyList(),
+)

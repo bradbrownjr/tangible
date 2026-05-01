@@ -36,9 +36,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.ItemPatch
 import io.github.bradbrownjr.covet.data.remote.LocationDto
+import io.github.bradbrownjr.covet.data.remote.ManualBundleDto
 import io.github.bradbrownjr.covet.data.remote.PhotoDto
 import io.github.bradbrownjr.covet.data.repo.ItemRepository
 import io.github.bradbrownjr.covet.data.repo.LocationRepository
+import io.github.bradbrownjr.covet.data.repo.BundleRepository
 import io.github.bradbrownjr.covet.data.repo.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +70,7 @@ data class ItemDetailUi(
     val currency: String = "",
     val locationId: String = "",
     val locations: List<LocationDto> = emptyList(),
+    val bundles: List<ManualBundleDto> = emptyList(),
 )
 
 @HiltViewModel
@@ -75,6 +78,7 @@ class ItemDetailViewModel @Inject constructor(
     private val items: ItemRepository,
     private val photos: PhotoRepository,
     private val locations: LocationRepository,
+    private val bundles: BundleRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val itemId: String = savedState.get<String>("itemId").orEmpty()
@@ -90,6 +94,7 @@ class ItemDetailViewModel @Inject constructor(
                 val item = items.get(itemId)
                 _state.value = _state.value.copy(item = item, loading = false)
                 loadPhotos()
+                loadBundles()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(loading = false, error = t.message)
             }
@@ -105,6 +110,15 @@ class ItemDetailViewModel @Inject constructor(
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(photosLoading = false)
             }
+        }
+    }
+
+    fun loadBundles() {
+        viewModelScope.launch {
+            try {
+                val list = bundles.listForItem(itemId)
+                _state.value = _state.value.copy(bundles = list)
+            } catch (_: Throwable) { /* keep empty list */ }
         }
     }
 
@@ -332,6 +346,23 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
                 Spacer(Modifier.height(4.dp))
                 Text("Notes", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(it, style = MaterialTheme.typography.bodyMedium)
+            }
+            if (s.bundles.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text("Manuals", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                s.bundles.forEach { b ->
+                    Text(b.title, style = MaterialTheme.typography.bodyMedium)
+                    if (!b.description.isNullOrBlank()) {
+                        Text(b.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (b.assets.isNotEmpty()) {
+                        Text(
+                            "${b.assets.size} asset${if (b.assets.size == 1) "" else "s"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }

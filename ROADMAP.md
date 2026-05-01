@@ -161,13 +161,13 @@ eventually makes and then stops maintaining.
   in item create / edit / duplicate / bulk-move, location path shown in card
   + table views. Android: Room cache (`LocationEntity` + `LocationDao`,
   schema v2), location dropdown in item detail and bulk-move sheet.
-- **Manual/asset bundles (planned)** — beyond per-item document uploads,
-  add a reusable manual library that can store a primary manual plus
-  related assets (diagrams, firmware, service sheets, parts lists), then
-  link one bundle to multiple items. Scope: database model (bundles table,
-  bundle_items join), API endpoints (CRUD bundles, attach/detach), web UI
-  for bundle management and item → bundle linking, photo gallery for bundle
-  assets.
+- **Manual/asset bundles** ✅ — reusable manual library shipped: server
+  models (`manual_bundles`, `bundle_assets`, `bundle_items`), CRUD +
+  asset upload/download/primary-flag + bundle↔item linking API,
+  web management page at `/collections/[id]/bundles` (create / edit /
+  delete bundles, multipart asset upload by kind, mark primary, link
+  and unlink items), Android viewer surfaces linked bundles on the
+  item detail screen.
 
 ### New top-level category roots
 

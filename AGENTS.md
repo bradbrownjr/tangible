@@ -348,6 +348,7 @@ the affected file column is preserved.**
 | Tags / item-tags | `server/src/covet/api/tags.py`, `models/tag.py` | `tag`, `item_tag` |
 | Contacts + loans | `server/src/covet/api/loans.py`, `models/{contact,loan}.py` | `loan`, `contact` |
 | Photos (multipart, sha256 dedupe) | `server/src/covet/api/photos.py`, `models/photo.py` | `POST /photos`, `_photo_path` |
+| Manual / asset bundles | `server/src/covet/api/manual_bundles.py`, `models/manual_bundle.py`, `web/src/routes/collections/[id]/bundles/+page.svelte`, android `data/repo/Repositories.kt` (`BundleRepository`) | `GET/POST/PATCH/DELETE /collections/{id}/bundles`, `POST /bundles/{id}/assets`, `POST /bundles/{id}/items/{item_id}` |
 | Sync (CRDT changes + snapshots) | `server/src/covet/api/sync.py`, `sync/automerge.py` | `GET/POST /sync/{collection_id}`, `apply_changes` |
 | Importers (CLZ, generic CSV, JSON) | `server/src/covet/importers/{clz,csv_importer,json_backup}.py`, `api/imports.py` | `clz`, `csv`, `json_backup` |
 | Backup / restore CLI | `server/src/covet/cli.py`, `importers/json_backup.py` | `covet backup`, `covet restore`, `covet version` |

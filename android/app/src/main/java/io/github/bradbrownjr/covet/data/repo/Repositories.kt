@@ -28,6 +28,7 @@ import io.github.bradbrownjr.covet.data.remote.ItemPatch
 import io.github.bradbrownjr.covet.data.remote.LocationCreate
 import io.github.bradbrownjr.covet.data.remote.LocationDto
 import io.github.bradbrownjr.covet.data.remote.LocationPatch
+import io.github.bradbrownjr.covet.data.remote.ManualBundleDto
 import io.github.bradbrownjr.covet.data.remote.PhotoDto
 import io.github.bradbrownjr.covet.data.remote.RestockRequest
 import io.github.bradbrownjr.covet.data.remote.TagDto
@@ -352,4 +353,18 @@ class LocationRepository @Inject constructor(
         dao.delete(id)
         listTree(collectionId)
     }
+}
+
+@Singleton
+class BundleRepository @Inject constructor(
+    private val api: CovetApi,
+) {
+    suspend fun listForCollection(collectionId: String): List<ManualBundleDto> =
+        api.listBundles(collectionId)
+
+    suspend fun listForItem(itemId: String): List<ManualBundleDto> =
+        api.listItemBundles(itemId)
+
+    suspend fun get(bundleId: String): ManualBundleDto =
+        api.getBundle(bundleId)
 }
