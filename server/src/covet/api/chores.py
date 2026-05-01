@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session as DBSession
 
 from covet.auth.deps import AuthContext, collection_role, require_user
 from covet.db import get_session
-from covet.models import Chore, ChoreCompletion, Collection
+from covet.models import Chore, ChoreCompletion, Collection, Item
 from covet.schemas import (
     ChoreCompletePayload,
     ChoreCompletionRead,
@@ -20,6 +20,7 @@ from covet.schemas import (
     ChoreRead,
     ChoreUpdate,
 )
+from covet.schemas.maintenance import QuickChorePayload
 
 router = APIRouter(tags=["chores"])
 
@@ -194,3 +195,62 @@ def chore_history(
             headers={"Content-Disposition": f'attachment; filename="chore-{chore_id}-history.csv"'},
         )
     return completions
+
+
+@router.post("/items/{item_id}/quick-chore", response_model=ChoreRead, status_code=status.HTTP_200_OK)
+def quick_chore(
+    item_id: str,
+    payload: QuickChorePayload,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ChoreRead:
+    """Find-or-create a named chore for this item's collection and complete it immediately.
+
+    If a chore with the given name already exists in the collection it is reused.
+    If it doesn't exist, one is created with the supplied interval_days.
+    Either way the chore is marked complete right now.
+    """
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+
+    chore = db.scalars(
+        select(Chore).where(
+            Chore.collection_id == item.collection_id,
+            Chore.name == payload.chore_name,
+        )
+    ).first()
+
+    now = datetime.now(UTC)
+
+    if chore is None:
+        chore = Chore(
+            collection_id=item.collection_id,
+            name=payload.chore_name,
+            interval_days=payload.interval_days,
+            last_completed_at=now,
+            next_due_at=(now + timedelta(days=payload.interval_days)) if payload.interval_days else None,
+        )
+        db.add(chore)
+        db.flush()
+    else:
+        if payload.interval_days is not None and chore.interval_days is None:
+            chore.interval_days = payload.interval_days
+        chore.last_completed_at = now
+        chore.next_due_at = (
+            now + timedelta(days=chore.interval_days) if chore.interval_days else None
+        )
+
+    completion = ChoreCompletion(
+        chore_id=chore.id,
+        completed_at=now,
+        notes=payload.notes,
+        cost=payload.cost,
+        currency=payload.currency,
+        technician=payload.technician,
+    )
+    db.add(completion)
+    db.commit()
+    db.refresh(chore)
+    return ChoreRead.model_validate(chore)

@@ -174,6 +174,23 @@ run generator, etc. Set an optional interval (days) and next-due date.
 Clicking **Mark done** records a timestamped completion entry with optional
 notes, cost, and technician, and recomputes the next due date.
 
+### Quick-action shortcuts for home equipment
+
+Items in specific home-equipment categories show a one-tap action button
+directly on the item card (both grid and table views):
+
+| Category | Button label | Default interval |
+|---|---|---|
+| HVAC / Furnace / Air Handler | Log filter change | 60 days |
+| Refrigerator | Log filter change | 180 days |
+| Water Service Filtration | Log filter service | 90 days |
+| Generator | Ran generator today | 30 days |
+
+Tapping the button auto-creates (or reuses) a named chore for that item and
+records a completion immediately. The chore then appears in the **Chores** tab
+and **Maintenance** agenda with the updated next-due date. No manual chore
+setup is required.
+
 ### Low-stock alerts
 
 Set a **minimum quantity** on any inventory item. When the item's quantity

@@ -169,3 +169,47 @@ def test_chore_viewer_cannot_write(client) -> None:
     assert client.get(f"/api/chores/{chore_id}").status_code == 200
     assert client.post(f"/api/chores/{chore_id}/complete").status_code == 403
     assert client.delete(f"/api/chores/{chore_id}").status_code == 403
+
+
+def test_quick_chore(client) -> None:
+    """POST /items/{id}/quick-chore finds-or-creates a chore and completes it."""
+    cid = _setup(client, "quickuser")
+    iid = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "home_equipment.generator", "title": "Honda Generator"},
+    ).json()["id"]
+
+    # First call creates the chore and completes it.
+    r = client.post(
+        f"/api/items/{iid}/quick-chore",
+        json={"chore_name": "Honda Generator — run log", "interval_days": 30},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["name"] == "Honda Generator — run log"
+    assert data["last_completed_at"] is not None
+    assert data["next_due_at"] is not None
+    chore_id = data["id"]
+
+    # Second call reuses the same chore and adds another completion.
+    r2 = client.post(
+        f"/api/items/{iid}/quick-chore",
+        json={"chore_name": "Honda Generator — run log", "interval_days": 30, "notes": "ran 20 min"},
+    )
+    assert r2.status_code == 200
+    assert r2.json()["id"] == chore_id  # same chore
+
+    history = client.get(f"/api/chores/{chore_id}/history").json()
+    assert len(history) == 2
+
+    # Viewer cannot use quick-chore.
+    _register(client, "quickview", "hunter22-secure")
+    client.post(
+        f"/api/collections/{cid}/members",
+        json={"user_identifier": "quickview", "role": "viewer"},
+    )
+    _login(client, "quickview")
+    assert client.post(
+        f"/api/items/{iid}/quick-chore",
+        json={"chore_name": "Honda Generator — run log"},
+    ).status_code == 403

@@ -344,20 +344,15 @@ history, and proactive notifications across every asset.
   (clean gutters, test smoke detectors, drain water heater sediment,
   run generator, flush water softener) with recurrence interval and
   completion log. Per-collection **Chores** tab in web UI.
-- **Furnace filter workflow** — guided task flow for filter changes
-  with a default schedule choice (every 2 months or every 3 months),
-  plus custom interval; supports storing filter size/spec and linking
-  to replacement filter inventory. (planned)
-- **Refrigerator filter workflow** — recurring schedule for internal
-  fridge water filters with part number, last changed date, next due
-  date, and inventory linkage for replacement cartridges. (planned)
-- **Water service filter workflow** — recurring schedule for
-  whole-home/under-sink filtration service with stage-specific part
-  numbers, last serviced date, next due date, and inventory linkage for
-  replacement cartridges/canisters. (planned)
-- **Generator run log shortcut** — one-tap "I ran the generator today"
-  action from the item detail, stamping last run date and resetting the
-  overdue alert. Backed by a maintenance task completion. (planned)
+- **Furnace / refrigerator / water filter workflows** — ✅ one-tap
+  "Log filter change" / "Log filter service" button appears directly
+  on HVAC, Refrigerator, and Water Service Filtration item cards.
+  Auto-creates (or reuses) a named chore for that item and records a
+  completion. Default intervals: 60 days (furnace), 180 days (fridge),
+  90 days (water filter). Accessible via `POST /items/{id}/quick-chore`.
+- **Generator run log shortcut** — ✅ "Ran generator today" one-tap
+  action on Generator item cards. Stamps a completion on the generator's
+  run-log chore and resets the 30-day overdue alert.
 
 ---
 

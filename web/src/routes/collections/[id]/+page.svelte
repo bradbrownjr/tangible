@@ -97,6 +97,49 @@
         return root === 'spices'; // spices root includes pantry items
     }
 
+    // Quick-action config for maintenance-relevant categories.
+    const QUICK_ACTIONS: Record<string, { label: string; choreName: (title: string) => string; intervalDays: number }> = {
+        'home_equipment.hvac': {
+            label: 'Log filter change',
+            choreName: (title) => `${title} — filter change`,
+            intervalDays: 60,
+        },
+        'home_equipment.refrigerator': {
+            label: 'Log filter change',
+            choreName: (title) => `${title} — filter change`,
+            intervalDays: 180,
+        },
+        'home_equipment.water_filtration': {
+            label: 'Log filter service',
+            choreName: (title) => `${title} — filter service`,
+            intervalDays: 90,
+        },
+        'home_equipment.generator': {
+            label: 'Ran generator today',
+            choreName: (title) => `${title} — run log`,
+            intervalDays: 30,
+        },
+    };
+
+    function quickActionFor(slug: string | null) {
+        if (!slug) return null;
+        return QUICK_ACTIONS[slug] ?? null;
+    }
+
+    async function triggerQuickAction(item: Item) {
+        const action = quickActionFor(item.category_slug);
+        if (!action) return;
+        try {
+            await api.post(`/items/${item.id}/quick-chore`, {
+                chore_name: action.choreName(item.title),
+                interval_days: action.intervalDays,
+            });
+            await load();
+        } catch (err) {
+            error = (err as Error).message;
+        }
+    }
+
     const cid = $derived(page.params.id ?? '');
     const roots = $derived(rootCategories(categories));
     const canEdit = $derived(
@@ -1064,6 +1107,9 @@
                         {#if canEdit}
                             <div class="item-card-actions">
                                 <button type="button" class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                {#if quickActionFor(i.category_slug)}
+                                    <button type="button" class="secondary" onclick={() => triggerQuickAction(i)} disabled={i.archived_at != null}>{quickActionFor(i.category_slug)!.label}</button>
+                                {/if}
                                 <button type="button" class="secondary" onclick={() => duplicateItem(i)} disabled={i.archived_at != null}>Duplicate</button>
                                 <button
                                     type="button"
@@ -1184,6 +1230,9 @@
                             {#if canEdit}
                                 <td class="row-actions">
                                     <button class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                    {#if quickActionFor(i.category_slug)}
+                                        <button class="secondary" onclick={() => triggerQuickAction(i)} disabled={i.archived_at != null}>{quickActionFor(i.category_slug)!.label}</button>
+                                    {/if}
                                     <button class="secondary" onclick={() => duplicateItem(i)} disabled={i.archived_at != null}>Duplicate</button>
                                     <button
                                         type="button"

@@ -104,6 +104,17 @@ class ChoreCompletePayload(BaseModel):
     technician: str | None = Field(default=None, max_length=128)
 
 
+class QuickChorePayload(BaseModel):
+    """Body for POST /items/{item_id}/quick-chore."""
+
+    chore_name: str = Field(min_length=1, max_length=128)
+    interval_days: int | None = Field(default=None, ge=1, le=36500)
+    notes: str | None = None
+    cost: Decimal | None = Field(default=None, ge=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    technician: str | None = Field(default=None, max_length=128)
+
+
 class ChoreCompletionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -14,6 +14,7 @@ All notable changes to **Covet** are documented here. Format follows
 - **Low-stock alerts.** Set a `minimum_quantity` on any inventory item. Items below that threshold surface in the unified alerts feed under the "low_stock" kind.
 - **Email notifications.** Opt-in per-kind email digests for maintenance tasks, chores, expiry dates, and low-stock alerts. Configure lead time (days) per alert type in **Settings → Email notifications**. Send a test digest immediately with "Send digest now". Requires SMTP configured by the server operator.
 - **Android maintenance agenda.** New **Maintenance** screen in the Android app shows all upcoming and overdue alerts across collections, filterable by time window (7/14/30/60/90 days) and alert kind.
+- **Quick-action shortcuts for home equipment.** Items in the HVAC/Furnace, Refrigerator, Water Service Filtration, and Generator categories now show a one-tap action button — "Log filter change" or "Ran generator today" — directly on the item card. Each tap auto-creates (or reuses) a dedicated chore and records a completion, keeping maintenance history current without navigating to the Chores tab.
 
 - **Manual / asset bundles.** A new collection-scoped "manual library"
   lets you upload a primary manual plus related assets (diagrams,
