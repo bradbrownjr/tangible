@@ -395,3 +395,80 @@ def test_item_bulk_actions_require_editor_role(client) -> None:
         json={"collection_id": cid, "item_ids": [item_id]},
     )
     assert denied_delete.status_code == 403
+
+
+def test_item_archive_restore_workflow(client) -> None:
+    _signup_and_login(client, "archive")
+    cid = client.post("/api/collections", json={"name": "Archive flow"}).json()["id"]
+    created = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Old DVD"},
+    )
+    assert created.status_code == 201, created.text
+    item_id = created.json()["id"]
+
+    archived = client.post(
+        f"/api/items/{item_id}/archive",
+        json={
+            "disposition_type": "sold",
+            "disposition_amount": "12.50",
+            "disposition_buyer": "Local buyer",
+            "disposition_note": "Garage sale",
+            "disposition_at": "2026-05-01T10:00:00Z",
+        },
+    )
+    assert archived.status_code == 200, archived.text
+    body = archived.json()
+    assert body["archived_at"] is not None
+    assert body["disposition_type"] == "sold"
+    assert body["disposition_amount"] == "12.50"
+    assert body["disposition_buyer"] == "Local buyer"
+
+    active = client.get("/api/items", params={"collection_id": cid})
+    assert active.status_code == 200
+    assert active.json() == []
+
+    archived_only = client.get(
+        "/api/items",
+        params={"collection_id": cid, "include_archived": "true", "archived": "true"},
+    )
+    assert archived_only.status_code == 200
+    assert [x["id"] for x in archived_only.json()] == [item_id]
+
+    restored = client.post(f"/api/items/{item_id}/restore")
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["archived_at"] is None
+    assert restored.json()["disposition_type"] is None
+
+    active_again = client.get("/api/items", params={"collection_id": cid})
+    assert active_again.status_code == 200
+    assert [x["id"] for x in active_again.json()] == [item_id]
+
+
+def test_item_archive_restore_requires_editor_role(client) -> None:
+    _signup_and_login(client, "archive_owner")
+    cid = client.post("/api/collections", json={"name": "Archive ACL"}).json()["id"]
+    item_id = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "ACL item"},
+    ).json()["id"]
+    client.post(
+        "/api/auth/register",
+        json={"username": "archive_viewer", "password": "hunter22-secure", "email": "av@x.io"},
+    )
+    client.post(
+        f"/api/collections/{cid}/members",
+        json={"user_identifier": "archive_viewer", "role": "viewer"},
+    )
+
+    client.post("/api/auth/logout")
+    client.post(
+        "/api/auth/login",
+        json={"username": "archive_viewer", "password": "hunter22-secure"},
+    )
+
+    denied_archive = client.post(f"/api/items/{item_id}/archive", json={"disposition_type": "disposed"})
+    assert denied_archive.status_code == 403
+
+    denied_restore = client.post(f"/api/items/{item_id}/restore")
+    assert denied_restore.status_code == 403

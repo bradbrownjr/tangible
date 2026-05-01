@@ -209,6 +209,9 @@ require new environment variables or reverse-proxy changes:
 - CSV hierarchy round-trip via `GET /imports/csv/export` plus CSV import
    mapping targets `category_slug`, `ref:item_ref`, and `ref:parent_ref`
    to preserve parent/child links.
+- Archive/disposition endpoints `POST /items/{id}/archive` and
+   `POST /items/{id}/restore`, with `GET /items?include_archived=true`
+   and `archived=true/false` filtering for archive views.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.

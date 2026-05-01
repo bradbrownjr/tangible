@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +29,12 @@ class ItemBase(BaseModel):
     parent_id: str | None = None
     depleted: bool = False
     wanted: bool = False
+    archived_at: datetime | None = None
+    disposition_type: str | None = None
+    disposition_at: datetime | None = None
+    disposition_amount: Decimal | None = None
+    disposition_buyer: str | None = None
+    disposition_note: str | None = None
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
     date_frozen: datetime | None = None
@@ -67,6 +73,12 @@ class ItemUpdate(BaseModel):
     category: str | None = None
     depleted: bool | None = None
     wanted: bool | None = None
+    archived_at: datetime | None = None
+    disposition_type: str | None = None
+    disposition_at: datetime | None = None
+    disposition_amount: Decimal | None = None
+    disposition_buyer: str | None = None
+    disposition_note: str | None = None
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
     date_frozen: datetime | None = None
@@ -105,6 +117,14 @@ class ItemRead(ItemBase):
 
 class ItemFlagUpdate(BaseModel):
     note: str | None = Field(default=None, max_length=256)
+
+
+class ItemArchiveUpdate(BaseModel):
+    disposition_type: Literal["sold", "disposed", "donated", "archived"] = "archived"
+    disposition_at: datetime | None = None
+    disposition_amount: Decimal | None = None
+    disposition_buyer: str | None = Field(default=None, max_length=256)
+    disposition_note: str | None = Field(default=None, max_length=512)
 
 
 class ItemBulkPatchRequest(BaseModel):

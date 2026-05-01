@@ -19,6 +19,7 @@ from covet.auth.deps import (
 from covet.db import get_session
 from covet.models import Category, Collection, CollectionMembership, Item, ItemTemplate
 from covet.schemas import (
+    ItemArchiveUpdate,
     ItemBulkDeleteRequest,
     ItemBulkDeleteResponse,
     ItemBulkPatchRequest,
@@ -158,6 +159,14 @@ def list_items(
         description="Top-level category slug; matches the root and all of its children.",
     ),
     search: str | None = None,
+    include_archived: bool = Query(
+        default=False,
+        description="Include archived items in results.",
+    ),
+    archived: bool | None = Query(
+        default=None,
+        description="When include_archived=true, optionally narrow to archived=true/false.",
+    ),
     depleted: bool | None = Query(default=None, description="Filter by depleted status."),
     wanted: bool | None = Query(default=None, description="Filter by wanted status."),
     flagged: bool | None = Query(default=None, description="Filter by review flag status."),
@@ -197,6 +206,13 @@ def list_items(
     if search:
         like = f"%{search.lower()}%"
         stmt = stmt.where(Item.title.ilike(like))
+    if not include_archived:
+        stmt = stmt.where(Item.archived_at.is_(None))
+    elif archived is not None:
+        if archived:
+            stmt = stmt.where(Item.archived_at.is_not(None))
+        else:
+            stmt = stmt.where(Item.archived_at.is_(None))
     if depleted is not None:
         stmt = stmt.where(Item.depleted.is_(depleted))
     if wanted is not None:
@@ -253,6 +269,7 @@ def grocery_list(
     stmt = (
         select(Item)
         .where(Item.collection_id.in_(readable_cids))
+        .where(Item.archived_at.is_(None))
         .where(Item.depleted.is_(True))
         .options(selectinload(Item.photos))
         .order_by(Item.title)
@@ -480,6 +497,54 @@ def unflag_item(
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
     item.flagged_note = None
     item.flagged_at = None
+    db.commit()
+    db.refresh(item)
+    return ItemRead.model_validate(item)
+
+
+@router.post("/{item_id}/archive", response_model=ItemRead)
+def archive_item(
+    item_id: str,
+    payload: ItemArchiveUpdate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ItemRead:
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+
+    item.archived_at = datetime.now(UTC)
+    item.disposition_type = payload.disposition_type
+    item.disposition_at = payload.disposition_at or datetime.now(UTC)
+    item.disposition_amount = payload.disposition_amount
+    item.disposition_buyer = (payload.disposition_buyer or "").strip() or None
+    item.disposition_note = (payload.disposition_note or "").strip() or None
+    # Archived items are not active wants/depleted state.
+    item.wanted = False
+    item.depleted = False
+    db.commit()
+    db.refresh(item)
+    return ItemRead.model_validate(item)
+
+
+@router.post("/{item_id}/restore", response_model=ItemRead)
+def restore_item(
+    item_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ItemRead:
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+
+    item.archived_at = None
+    item.disposition_type = None
+    item.disposition_at = None
+    item.disposition_amount = None
+    item.disposition_buyer = None
+    item.disposition_note = None
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)

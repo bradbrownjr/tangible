@@ -118,6 +118,12 @@ export interface Item {
     template_id: string | null;
     depleted: boolean;
     wanted: boolean;
+    archived_at: string | null;
+    disposition_type: string | null;
+    disposition_at: string | null;
+    disposition_amount: number | null;
+    disposition_buyer: string | null;
+    disposition_note: string | null;
     flagged_note: string | null;
     flagged_at: string | null;
     purchased_at: string | null;

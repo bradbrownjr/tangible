@@ -64,6 +64,14 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     # Whether the item is on the wishlist (not yet owned).
     wanted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Archival/disposition tracking for sold/disposed/donated items.
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disposition_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    disposition_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disposition_amount: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    disposition_buyer: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    disposition_note: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     # Optional pointer to the CRDT document for this item.
     doc_id: Mapped[str | None] = mapped_column(
         String(26), ForeignKey("automerge_docs.id", ondelete="SET NULL"), nullable=True

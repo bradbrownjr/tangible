@@ -13,6 +13,7 @@
     let search = $state('');
     let rootFilter = $state(''); // only used when collection has no default category
     let wantedFilter = $state<'all' | 'wanted' | 'owned'>('all');
+    let archivedFilter = $state<'active' | 'archived' | 'all'>('active');
     let sortBy = $state<'title' | 'value' | 'acquired_at' | 'attr'>('title');
     let sortDir = $state<'asc' | 'desc'>('asc');
     let sortAttr = $state('');
@@ -33,7 +34,7 @@
     let editUseByDate = $state('');
     let editDateFrozen = $state('');
     let editDateOpened = $state('');
-    let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | 'mark-owned' | null>(null);
+    let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | 'mark-owned' | 'archive-item' | null>(null);
     let pendingDeleteItemId = $state<string | null>(null);
     let pendingDeleteItemTitle = $state('');
     let pendingFlagItemId = $state<string | null>(null);
@@ -43,6 +44,13 @@
     let pendingOwnedItemTitle = $state('');
     let ownedAtInput = $state('');
     let ownedPriceInput = $state('');
+    let pendingArchiveItemId = $state<string | null>(null);
+    let pendingArchiveItemTitle = $state('');
+    let archiveDispositionType = $state<'sold' | 'disposed' | 'donated' | 'archived'>('archived');
+    let archiveDispositionAt = $state('');
+    let archiveDispositionAmount = $state('');
+    let archiveDispositionBuyer = $state('');
+    let archiveDispositionNote = $state('');
     let bulkBusy = $state(false);
 
     // Inline create form: cascading root → leaf.
@@ -246,6 +254,12 @@
             const params = new URLSearchParams({ collection_id: cid });
             if (search) params.set('search', search);
             if (rootFilter) params.set('category_subtree', rootFilter);
+            if (archivedFilter === 'archived') {
+                params.set('include_archived', 'true');
+                params.set('archived', 'true');
+            } else if (archivedFilter === 'all') {
+                params.set('include_archived', 'true');
+            }
             if (wantedFilter === 'wanted') params.set('wanted', 'true');
             if (wantedFilter === 'owned') params.set('wanted', 'false');
             params.set('sort_by', sortBy);
@@ -542,6 +556,38 @@
         await load();
     }
 
+    function requestArchiveItem(item: Item) {
+        pendingArchiveItemId = item.id;
+        pendingArchiveItemTitle = item.title;
+        archiveDispositionType = 'archived';
+        archiveDispositionAt = new Date().toISOString().slice(0, 16);
+        archiveDispositionAmount = '';
+        archiveDispositionBuyer = '';
+        archiveDispositionNote = '';
+        confirmDialog = 'archive-item';
+    }
+
+    async function archiveItemConfirmed() {
+        if (!pendingArchiveItemId) return;
+        const payload: Record<string, unknown> = {
+            disposition_type: archiveDispositionType,
+            disposition_at: archiveDispositionAt ? new Date(archiveDispositionAt).toISOString() : undefined,
+            disposition_buyer: archiveDispositionBuyer.trim() || undefined,
+            disposition_note: archiveDispositionNote.trim() || undefined,
+        };
+        if (archiveDispositionAmount.trim()) payload.disposition_amount = Number(archiveDispositionAmount);
+        await api.post(`/items/${pendingArchiveItemId}/archive`, payload);
+        pendingArchiveItemId = null;
+        pendingArchiveItemTitle = '';
+        confirmDialog = null;
+        await load();
+    }
+
+    async function restoreArchivedItem(item: Item) {
+        await api.post(`/items/${item.id}/restore`, {});
+        await load();
+    }
+
     async function duplicateItem(item: Item) {
         const copyTitle = item.title.endsWith(' (Copy)') ? item.title : `${item.title} (Copy)`;
         await api.post('/items', {
@@ -723,6 +769,11 @@
             <option value="owned">Owned only</option>
             <option value="wanted">Wanted only</option>
         </select>
+        <select bind:value={archivedFilter} onchange={() => load()} title="Archived status">
+            <option value="active">Active only</option>
+            <option value="archived">Archived only</option>
+            <option value="all">Active + archived</option>
+        </select>
         <select bind:value={sortDir} onchange={() => load()} title="Sort direction">
             <option value="asc">Ascending</option>
             <option value="desc">Descending</option>
@@ -788,7 +839,7 @@
                         </div>
                     </div>
                 {:else}
-                    <div class="item-card" class:depleted-card={i.depleted} class:wanted-card={i.wanted}>
+                    <div class="item-card" class:depleted-card={i.depleted} class:wanted-card={i.wanted} class:archived-card={i.archived_at != null}>
                         <div class="item-card-body">
                             {#if canEdit}
                                 <label class="select-chip">
@@ -826,6 +877,7 @@
                                 {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
                                 {#if i.wanted}<span class="wanted-badge">Wanted</span>{/if}
+                                {#if i.archived_at}<span class="archived-badge">Archived</span>{/if}
                                 {#if i.flagged_at}
                                     <span class="flagged-badge" title={i.flagged_note ?? 'Flagged for review'}>
                                         Flagged
@@ -840,22 +892,26 @@
                         {#if canEdit}
                             <div class="item-card-actions">
                                 <button type="button" class="secondary" onclick={() => startEdit(i)}>Edit</button>
-                                <button type="button" class="secondary" onclick={() => duplicateItem(i)}>Duplicate</button>
+                                <button type="button" class="secondary" onclick={() => duplicateItem(i)} disabled={i.archived_at != null}>Duplicate</button>
                                 <button
                                     type="button"
                                     class={i.depleted ? 'secondary' : 'warn'}
                                     onclick={() => toggleDepleted(i)}
+                                    disabled={i.archived_at != null}
                                 >{i.depleted ? 'In stock' : 'Depleted'}</button>
                                 <button
                                     type="button"
                                     class={i.wanted ? 'secondary' : 'warn'}
                                     onclick={() => toggleWanted(i)}
+                                    disabled={i.archived_at != null}
                                 >{i.wanted ? 'Owned' : 'Wanted'}</button>
                                 <button
                                     type="button"
                                     class="secondary"
                                     onclick={() => (i.flagged_at ? clearFlag(i) : requestFlagItem(i))}
+                                    disabled={i.archived_at != null}
                                 >{i.flagged_at ? 'Unflag' : 'Flag'}</button>
+                                <button type="button" class="secondary" onclick={() => (i.archived_at ? restoreArchivedItem(i) : requestArchiveItem(i))}>{i.archived_at ? 'Restore' : 'Archive'}</button>
                                 <button class="danger item-card-delete" onclick={() => requestRemoveItem(i)}>Delete</button>
                             </div>
                         {/if}
@@ -914,7 +970,7 @@
                             </tr>
                         {/if}
                     {:else}
-                        <tr class:depleted-row={i.depleted} class:wanted-row={i.wanted}>
+                        <tr class:depleted-row={i.depleted} class:wanted-row={i.wanted} class:archived-row={i.archived_at != null}>
                             {#if canEdit}
                                 <td>
                                     <input
@@ -935,6 +991,9 @@
                                 {#if i.wanted}
                                     <span class="wanted-inline" title="Marked as wanted / not currently owned">Wanted</span>
                                 {/if}
+                                {#if i.archived_at}
+                                    <span class="archived-inline" title={i.disposition_type ?? 'archived'}>Archived</span>
+                                {/if}
                                 {#if relationEntries(i).length}
                                     <div class="relation-inline-list">
                                         {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
@@ -953,24 +1012,28 @@
                             {#if canEdit}
                                 <td class="row-actions">
                                     <button class="secondary" onclick={() => startEdit(i)}>Edit</button>
-                                    <button class="secondary" onclick={() => duplicateItem(i)}>Duplicate</button>
+                                    <button class="secondary" onclick={() => duplicateItem(i)} disabled={i.archived_at != null}>Duplicate</button>
                                     <button
                                         type="button"
                                         class={i.depleted ? 'secondary' : 'warn'}
                                         onclick={() => toggleDepleted(i)}
+                                        disabled={i.archived_at != null}
                                         title={i.depleted ? 'Mark as in stock' : 'Mark as depleted'}
                                     >{i.depleted ? 'In stock' : 'Depleted'}</button>
                                     <button
                                         type="button"
                                         class={i.wanted ? 'secondary' : 'warn'}
                                         onclick={() => toggleWanted(i)}
+                                        disabled={i.archived_at != null}
                                         title={i.wanted ? 'Mark as owned' : 'Mark as wanted'}
                                     >{i.wanted ? 'Owned' : 'Wanted'}</button>
                                     <button
                                         type="button"
                                         class="secondary"
                                         onclick={() => (i.flagged_at ? clearFlag(i) : requestFlagItem(i))}
+                                        disabled={i.archived_at != null}
                                     >{i.flagged_at ? 'Unflag' : 'Flag'}</button>
+                                    <button type="button" class="secondary" onclick={() => (i.archived_at ? restoreArchivedItem(i) : requestArchiveItem(i))}>{i.archived_at ? 'Restore' : 'Archive'}</button>
                                     <button class="danger" onclick={() => requestRemoveItem(i)}>Delete</button>
                                 </td>
                             {/if}
@@ -1045,6 +1108,44 @@
             <div class="modal-actions">
                 <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
                 <button type="button" onclick={markOwnedConfirmed}>Mark owned</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if confirmDialog === 'archive-item'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="archive-item-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="archive-item-title">Archive item</h3>
+            <p class="muted">Archive {pendingArchiveItemTitle || 'this item'} and optionally capture disposition details.</p>
+            <label>
+                Disposition type
+                <select bind:value={archiveDispositionType}>
+                    <option value="archived">Archived</option>
+                    <option value="sold">Sold</option>
+                    <option value="disposed">Disposed</option>
+                    <option value="donated">Donated</option>
+                </select>
+            </label>
+            <label>
+                Disposition date
+                <input type="datetime-local" bind:value={archiveDispositionAt} />
+            </label>
+            <label>
+                Amount (optional)
+                <input type="number" min="0" step="0.01" bind:value={archiveDispositionAmount} placeholder="e.g. 25.00" />
+            </label>
+            <label>
+                Buyer / recipient (optional)
+                <input bind:value={archiveDispositionBuyer} maxlength="256" placeholder="e.g. Alice" />
+            </label>
+            <label>
+                Note (optional)
+                <input bind:value={archiveDispositionNote} maxlength="512" placeholder="e.g. donated to local library" />
+            </label>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" onclick={archiveItemConfirmed}>Archive</button>
             </div>
         </div>
     </div>
@@ -1340,6 +1441,10 @@
     .wanted-row td {
         background: color-mix(in srgb, #2c7a7b 8%, transparent);
     }
+    .archived-row td {
+        opacity: 0.75;
+        background: color-mix(in srgb, #666 8%, transparent);
+    }
     .flagged-badge {
         display: inline-flex;
         align-items: center;
@@ -1363,6 +1468,9 @@
     .wanted-card {
         border-color: color-mix(in srgb, #2c7a7b 35%, var(--border));
     }
+    .archived-card {
+        border-style: dashed;
+    }
     .depleted-card .item-title {
         text-decoration: line-through;
         text-decoration-color: var(--danger, #c00);
@@ -1376,7 +1484,16 @@
         color: #2c7a7b;
         font-weight: 600;
     }
+    .archived-badge,
+    .archived-inline {
+        color: #666;
+        font-weight: 600;
+    }
     .wanted-inline {
+        margin-left: 0.4rem;
+        font-size: 0.72rem;
+    }
+    .archived-inline {
         margin-left: 0.4rem;
         font-size: 0.72rem;
     }

@@ -90,10 +90,10 @@ bottleneck. This phase is about scaling the UX.
   loaned, returned, maintenance-due) for Home Assistant, n8n, Discord.
 - **i18n scaffold** — moved to Phase 14 where translation rollout is
   tracked as platform work.
-- **Sold / disposed / donated workflow** — archive items rather than
-  hard-delete; record sale price, sale date, buyer (contact), or
-  disposal method. Archived items roll off the active list but stay in
-  reports and audit log.
+- **Sold / disposed / donated workflow** 🚧 — items can now be archived
+  instead of deleted, with disposition type/date/amount/buyer/note and
+  explicit restore flow; archived items are excluded from default item
+  lists. Remaining scope: buyer contact linkage + report/audit surfacing.
 - **Item flagging** ✅ — mark items for review ("verify location",
   "needs photo", "check warranty") without editing them; flag is
   cleared on next edit or explicit dismiss.

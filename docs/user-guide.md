@@ -191,6 +191,10 @@ ready-to-use templates for that collection.
 - Editors/owners can also **select multiple items** and run bulk actions
   from the collection toolbar: set wanted/owned, set depleted/in-stock,
   or delete selected rows/cards.
+- Items can be **archived** instead of deleted, with optional disposition
+  details (sold/disposed/donated, date, amount, buyer, note). Archived
+  items are hidden from default views and can be shown/restored via the
+  archived filter in collection view.
 - Filter by tag from the collection page.
 
 ## Importing your existing inventory
