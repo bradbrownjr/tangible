@@ -213,6 +213,8 @@ require new environment variables or reverse-proxy changes:
 - Archive/disposition endpoints `POST /items/{id}/archive` and
    `POST /items/{id}/restore`, with `GET /items?include_archived=true`
    and `archived=true/false` filtering for archive views.
+- Expanded item search across title/subtitle/notes/custom fields/identifiers,
+   plus web `/` keyboard focus shortcut for collection search.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.

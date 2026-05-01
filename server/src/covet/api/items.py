@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import String, asc, cast, desc, func, or_, select
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import selectinload
 
@@ -204,8 +204,16 @@ def list_items(
             ) from exc
         stmt = stmt.where(Item.category_id == cat.id)
     if search:
-        like = f"%{search.lower()}%"
-        stmt = stmt.where(Item.title.ilike(like))
+        like = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Item.title.ilike(like),
+                Item.subtitle.ilike(like),
+                Item.notes.ilike(like),
+                cast(Item.attrs, String).ilike(like),
+                cast(Item.identifiers, String).ilike(like),
+            )
+        )
     if not include_archived:
         stmt = stmt.where(Item.archived_at.is_(None))
     elif archived is not None:

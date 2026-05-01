@@ -143,6 +143,37 @@ def test_item_list_sort_options(client) -> None:
     assert r.status_code == 422
 
 
+def test_item_search_matches_notes_and_attrs(client) -> None:
+    _signup_and_login(client, "searcher")
+    cid = client.post("/api/collections", json={"name": "Search"}).json()["id"]
+
+    alpha = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "movies.dvd",
+            "title": "Generic title",
+            "notes": "stored on top shelf",
+            "attrs": {"creator": "Ridley Scott"},
+        },
+    )
+    assert alpha.status_code == 201, alpha.text
+
+    beta = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Other"},
+    )
+    assert beta.status_code == 201, beta.text
+
+    by_note = client.get("/api/items", params={"collection_id": cid, "search": "top shelf"})
+    assert by_note.status_code == 200, by_note.text
+    assert [x["title"] for x in by_note.json()] == ["Generic title"]
+
+    by_attr = client.get("/api/items", params={"collection_id": cid, "search": "ridley"})
+    assert by_attr.status_code == 200, by_attr.text
+    assert [x["title"] for x in by_attr.json()] == ["Generic title"]
+
+
 def test_parent_item_value_rollup(client) -> None:
     _signup_and_login(client, "rollup")
     cid = client.post("/api/collections", json={"name": "Kits"}).json()["id"]

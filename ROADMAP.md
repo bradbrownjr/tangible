@@ -72,9 +72,10 @@ bottleneck. This phase is about scaling the UX.
   bulk set-field actions (`depleted` / `wanted`) and bulk delete backed
   by collection-scoped API endpoints. Remaining scope: Android parity,
   bulk move/tag/lend/archive.
-- **Better search** — case-insensitive across locales, accent-folding,
-  fuzzy matching, search across custom fields and attachments OCR text.
-  Keyboard-driven palette on web (`/`).
+- **Better search** 🚧 — search now covers title/subtitle/notes plus
+  custom fields (`attrs`) and identifiers, with web `/` keyboard focus
+  shortcut. Remaining scope: accent-folding, fuzzy ranking, attachment
+  OCR indexing, and full command palette UX.
 - **Hierarchical / nested tags** — `electronics > audio > cables`. UI
   shows breadcrumbs; filters cascade.
 - **QR code label sheets** — generate a printable PDF of QR labels for

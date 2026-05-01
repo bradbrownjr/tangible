@@ -186,6 +186,8 @@ or fixes can be contributed through pull requests.
 - The collection view supports live **title search**, category filters,
   and **sort controls** for title, current value, acquisition date, or a
   custom attribute key such as `creator`.
+- Search now also matches subtitle, notes, and custom-field/identifier
+  content; press `/` from collection view to focus the search box quickly.
 - Use the **ownership filter** to switch between all items, owned-only,
   and wanted-only rows/cards. Editors/owners can toggle an item between
   **Wanted** and **Owned** inline. Converting to **Owned** prompts for

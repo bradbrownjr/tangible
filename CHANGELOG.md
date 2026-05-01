@@ -69,6 +69,9 @@ All notable changes to **Covet** are documented here. Format follows
   disposition metadata (sold/disposed/donated, date, amount, buyer, note),
   restored via `POST /items/{id}/restore`, and filtered using
   `GET /items?include_archived=true&archived=true`.
+- **Expanded item search (web + API).** Collection search now matches
+  title/subtitle, notes, and JSON custom fields/identifiers, and web adds
+  a `/` keyboard shortcut to focus the search box.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

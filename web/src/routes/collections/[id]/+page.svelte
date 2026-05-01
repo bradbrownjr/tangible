@@ -65,6 +65,7 @@
     let titleInput: HTMLInputElement | undefined;
     let subtitleInput: HTMLInputElement | undefined;
     let barcodeImageInput: HTMLInputElement | undefined;
+    let searchInput: HTMLInputElement | undefined;
 
     // Label for the creator field based on leaf category; null = hide the field.
     const creatorLabel = $derived.by(() => {
@@ -631,7 +632,18 @@
 
     onMount(() => {
         viewMode = (localStorage.getItem('covet:viewMode') ?? 'list') as 'list' | 'grid';
+        const onGlobalKeydown = (event: KeyboardEvent) => {
+            if (event.key !== '/') return;
+            if (event.metaKey || event.ctrlKey || event.altKey) return;
+            const active = document.activeElement;
+            if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+            event.preventDefault();
+            searchInput?.focus();
+            searchInput?.select();
+        };
+        window.addEventListener('keydown', onGlobalKeydown);
         load();
+        return () => window.removeEventListener('keydown', onGlobalKeydown);
     });
 
     $effect(() => {
@@ -729,8 +741,9 @@
 
     <div class="filters">
         <input
+            bind:this={searchInput}
             bind:value={search}
-            placeholder="Search this collection (title)…"
+            placeholder="Search title, notes, and custom fields…"
             oninput={() => load()}
         />
         {#if !isFocused}
