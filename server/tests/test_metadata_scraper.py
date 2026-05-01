@@ -106,3 +106,65 @@ def test_scrape_endpoint_rejects_loopback(client, monkeypatch) -> None:
     client.post("/api/auth/login", json={"username": "scraper", "password": "hunter22-secure"})
     r = client.post("/api/metadata/scrape", json={"url": "http://127.0.0.1/x"})
     assert r.status_code == 400
+
+
+def test_registry_requires_auth(client) -> None:
+    r = client.get("/api/metadata/registry")
+    assert r.status_code == 401
+
+
+def test_registry_list_and_import(client) -> None:
+    client.post(
+        "/api/auth/register",
+        json={"username": "registryuser", "password": "hunter22-secure", "email": "r@x.io"},
+    )
+    client.post(
+        "/api/auth/login",
+        json={"username": "registryuser", "password": "hunter22-secure"},
+    )
+    cid = client.post("/api/collections", json={"name": "Library"}).json()["id"]
+
+    listed = client.get("/api/metadata/registry")
+    assert listed.status_code == 200
+    assert len(listed.json()) >= 1
+    entry_id = listed.json()[0]["id"]
+
+    imported = client.post(
+        "/api/metadata/registry/import",
+        json={"collection_id": cid, "entry_ids": [entry_id]},
+    )
+    assert imported.status_code == 200, imported.text
+    assert len(imported.json()) == 1
+
+    # Re-importing the same entry should return the existing template, not duplicate.
+    imported_again = client.post(
+        "/api/metadata/registry/import",
+        json={"collection_id": cid, "entry_ids": [entry_id]},
+    )
+    assert imported_again.status_code == 200, imported_again.text
+    assert imported_again.json()[0]["id"] == imported.json()[0]["id"]
+
+
+def test_registry_import_requires_editor_role(client) -> None:
+    client.post(
+        "/api/auth/register",
+        json={"username": "owner2", "password": "hunter22-secure", "email": "o2@x.io"},
+    )
+    client.post(
+        "/api/auth/register",
+        json={"username": "viewer2", "password": "hunter22-secure", "email": "v2@x.io"},
+    )
+    client.post("/api/auth/login", json={"username": "owner2", "password": "hunter22-secure"})
+    cid = client.post("/api/collections", json={"name": "Shared"}).json()["id"]
+    client.post(
+        f"/api/collections/{cid}/members",
+        json={"user_identifier": "viewer2", "role": "viewer"},
+    )
+    client.post("/api/auth/logout")
+
+    client.post("/api/auth/login", json={"username": "viewer2", "password": "hunter22-secure"})
+    denied = client.post(
+        "/api/metadata/registry/import",
+        json={"collection_id": cid, "entry_ids": ["openlibrary-books"]},
+    )
+    assert denied.status_code == 403

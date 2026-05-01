@@ -230,3 +230,14 @@ export interface PublicConfig {
     oidc_enabled: boolean;
     oidc_providers: { name: string; label: string; login_url: string }[];
 }
+
+export interface ScraperRegistryEntry {
+    id: string;
+    name: string;
+    provider: string;
+    description: string;
+    category_slug: string;
+    homepage: string;
+    trusted: boolean;
+    fields: Array<Record<string, unknown>>;
+}

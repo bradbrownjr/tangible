@@ -47,6 +47,10 @@ All notable changes to **Covet** are documented here. Format follows
   `any_collection`) so attrs can point to another item ID with server-side
   validation, and web collection views now render relation mini-cards showing
   linked item labels.
+- **Community scraper registry import (web + API).** The Templates page now
+  lists curated registry presets from `GET /metadata/registry` and allows
+  editors/owners to one-click import them into a collection via
+  `POST /metadata/registry/import`.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

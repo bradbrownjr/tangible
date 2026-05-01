@@ -174,6 +174,10 @@ multiple URLs, multiple ISBNs, or actor lists).
 Templates now also support `relation` fields for linking one item to another
 by item ID, with scope controls for same-collection or any-collection links.
 
+The Templates tab also includes a **Community scraper registry** section with
+curated presets. Editors/owners can import a preset with one click to create
+ready-to-use templates for that collection.
+
 ## Tags and search
 
 - Add tags from the item editor or the collection's **Tags** page.

@@ -106,10 +106,10 @@ bottleneck. This phase is about scaling the UX.
 - **Multi-value fields** ✅ — template field type that holds an ordered
   list (e.g. list of URLs, list of related ISBNs, list of actors).
   Renders as a tagged chip list; sortable; searchable.
-- **Community scraper registry** — a curated, version-controlled
-  registry of scraper configs (site → field mapping rules) that users
-  can import with one click from the collection settings. Admins can
-  pin trusted scrapers; users can contribute via PR.
+- **Community scraper registry** 🚧 — curated, version-controlled
+  scraper presets are now browseable/importable from the Templates tab
+  with one-click collection import. Remaining work: admin pinning and
+  contribution workflow docs.
 
 ---
 

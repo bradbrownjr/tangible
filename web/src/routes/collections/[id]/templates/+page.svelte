@@ -5,15 +5,27 @@
         api,
         type Collection,
         type ItemTemplate,
+        type ScraperRegistryEntry,
         type TemplateField,
         type TemplateFieldType
     } from '$lib/api';
 
-    const FIELD_TYPES: TemplateFieldType[] = ['text', 'number', 'boolean', 'date', 'url', 'select'];
+    const FIELD_TYPES: TemplateFieldType[] = [
+        'text',
+        'number',
+        'boolean',
+        'date',
+        'url',
+        'select',
+        'multi_value',
+        'relation'
+    ];
 
     let collection = $state<Collection | null>(null);
     let templates = $state<ItemTemplate[]>([]);
     let scaffoldNames = $state<string[]>([]);
+    let registryEntries = $state<ScraperRegistryEntry[]>([]);
+    let importingRegistryId = $state<string | null>(null);
     let loading = $state(true);
     let error = $state('');
 
@@ -65,6 +77,7 @@
                 };
                 if (f.required) out.required = true;
                 if (f.type === 'select') out.select_source = f.select_source ?? 'static';
+                if (f.type === 'relation') out.relation_scope = f.relation_scope ?? 'same_collection';
                 if (f.options && f.options.length) out.options = f.options;
                 if (f.default !== undefined && f.default !== '') out.default = f.default;
                 return out;
@@ -95,10 +108,11 @@
         loading = true;
         error = '';
         try {
-            [collection, templates, scaffoldNames] = await Promise.all([
+            [collection, templates, scaffoldNames, registryEntries] = await Promise.all([
                 api.get<Collection>(`/collections/${cid}`),
                 api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
                 api.get<string[]>(`/collections/${cid}/scaffold-templates`),
+                api.get<ScraperRegistryEntry[]>(`/metadata/registry`),
             ]);
         } catch (e) {
             error = (e as Error).message;
@@ -236,6 +250,21 @@
         }
     }
 
+    async function importRegistryEntry(entry: ScraperRegistryEntry) {
+        importingRegistryId = entry.id;
+        try {
+            await api.post('/metadata/registry/import', {
+                collection_id: cid,
+                entry_ids: [entry.id]
+            });
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            importingRegistryId = null;
+        }
+    }
+
     onMount(load);
 </script>
 
@@ -258,6 +287,40 @@
     </p>
 
     {#if error}<p class="error">{error}</p>{/if}
+
+    <section class="card stack" style="margin-bottom:0.75rem">
+        <h3 style="margin:0">Community scraper registry</h3>
+        <p class="muted" style="margin:0">
+            Curated, version-controlled presets contributed by the community.
+            Import with one click to create matching templates for this collection.
+        </p>
+        {#if registryEntries.length === 0}
+            <p class="muted" style="margin:0">No registry entries available.</p>
+        {:else}
+            <div class="registry-grid">
+                {#each registryEntries as entry (entry.id)}
+                    <article class="registry-card">
+                        <div class="registry-head">
+                            <strong>{entry.name}</strong>
+                            {#if entry.trusted}<span class="trusted-pill">Trusted</span>{/if}
+                        </div>
+                        <p class="muted" style="margin:0">{entry.description}</p>
+                        <p class="muted" style="margin:0">Provider: {entry.provider} · Category: {entry.category_slug}</p>
+                        <div class="registry-actions">
+                            <a href={entry.homepage} target="_blank" rel="noreferrer">Source</a>
+                            {#if canEdit}
+                                <button
+                                    type="button"
+                                    onclick={() => importRegistryEntry(entry)}
+                                    disabled={importingRegistryId === entry.id}
+                                >{importingRegistryId === entry.id ? 'Importing…' : 'Import preset'}</button>
+                            {/if}
+                        </div>
+                    </article>
+                {/each}
+            </div>
+        {/if}
+    </section>
 
     {#if canEdit}
     <form onsubmit={createTemplate} class="card stack">
@@ -619,5 +682,38 @@
     }
     .editing-row td {
         background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    }
+    .registry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.6rem;
+    }
+    .registry-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.6rem;
+        display: grid;
+        gap: 0.35rem;
+        background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    }
+    .registry-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.4rem;
+        align-items: baseline;
+    }
+    .trusted-pill {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.05rem 0.4rem;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, #2d8f3c 45%, transparent);
+        color: #2d8f3c;
+        background: color-mix(in srgb, #2d8f3c 12%, transparent);
+    }
+    .registry-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 </style>
