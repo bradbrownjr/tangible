@@ -32,12 +32,16 @@
     let editUseByDate = $state('');
     let editDateFrozen = $state('');
     let editDateOpened = $state('');
-    let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | null>(null);
+    let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | 'mark-owned' | null>(null);
     let pendingDeleteItemId = $state<string | null>(null);
     let pendingDeleteItemTitle = $state('');
     let pendingFlagItemId = $state<string | null>(null);
     let pendingFlagItemTitle = $state('');
     let flagNoteInput = $state('');
+    let pendingOwnedItemId = $state<string | null>(null);
+    let pendingOwnedItemTitle = $state('');
+    let ownedAtInput = $state('');
+    let ownedPriceInput = $state('');
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
@@ -430,7 +434,29 @@
     }
 
     async function toggleWanted(item: Item) {
-        await api.patch(`/items/${item.id}`, { wanted: !item.wanted });
+        if (item.wanted) {
+            pendingOwnedItemId = item.id;
+            pendingOwnedItemTitle = item.title;
+            ownedAtInput = new Date().toISOString().slice(0, 16);
+            ownedPriceInput = '';
+            confirmDialog = 'mark-owned';
+            return;
+        }
+        await api.patch(`/items/${item.id}`, { wanted: true });
+        await load();
+    }
+
+    async function markOwnedConfirmed() {
+        if (!pendingOwnedItemId) return;
+        const payload: Record<string, unknown> = { wanted: false };
+        if (ownedAtInput) payload.acquired_at = new Date(ownedAtInput).toISOString();
+        if (ownedPriceInput.trim()) payload.purchase_price = Number(ownedPriceInput);
+        await api.patch(`/items/${pendingOwnedItemId}`, payload);
+        pendingOwnedItemId = null;
+        pendingOwnedItemTitle = '';
+        ownedAtInput = '';
+        ownedPriceInput = '';
+        confirmDialog = null;
         await load();
     }
 
@@ -904,6 +930,27 @@
             <div class="modal-actions">
                 <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
                 <button type="button" onclick={flagItemConfirmed}>Flag item</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if confirmDialog === 'mark-owned'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mark-owned-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="mark-owned-title">Mark item as owned</h3>
+            <p class="muted">Update ownership details for {pendingOwnedItemTitle || 'this item'}.</p>
+            <label>
+                Acquisition date
+                <input type="datetime-local" bind:value={ownedAtInput} />
+            </label>
+            <label>
+                Purchase price (optional)
+                <input type="number" min="0" step="0.01" bind:value={ownedPriceInput} placeholder="e.g. 29.99" />
+            </label>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" onclick={markOwnedConfirmed}>Mark owned</button>
             </div>
         </div>
     </div>

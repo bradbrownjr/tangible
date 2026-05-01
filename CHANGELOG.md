@@ -54,7 +54,8 @@ All notable changes to **Covet** are documented here. Format follows
 - **Wanted items (web + API).** Items now support a `wanted` flag so you can
   track not-yet-owned targets in the same collection, filter lists with
   `GET /items?wanted=true/false`, and toggle Wanted/Owned inline from web
-  list and grid views.
+  list and grid views. Converting Wanted → Owned now captures acquisition
+  date and optional purchase price.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

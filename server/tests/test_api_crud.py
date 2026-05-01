@@ -286,9 +286,18 @@ def test_item_wanted_flag_and_filter(client) -> None:
     assert listed_owned.status_code == 200, listed_owned.text
     assert [x["title"] for x in listed_owned.json()] == ["Owned Game"]
 
-    patched = client.patch(f"/api/items/{wanted_id}", json={"wanted": False})
+    patched = client.patch(
+        f"/api/items/{wanted_id}",
+        json={
+            "wanted": False,
+            "acquired_at": "2026-05-01T12:00:00Z",
+            "purchase_price": "24.99",
+        },
+    )
     assert patched.status_code == 200, patched.text
     assert patched.json()["wanted"] is False
+    assert str(patched.json()["acquired_at"]).startswith("2026-05-01T12:00:00")
+    assert patched.json()["purchase_price"] == "24.99"
 
     listed_after = client.get("/api/items", params={"collection_id": cid, "wanted": "true"})
     assert listed_after.status_code == 200, listed_after.text

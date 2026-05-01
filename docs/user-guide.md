@@ -186,7 +186,8 @@ ready-to-use templates for that collection.
   custom attribute key such as `creator`.
 - Use the **ownership filter** to switch between all items, owned-only,
   and wanted-only rows/cards. Editors/owners can toggle an item between
-  **Wanted** and **Owned** inline.
+  **Wanted** and **Owned** inline. Converting to **Owned** prompts for
+  acquisition date and optional purchase price.
 - Filter by tag from the collection page.
 
 ## Importing your existing inventory

@@ -78,10 +78,8 @@ bottleneck. This phase is about scaling the UX.
 - **QR code label sheets** — generate a printable PDF of QR labels for
   selected items. Android scanner gains a "find by QR" mode (vs.
   scan-to-create today) that jumps straight to item detail.
-- **Wishlist / wanted items** 🚧 — items can now be marked as wanted and
-  filtered as wanted-only vs owned-only from collection views, with a
-  one-click Wanted/Owned toggle. Remaining work: conversion prompt that
-  captures acquisition date and purchase price at the moment of ownership.
+- **Wishlist / wanted items** ✅ — flag items the user doesn't own yet;
+  one click converts to owned with acquisition date and price.
 - **Reports** — per-collection totals (count, value), BoM PDF export,
   insurance-friendly export bundle (CSV + photos + PDFs in a zip).
 - **CSV export with parent/child preserved** — round-trip the new item
