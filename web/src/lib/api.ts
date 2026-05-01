@@ -321,3 +321,63 @@ export interface ScraperRegistryEntry {
     trusted: boolean;
     fields: Array<Record<string, unknown>>;
 }
+
+// --- Phase 12 types -------------------------------------------------------
+
+export interface MaintenanceTask {
+    id: string;
+    item_id: string;
+    name: string;
+    notes: string | null;
+    interval_days: number | null;
+    last_completed_at: string | null;
+    next_due_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface MaintenanceCompletion {
+    id: string;
+    task_id: string;
+    completed_at: string;
+    notes: string | null;
+    cost: string | null;
+    currency: string | null;
+    technician: string | null;
+    odometer_reading: string | null;
+    hours_reading: string | null;
+}
+
+export interface Chore {
+    id: string;
+    collection_id: string;
+    name: string;
+    notes: string | null;
+    interval_days: number | null;
+    last_completed_at: string | null;
+    next_due_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ChoreCompletion {
+    id: string;
+    chore_id: string;
+    completed_at: string;
+    notes: string | null;
+    cost: string | null;
+    currency: string | null;
+    technician: string | null;
+}
+
+export interface DueAlert {
+    id: string;
+    kind: string;
+    severity: 'warning' | 'critical';
+    title: string;
+    collection_id: string;
+    item_id: string | null;
+    lot_id: string | null;
+    due_at: string | null;
+    details: string | null;
+}

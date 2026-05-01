@@ -62,5 +62,5 @@ class DueAlertRead(BaseModel):
     collection_id: str
     item_id: str | None = None
     lot_id: str | None = None
-    due_at: datetime
+    due_at: datetime | None = None
     details: str | None = None

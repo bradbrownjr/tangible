@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session as DBSession
 
 from covet.auth.deps import AuthContext, collection_role, require_user
 from covet.db import get_session
-from covet.models import Item, ItemLot, MaintenanceTask
+from covet.models import Chore, Collection, Item, ItemLot, MaintenanceTask
 from covet.models.base import as_utc
+from covet.models.user import CollectionMembership
 from covet.schemas.inventory import (
     DueAlertRead,
     ItemLotCreate,
@@ -182,11 +183,17 @@ def list_alerts(
     now = datetime.now(UTC)
     horizon = now + timedelta(days=within_days)
 
-    readable_collection_ids = db.scalars(
-        select(Item.collection_id).distinct().join(ItemLot, ItemLot.item_id == Item.id)
+    owned = db.scalars(
+        select(Collection.id).where(Collection.owner_id == auth.user.id)
+    ).all()
+    membered = db.scalars(
+        select(CollectionMembership.collection_id)
+        .where(CollectionMembership.user_id == auth.user.id)
+        .distinct()
     ).all()
     readable_collection_ids = [
-        cid for cid in readable_collection_ids if collection_role(db, auth.user, cid) in _VIEWER_ROLES
+        cid for cid in set(list(owned) + list(membered))
+        if collection_role(db, auth.user, cid) in _VIEWER_ROLES
     ]
 
     if collection_id is not None:
@@ -303,5 +310,55 @@ def list_alerts(
             )
         )
 
-    out.sort(key=lambda a: a.due_at)
+    chore_rows = db.execute(
+        select(Chore)
+        .where(
+            Chore.collection_id.in_(readable_collection_ids),
+            Chore.next_due_at.isnot(None),
+            Chore.next_due_at <= horizon,
+        )
+    ).scalars()
+    for chore in chore_rows:
+        due = as_utc(chore.next_due_at)
+        if due is None:
+            continue
+        out.append(
+            DueAlertRead(
+                id=f"chore-{chore.id}",
+                kind="chore_due",
+                severity="warning" if due >= now else "critical",
+                title=f"Chore due: {chore.name}",
+                collection_id=chore.collection_id,
+                item_id=None,
+                lot_id=None,
+                due_at=due,
+                details=chore.notes,
+            )
+        )
+
+    # Low-stock: items where quantity < minimum_quantity.
+    low_stock_rows = db.execute(
+        select(Item).where(
+            Item.collection_id.in_(readable_collection_ids),
+            Item.minimum_quantity.isnot(None),
+            Item.quantity < Item.minimum_quantity,
+            Item.archived_at.is_(None),
+        )
+    ).scalars()
+    for item in low_stock_rows:
+        out.append(
+            DueAlertRead(
+                id=f"low-stock-{item.id}",
+                kind="low_stock",
+                severity="warning",
+                title=f"Low stock: {item.title}",
+                collection_id=item.collection_id,
+                item_id=item.id,
+                lot_id=None,
+                due_at=None,
+                details=f"Quantity {item.quantity} is below minimum {item.minimum_quantity}.",
+            )
+        )
+
+    out.sort(key=lambda a: a.due_at or datetime.max.replace(tzinfo=UTC))
     return out

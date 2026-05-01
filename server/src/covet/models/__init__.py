@@ -15,7 +15,13 @@ from covet.models.item_lot import ItemLot
 from covet.models.item_template import ItemTemplate
 from covet.models.loan import Loan
 from covet.models.location import Location
-from covet.models.maintenance import MaintenanceTask
+from covet.models.maintenance import (
+    Chore,
+    ChoreCompletion,
+    MaintenanceCompletion,
+    MaintenanceTask,
+    MaintenanceTaskConsumable,
+)
 from covet.models.manual_bundle import BundleAsset, BundleItem, ManualBundle
 from covet.models.metadata_cache import MetadataCacheEntry
 from covet.models.photo import Photo
@@ -40,6 +46,8 @@ __all__ = [
     "BundleAsset",
     "BundleItem",
     "Category",
+    "Chore",
+    "ChoreCompletion",
     "Collection",
     "CollectionMembership",
     "Contact",
@@ -51,7 +59,9 @@ __all__ = [
     "ItemTemplate",
     "Loan",
     "Location",
+    "MaintenanceCompletion",
     "MaintenanceTask",
+    "MaintenanceTaskConsumable",
     "ManualBundle",
     "MetadataCacheEntry",
     "OIDCIdentity",

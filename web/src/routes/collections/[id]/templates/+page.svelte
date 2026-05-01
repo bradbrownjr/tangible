@@ -288,6 +288,7 @@
         </a>
         <a class="tab" href="/collections/{cid}/locations">Locations</a>
         <a class="tab" href="/collections/{cid}/bundles">Bundles</a>
+        <a class="tab" href="/collections/{cid}/chores">Chores</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
     </nav>
 

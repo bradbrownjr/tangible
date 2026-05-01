@@ -789,6 +789,7 @@
         <a class="tab" href="/collections/{cid}/templates">Templates</a>
         <a class="tab" href="/collections/{cid}/locations">Locations</a>
         <a class="tab" href="/collections/{cid}/bundles">Bundles</a>
+        <a class="tab" href="/collections/{cid}/chores">Chores</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
         {#if collection.my_role === 'owner'}
             <button type="button" class="tab tab-danger" onclick={requestDeleteCollection}>Delete</button>

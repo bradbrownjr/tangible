@@ -29,6 +29,7 @@ class ItemBase(BaseModel):
     parent_id: str | None = None
     depleted: bool = False
     wanted: bool = False
+    minimum_quantity: int | None = Field(default=None, ge=0)
     archived_at: datetime | None = None
     disposition_type: str | None = None
     disposition_at: datetime | None = None
@@ -74,7 +75,7 @@ class ItemUpdate(BaseModel):
     category: str | None = None
     depleted: bool | None = None
     wanted: bool | None = None
-    archived_at: datetime | None = None
+    minimum_quantity: int | None = Field(default=None, ge=0)
     disposition_type: str | None = None
     disposition_at: datetime | None = None
     disposition_amount: Decimal | None = None

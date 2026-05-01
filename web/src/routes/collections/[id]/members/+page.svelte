@@ -194,6 +194,7 @@
         <a class="tab" href="/collections/{cid}/templates">Templates</a>
         <a class="tab" href="/collections/{cid}/locations">Locations</a>
         <a class="tab" href="/collections/{cid}/bundles">Bundles</a>
+        <a class="tab" href="/collections/{cid}/chores">Chores</a>
         <a class="tab tab-active" href="/collections/{cid}/members" aria-current="page">Members</a>
     </nav>
 

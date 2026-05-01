@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from covet.api import audit as audit_router
 from covet.api import auth as auth_router
 from covet.api import categories as categories_router
+from covet.api import chores as chores_router
 from covet.api import collections as collections_router
 from covet.api import contacts as contacts_router
 from covet.api import documents as documents_router
@@ -46,6 +47,7 @@ api_router.include_router(audit_router.router)
 api_router.include_router(metadata_router.router)
 api_router.include_router(documents_router.router)
 api_router.include_router(maintenance_router.router)
+api_router.include_router(chores_router.router)
 api_router.include_router(photos_router.router)
 api_router.include_router(manual_bundles_router.router)
 api_router.include_router(system_router.router)

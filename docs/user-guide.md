@@ -155,9 +155,30 @@ to lapse or licenses due for renewal.
 
 For tools / appliances / vehicles, add a **maintenance task** with an
 **interval (in days)**. When you click **Mark complete**, Covet stores
-`last_completed_at` and recomputes `next_due_at`. The
-**Maintenance — due soon** dashboard lists tasks coming up across
-all your collections.
+`last_completed_at` and recomputes `next_due_at`. You can record optional
+notes, cost, technician, and odometer/hours readings with each completion.
+Full completion history is paginated and exportable to CSV.
+
+You can also link consumable items to a maintenance task. When the task
+is completed, linked items are automatically depleted by the configured
+quantity.
+
+The top-level **Maintenance** page shows all upcoming and overdue alerts
+across every collection in one place (filter by 7 to 365-day window).
+
+### Chores
+
+The **Chores** tab on each collection holds recurring household tasks that
+aren't tied to a specific item — clean gutters, test smoke detectors,
+run generator, etc. Set an optional interval (days) and next-due date.
+Clicking **Mark done** records a timestamped completion entry with optional
+notes, cost, and technician, and recomputes the next due date.
+
+### Low-stock alerts
+
+Set a **minimum quantity** on any inventory item. When the item's quantity
+falls at or below the minimum, it surfaces in the Maintenance alerts page
+as a "low stock" alert.
 
 ### Loans
 

@@ -117,7 +117,7 @@ bottleneck. This phase is about scaling the UX.
 
 ---
 
-## Phase 11 — Become the whole-home database (in progress)
+## Phase 11 — Become the whole-home database ✅ COMPLETE
 
 Covet starts as a collectibles tracker. This phase broadens it into a
 complete home inventory: every room, every appliance, every tool, every
@@ -319,48 +319,46 @@ moves all of its contents.
 
 ---
 
-## Phase 12 — Maintenance & operations hub (planned)
+## Phase 12 — Maintenance & operations hub (in progress)
 
 Core maintenance APIs and due-date alerts now exist. This phase expands
 that foundation into a first-class operations center: scheduled care,
 history, and proactive notifications across every asset.
 
-- **Maintenance calendar** — a unified calendar/agenda view across all
-  collections showing upcoming and overdue tasks (filter change, oil
-  change, generator run, battery charge, etc.). Web widget + Android
-  home screen shortcut.
-- **Completion history with notes** — each mark-complete records
+- **Maintenance calendar** — ✅ unified alerts agenda page at `/maintenance`
+  showing upcoming and overdue tasks across all collections, filtered by
+  time window (7/14/30/60/90 days). Web UI complete.
+- **Completion history with notes** — ✅ each mark-complete records
   odometer/hours reading, cost, technician (free text), and a note.
   History is paginated; exportable to CSV.
 - **Push & email notifications** — opt-in alerts at configurable lead
   times (e.g. 7 days before, 1 day before, day-of, overdue). Delivery
   via email (SMTP) and Android push (FCM). Reuses the existing alerts
-  API; adds a notification preferences table.
-- **Low-stock alerts** — when a consumable item's quantity drops below
-  its minimum, surface it in the alerts feed and optionally send a
-  push/email. Integrates with the Pantry and Fuel categories.
-- **Maintenance consumables linkage** — associate a maintenance task
-  with the consumable items it depletes (e.g. an oil change deducts
-  from the correct oil lot; a filter change deducts from a filter
-  inventory item). Track cost of materials per task.
-- **Chores & recurring household tasks** — non-item-specific tasks
+  API; adds a notification preferences table. (planned)
+- **Low-stock alerts** — ✅ when a consumable item's quantity drops below
+  its minimum, surface it in the alerts feed. `minimum_quantity` field
+  added to Item model.
+- **Maintenance consumables linkage** — ✅ associate a maintenance task
+  with the consumable items it depletes. Auto-depletion on task completion.
+  Track cost of materials per task.
+- **Chores & recurring household tasks** — ✅ non-item-specific tasks
   (clean gutters, test smoke detectors, drain water heater sediment,
-  run generator, flush water softener) with assignee, recurrence, and
-  completion log. Complements item-level maintenance.
+  run generator, flush water softener) with recurrence interval and
+  completion log. Per-collection **Chores** tab in web UI.
 - **Furnace filter workflow** — guided task flow for filter changes
   with a default schedule choice (every 2 months or every 3 months),
   plus custom interval; supports storing filter size/spec and linking
-  to replacement filter inventory.
+  to replacement filter inventory. (planned)
 - **Refrigerator filter workflow** — recurring schedule for internal
   fridge water filters with part number, last changed date, next due
-  date, and inventory linkage for replacement cartridges.
+  date, and inventory linkage for replacement cartridges. (planned)
 - **Water service filter workflow** — recurring schedule for
   whole-home/under-sink filtration service with stage-specific part
   numbers, last serviced date, next due date, and inventory linkage for
-  replacement cartridges/canisters.
+  replacement cartridges/canisters. (planned)
 - **Generator run log shortcut** — one-tap "I ran the generator today"
   action from the item detail, stamping last run date and resetting the
-  overdue alert. Backed by a maintenance task completion.
+  overdue alert. Backed by a maintenance task completion. (planned)
 
 ---
 

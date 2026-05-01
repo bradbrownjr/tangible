@@ -68,6 +68,9 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     # Whether the item is depleted (e.g. a pantry item that ran out).
     depleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Minimum quantity threshold for low-stock alerts.
+    minimum_quantity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     # Whether the item is on the wishlist (not yet owned).
     wanted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

@@ -8,6 +8,12 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Maintenance completion history.** Completing a maintenance task now records a timestamped entry with optional notes, cost (with currency), technician, and odometer/hours readings. Full history is accessible via `GET /maintenance/{task_id}/history` with CSV export.
+- **Maintenance consumables linkage.** Link inventory items to a maintenance task (`POST /maintenance/{task_id}/consumables`). When the task is completed, those items are automatically depleted by the configured quantity.
+- **Chores.** A new collection-scoped chore system tracks recurring household tasks that aren't tied to a specific item (e.g. "clean gutters every 180 days"). Chores have an optional recurrence interval, next-due date, and full completion history. Manage chores from the new **Chores** tab on every collection page.
+- **Low-stock alerts.** Set a `minimum_quantity` on any inventory item. Items below that threshold surface in the unified alerts feed under the "low_stock" kind.
+- **Maintenance &amp; alerts agenda.** A new top-level **Maintenance** page shows all upcoming and overdue alerts across all collections in one place, grouped by kind (maintenance tasks, chores, expiry dates, low stock). Filter by 7 / 14 / 30 / 60 / 90-day window.
+
 - **Manual / asset bundles.** A new collection-scoped "manual library"
   lets you upload a primary manual plus related assets (diagrams,
   firmware, service sheets, parts lists) once and link the bundle to
