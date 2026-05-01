@@ -194,7 +194,8 @@ or fixes can be contributed through pull requests.
   acquisition date and optional purchase price.
 - Editors/owners can also **select multiple items** and run bulk actions
   from the collection toolbar: set wanted/owned, set depleted/in-stock,
-  bulk archive/restore, or delete selected rows/cards.
+  bulk archive/restore, bulk tag add/remove, bulk move-to-location,
+  bulk lend-to-contact, or delete selected rows/cards.
 - Items can be **archived** instead of deleted, with optional disposition
   details (sold/disposed/donated, date, amount, buyer, note). Archived
   items are hidden from default views and can be shown/restored via the

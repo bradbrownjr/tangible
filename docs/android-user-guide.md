@@ -57,6 +57,22 @@ Inside a collection you see all its items.
 - If an item is a container / kit with children, the list/card can show the
   **effective rolled-up value** of its nested contents.
 
+### Bulk actions (Android)
+
+In collection detail, use the checkboxes on list rows or grid cards to
+select multiple items. The bulk action strip supports:
+
+- **Depleted / In stock**
+- **Wanted / Owned**
+- **Archive / Restore**
+- **Tag add / remove**
+- **Move to location / clear location**
+- **Lend to contact**
+- **Delete**
+
+Use **Select visible** to select all currently filtered items, and **Clear**
+to reset the selection.
+
 ---
 
 ## Adding items

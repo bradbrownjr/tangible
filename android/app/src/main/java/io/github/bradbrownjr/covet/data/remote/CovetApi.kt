@@ -46,6 +46,12 @@ interface CovetApi {
     @GET("categories")
     suspend fun listCategories(): List<CategoryDto>
 
+    @GET("tags")
+    suspend fun listTags(): List<TagDto>
+
+    @GET("contacts")
+    suspend fun listContacts(): List<ContactDto>
+
     // --- Items ---
     @GET("items")
     suspend fun listItems(
@@ -65,6 +71,24 @@ interface CovetApi {
 
     @DELETE("items/{id}")
     suspend fun deleteItem(@Path("id") id: String)
+
+    @POST("items/bulk-patch")
+    suspend fun bulkPatchItems(@Body body: ItemBulkPatchRequest): List<ItemDto>
+
+    @POST("items/bulk-archive")
+    suspend fun bulkArchiveItems(@Body body: ItemBulkArchiveRequest): List<ItemDto>
+
+    @POST("items/bulk-restore")
+    suspend fun bulkRestoreItems(@Body body: ItemBulkRestoreRequest): List<ItemDto>
+
+    @POST("items/bulk-delete")
+    suspend fun bulkDeleteItems(@Body body: ItemBulkDeleteRequest): ItemBulkDeleteResponse
+
+    @POST("items/bulk-tags")
+    suspend fun bulkTagItems(@Body body: ItemBulkTagRequest): List<ItemDto>
+
+    @POST("items/bulk-lend")
+    suspend fun bulkLendItems(@Body body: ItemBulkLendRequest): List<LoanDto>
 
     @GET("items/grocery-list")
     suspend fun getGroceryList(): List<ItemDto>

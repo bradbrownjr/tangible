@@ -59,9 +59,16 @@ All notable changes to **Covet** are documented here. Format follows
   date and optional purchase price.
 - **Bulk item actions (web + API).** Collection views now support multi-select
   with bulk status updates (wanted/owned, depleted/in-stock), bulk
-  archive/restore, and bulk delete. The server adds `POST /items/bulk-patch`,
-  `POST /items/bulk-archive`, `POST /items/bulk-restore`, and
-  `POST /items/bulk-delete`.
+  archive/restore, bulk delete, bulk tag add/remove, bulk move-to-location,
+  and bulk lend-to-contact. The server adds `POST /items/bulk-patch`,
+  `POST /items/bulk-archive`, `POST /items/bulk-restore`,
+  `POST /items/bulk-delete`, `POST /items/bulk-tags`, and
+  `POST /items/bulk-lend`.
+- **Android: bulk selection actions parity.** Collection detail now
+  supports multi-select in list/grid views with bulk depleted/in-stock,
+  bulk wanted/owned, bulk archive/restore, bulk delete, bulk tag
+  add/remove, bulk move-to-location, and bulk lend-to-contact using the
+  collection-scoped bulk item endpoints.
 - **CSV hierarchy round-trip (web + API).** You can now export a collection as
   CSV with stable item/parent references (`GET /imports/csv/export`) and
   re-import it while preserving parent/child relationships using

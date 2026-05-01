@@ -388,6 +388,187 @@ def test_item_bulk_patch_and_delete(client) -> None:
     assert [x["id"] for x in remaining.json()] == [id_b]
 
 
+def test_item_bulk_tag_add_and_remove(client) -> None:
+    _signup_and_login(client, "bulktag")
+    cid = client.post("/api/collections", json={"name": "Bulk tags"}).json()["id"]
+
+    first = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Tagged A"},
+    )
+    second = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Tagged B"},
+    )
+    assert first.status_code == 201 and second.status_code == 201
+    id_a = first.json()["id"]
+    id_b = second.json()["id"]
+
+    tag = client.post("/api/tags", json={"name": "roadmap", "color": "#0af"})
+    assert tag.status_code == 201, tag.text
+    tag_id = tag.json()["id"]
+
+    added = client.post(
+        "/api/items/bulk-tags",
+        json={
+            "collection_id": cid,
+            "item_ids": [id_a, id_b],
+            "tag_ids": [tag_id],
+            "mode": "add",
+        },
+    )
+    assert added.status_code == 200, added.text
+    assert [x["id"] for x in added.json()] == [id_a, id_b]
+
+    tags_a = client.get(f"/api/items/{id_a}/tags")
+    tags_b = client.get(f"/api/items/{id_b}/tags")
+    assert tags_a.status_code == 200 and tags_b.status_code == 200
+    assert [t["id"] for t in tags_a.json()] == [tag_id]
+    assert [t["id"] for t in tags_b.json()] == [tag_id]
+
+    removed = client.post(
+        "/api/items/bulk-tags",
+        json={
+            "collection_id": cid,
+            "item_ids": [id_b],
+            "tag_ids": [tag_id],
+            "mode": "remove",
+        },
+    )
+    assert removed.status_code == 200, removed.text
+
+    tags_a_after = client.get(f"/api/items/{id_a}/tags")
+    tags_b_after = client.get(f"/api/items/{id_b}/tags")
+    assert [t["id"] for t in tags_a_after.json()] == [tag_id]
+    assert tags_b_after.json() == []
+
+
+def test_item_bulk_tag_requires_editor_role(client) -> None:
+    _signup_and_login(client, "bulktagowner")
+    cid = client.post("/api/collections", json={"name": "Bulk tag ACL"}).json()["id"]
+    created = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "ACL item"},
+    )
+    assert created.status_code == 201, created.text
+    item_id = created.json()["id"]
+
+    tag = client.post("/api/tags", json={"name": "private", "color": "#f0a"})
+    assert tag.status_code == 201, tag.text
+    tag_id = tag.json()["id"]
+
+    client.post(
+        "/api/auth/register",
+        json={"username": "bulktagviewer", "password": "hunter22-secure", "email": "btv@x.io"},
+    )
+    add_viewer = client.post(
+        f"/api/collections/{cid}/members",
+        json={"user_identifier": "bulktagviewer", "role": "viewer"},
+    )
+    assert add_viewer.status_code == 201, add_viewer.text
+
+    client.post("/api/auth/logout")
+    login = client.post(
+        "/api/auth/login",
+        json={"username": "bulktagviewer", "password": "hunter22-secure"},
+    )
+    assert login.status_code == 200, login.text
+
+    denied = client.post(
+        "/api/items/bulk-tags",
+        json={"collection_id": cid, "item_ids": [item_id], "tag_ids": [tag_id], "mode": "add"},
+    )
+    assert denied.status_code == 403
+
+
+def test_item_bulk_move_location_and_category(client) -> None:
+    _signup_and_login(client, "bulkmove")
+    cid = client.post("/api/collections", json={"name": "Bulk move"}).json()["id"]
+
+    first = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Move A"},
+    )
+    second = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Move B"},
+    )
+    assert first.status_code == 201 and second.status_code == 201
+    id_a = first.json()["id"]
+    id_b = second.json()["id"]
+
+    moved = client.post(
+        "/api/items/bulk-patch",
+        json={
+            "collection_id": cid,
+            "item_ids": [id_a, id_b],
+            "location": "Garage shelf A",
+            "category": "tools.power",
+        },
+    )
+    assert moved.status_code == 200, moved.text
+    assert [x["id"] for x in moved.json()] == [id_a, id_b]
+    assert all(x["location"] == "Garage shelf A" for x in moved.json())
+    assert all(x["category_slug"] == "tools.power" for x in moved.json())
+
+    cleared = client.post(
+        "/api/items/bulk-patch",
+        json={"collection_id": cid, "item_ids": [id_b], "location": ""},
+    )
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()[0]["location"] is None
+
+
+def test_item_bulk_lend_creates_loans(client) -> None:
+    _signup_and_login(client, "bulklend")
+    cid = client.post("/api/collections", json={"name": "Bulk lend"}).json()["id"]
+
+    first = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Lend A"},
+    )
+    second = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Lend B"},
+    )
+    assert first.status_code == 201 and second.status_code == 201
+    id_a = first.json()["id"]
+    id_b = second.json()["id"]
+
+    contact = client.post(
+        "/api/contacts",
+        json={"name": "Sam Borrower", "email": "sam@example.com"},
+    )
+    assert contact.status_code == 201, contact.text
+    contact_id = contact.json()["id"]
+
+    lent = client.post(
+        "/api/items/bulk-lend",
+        json={
+            "collection_id": cid,
+            "item_ids": [id_a, id_b],
+            "contact_id": contact_id,
+            "due_at": "2026-06-15T10:30:00Z",
+            "notes": "Family loan",
+        },
+    )
+    assert lent.status_code == 200, lent.text
+    assert [x["item_id"] for x in lent.json()] == [id_a, id_b]
+    assert all(x["contact_id"] == contact_id for x in lent.json())
+    assert all(str(x["due_at"]).startswith("2026-06-15T10:30:00") for x in lent.json())
+
+    listed_a = client.get("/api/loans", params={"item_id": id_a})
+    assert listed_a.status_code == 200, listed_a.text
+    assert len(listed_a.json()) == 1
+    assert listed_a.json()[0]["contact_id"] == contact_id
+
+    duplicate = client.post(
+        "/api/items/bulk-lend",
+        json={"collection_id": cid, "item_ids": [id_a], "contact_id": contact_id},
+    )
+    assert duplicate.status_code == 422
+
+
 def test_item_bulk_actions_require_editor_role(client) -> None:
     _signup_and_login(client, "bulkowner2")
     cid = client.post("/api/collections", json={"name": "Shared bulk"}).json()["id"]
@@ -438,6 +619,12 @@ def test_item_bulk_actions_require_editor_role(client) -> None:
         json={"collection_id": cid, "item_ids": [item_id]},
     )
     assert denied_restore.status_code == 403
+
+    denied_lend = client.post(
+        "/api/items/bulk-lend",
+        json={"collection_id": cid, "item_ids": [item_id], "contact_id": "01HNOTREALCONTACTID000000000"},
+    )
+    assert denied_lend.status_code == 403
 
 
 def test_item_bulk_archive_and_restore(client) -> None:

@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import String, asc, cast, desc, func, or_, select
+from sqlalchemy import String, asc, cast, delete, desc, func, or_, select
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import selectinload
 
@@ -17,18 +17,32 @@ from covet.auth.deps import (
     require_user,
 )
 from covet.db import get_session
-from covet.models import Category, Collection, CollectionMembership, Item, ItemTemplate
+from covet.models import (
+    Category,
+    Collection,
+    CollectionMembership,
+    Contact,
+    Item,
+    ItemTag,
+    ItemTemplate,
+    Loan,
+    Tag,
+)
 from covet.schemas import (
     ItemArchiveUpdate,
     ItemBulkArchiveRequest,
     ItemBulkDeleteRequest,
     ItemBulkDeleteResponse,
+    ItemBulkLendRequest,
     ItemBulkPatchRequest,
     ItemBulkRestoreRequest,
+    ItemBulkTagRequest,
     ItemCreate,
     ItemFlagUpdate,
     ItemRead,
     ItemUpdate,
+    LoanRead,
+    TagRead,
 )
 from covet.services.categories import resolve_slug, subtree_ids
 
@@ -342,11 +356,34 @@ def bulk_patch_items(
 ) -> list[ItemRead]:
     _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
 
-    updates: dict[str, bool] = {}
+    updates: dict[str, object] = {}
     if payload.depleted is not None:
         updates["depleted"] = payload.depleted
     if payload.wanted is not None:
         updates["wanted"] = payload.wanted
+    if "location" in payload.model_fields_set:
+        updates["location"] = (payload.location or "").strip() or None
+    if "category_id" in payload.model_fields_set or "category" in payload.model_fields_set:
+        category_id = payload.category_id
+        if not category_id and payload.category:
+            try:
+                category_id = resolve_slug(db, payload.category).id
+            except LookupError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+        if not category_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Either category_id or category (slug) is required for bulk move",
+            )
+        if db.get(Category, category_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Unknown category_id",
+            )
+        updates["category_id"] = category_id
     if not updates:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -379,6 +416,68 @@ def bulk_patch_items(
     rollups = _compute_rollup_values(db, payload.collection_id)
     by_id = {item.id: item for item in rows}
     return [_to_item_read(by_id[item_id], rollups) for item_id in ids]
+
+
+@router.post("/bulk-lend", response_model=list[LoanRead])
+def bulk_lend_items(
+    payload: ItemBulkLendRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[LoanRead]:
+    _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
+
+    ids = list(dict.fromkeys(payload.item_ids))
+    rows = db.scalars(
+        select(Item)
+        .where(Item.collection_id == payload.collection_id)
+        .where(Item.id.in_(ids))
+    ).all()
+    if len(rows) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more items not found in collection",
+        )
+    if any(item.archived_at is not None for item in rows):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Archived items cannot be lent",
+        )
+
+    contact = db.get(Contact, payload.contact_id)
+    if contact is None or contact.owner_id != auth.user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
+
+    active_loan_item_ids = set(
+        db.scalars(
+            select(Loan.item_id)
+            .where(Loan.item_id.in_(ids))
+            .where(Loan.returned_at.is_(None))
+        ).all()
+    )
+    if active_loan_item_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="One or more items already have an active loan",
+        )
+
+    loaned_at = payload.loaned_at or datetime.now(UTC)
+    notes = (payload.notes or "").strip() or None
+    created: list[Loan] = []
+    for item_id in ids:
+        loan = Loan(
+            item_id=item_id,
+            contact_id=payload.contact_id,
+            loaned_at=loaned_at,
+            due_at=payload.due_at,
+            notes=notes,
+        )
+        db.add(loan)
+        created.append(loan)
+
+    db.commit()
+    for loan in created:
+        db.refresh(loan)
+    return [LoanRead.model_validate(loan) for loan in created]
 
 
 @router.post("/bulk-delete", response_model=ItemBulkDeleteResponse)
@@ -487,6 +586,62 @@ def bulk_restore_items(
     return [_to_item_read(by_id[item_id], rollups) for item_id in ids]
 
 
+@router.post("/bulk-tags", response_model=list[ItemRead])
+def bulk_tag_items(
+    payload: ItemBulkTagRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
+
+    ids = list(dict.fromkeys(payload.item_ids))
+    tag_ids = list(dict.fromkeys(payload.tag_ids))
+    rows = db.scalars(
+        select(Item)
+        .where(Item.collection_id == payload.collection_id)
+        .where(Item.id.in_(ids))
+        .options(selectinload(Item.photos))
+    ).all()
+    if len(rows) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more items not found in collection",
+        )
+
+    user_tags = db.scalars(
+        select(Tag).where(Tag.owner_id == auth.user.id).where(Tag.id.in_(tag_ids))
+    ).all()
+    if len(user_tags) != len(tag_ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more tags not found",
+        )
+
+    if payload.mode == "add":
+        existing = {
+            (item_id, tag_id)
+            for item_id, tag_id in db.execute(
+                select(ItemTag.item_id, ItemTag.tag_id)
+                .where(ItemTag.item_id.in_(ids))
+                .where(ItemTag.tag_id.in_(tag_ids))
+            ).all()
+        }
+        for item_id in ids:
+            for tag_id in tag_ids:
+                if (item_id, tag_id) in existing:
+                    continue
+                db.add(ItemTag(item_id=item_id, tag_id=tag_id))
+    else:
+        db.execute(delete(ItemTag).where(ItemTag.item_id.in_(ids)).where(ItemTag.tag_id.in_(tag_ids)))
+
+    db.commit()
+    for item in rows:
+        db.refresh(item)
+    rollups = _compute_rollup_values(db, payload.collection_id)
+    by_id = {item.id: item for item in rows}
+    return [_to_item_read(by_id[item_id], rollups) for item_id in ids]
+
+
 @router.get("/{item_id}", response_model=ItemRead)
 def get_item(
     item_id: str,
@@ -499,6 +654,27 @@ def get_item(
     _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
     rollups = _compute_rollup_values(db, item.collection_id)
     return _to_item_read(item, rollups)
+
+
+@router.get("/{item_id}/tags", response_model=list[TagRead])
+def list_item_tags(
+    item_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[TagRead]:
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
+
+    rows = db.scalars(
+        select(Tag)
+        .join(ItemTag, ItemTag.tag_id == Tag.id)
+        .where(ItemTag.item_id == item_id)
+        .where(Tag.owner_id == auth.user.id)
+        .order_by(Tag.name)
+    ).all()
+    return [TagRead.model_validate(tag) for tag in rows]
 
 
 @router.patch("/{item_id}", response_model=ItemRead)

@@ -68,10 +68,11 @@ more useful data without manual data entry.
 With more items per collection, bulk operations and discovery become the
 bottleneck. This phase is about scaling the UX.
 
-- **Bulk select + bulk actions** 🚧 — web now supports multi-select with
-  bulk set-field actions (`depleted` / `wanted`), bulk archive/restore,
-  and bulk delete backed by collection-scoped API endpoints. Remaining
-  scope: Android parity, bulk move/tag/lend.
+- **Bulk select + bulk actions** ✅ — web and Android now support
+  multi-select with bulk set-field actions (`depleted` / `wanted`),
+  bulk archive/restore, bulk delete, bulk tag add/remove,
+  bulk move-to-location, and bulk lend-to-contact backed by
+  collection-scoped API endpoints.
 - **Better search** 🚧 — search now covers title/subtitle/notes plus
   custom fields (`attrs`) and identifiers, with web `/` keyboard focus
   shortcut. Remaining scope: accent-folding, fuzzy ranking, attachment

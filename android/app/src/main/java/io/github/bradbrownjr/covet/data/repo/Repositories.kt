@@ -9,14 +9,22 @@ import io.github.bradbrownjr.covet.data.local.ItemDao
 import io.github.bradbrownjr.covet.data.local.toDto
 import io.github.bradbrownjr.covet.data.local.toEntity
 import io.github.bradbrownjr.covet.data.remote.CategoryDto
+import io.github.bradbrownjr.covet.data.remote.ContactDto
 import io.github.bradbrownjr.covet.data.remote.CollectionCreate
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.remote.ItemCreate
+import io.github.bradbrownjr.covet.data.remote.ItemBulkArchiveRequest
+import io.github.bradbrownjr.covet.data.remote.ItemBulkDeleteRequest
+import io.github.bradbrownjr.covet.data.remote.ItemBulkLendRequest
+import io.github.bradbrownjr.covet.data.remote.ItemBulkPatchRequest
+import io.github.bradbrownjr.covet.data.remote.ItemBulkRestoreRequest
+import io.github.bradbrownjr.covet.data.remote.ItemBulkTagRequest
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.ItemPatch
 import io.github.bradbrownjr.covet.data.remote.PhotoDto
 import io.github.bradbrownjr.covet.data.remote.RestockRequest
+import io.github.bradbrownjr.covet.data.remote.TagDto
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -109,6 +117,10 @@ class ItemRepository @Inject constructor(
     private val dao: ItemDao,
     private val moshi: Moshi,
 ) {
+    suspend fun listTags(): List<TagDto> = api.listTags()
+
+    suspend fun listContacts(): List<ContactDto> = api.listContacts()
+
     fun observe(collectionId: String): Flow<List<ItemDto>> =
         dao.observeForCollection(collectionId).map { rows -> rows.map { it.toDto(moshi) } }
 
@@ -185,6 +197,80 @@ class ItemRepository @Inject constructor(
     suspend fun delete(id: String) {
         api.deleteItem(id)
         dao.delete(id)
+    }
+
+    suspend fun bulkPatch(
+        collectionId: String,
+        itemIds: List<String>,
+        depleted: Boolean? = null,
+        wanted: Boolean? = null,
+        location: String? = null,
+    ) {
+        if (itemIds.isEmpty()) return
+        api.bulkPatchItems(
+            ItemBulkPatchRequest(
+                collection_id = collectionId,
+                item_ids = itemIds,
+                depleted = depleted,
+                wanted = wanted,
+                location = location,
+            ),
+        )
+    }
+
+    suspend fun bulkMoveLocation(collectionId: String, itemIds: List<String>, location: String?) {
+        if (itemIds.isEmpty()) return
+        api.bulkPatchItems(
+            ItemBulkPatchRequest(
+                collection_id = collectionId,
+                item_ids = itemIds,
+                location = location,
+            ),
+        )
+    }
+
+    suspend fun bulkArchive(collectionId: String, itemIds: List<String>) {
+        if (itemIds.isEmpty()) return
+        api.bulkArchiveItems(
+            ItemBulkArchiveRequest(collection_id = collectionId, item_ids = itemIds),
+        )
+    }
+
+    suspend fun bulkRestore(collectionId: String, itemIds: List<String>) {
+        if (itemIds.isEmpty()) return
+        api.bulkRestoreItems(
+            ItemBulkRestoreRequest(collection_id = collectionId, item_ids = itemIds),
+        )
+    }
+
+    suspend fun bulkDelete(collectionId: String, itemIds: List<String>) {
+        if (itemIds.isEmpty()) return
+        api.bulkDeleteItems(
+            ItemBulkDeleteRequest(collection_id = collectionId, item_ids = itemIds),
+        )
+    }
+
+    suspend fun bulkTag(collectionId: String, itemIds: List<String>, tagId: String, mode: String) {
+        if (itemIds.isEmpty()) return
+        api.bulkTagItems(
+            ItemBulkTagRequest(
+                collection_id = collectionId,
+                item_ids = itemIds,
+                tag_ids = listOf(tagId),
+                mode = mode,
+            ),
+        )
+    }
+
+    suspend fun bulkLend(collectionId: String, itemIds: List<String>, contactId: String) {
+        if (itemIds.isEmpty()) return
+        api.bulkLendItems(
+            ItemBulkLendRequest(
+                collection_id = collectionId,
+                item_ids = itemIds,
+                contact_id = contactId,
+            ),
+        )
     }
 }
 

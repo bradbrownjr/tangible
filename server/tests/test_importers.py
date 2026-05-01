@@ -106,7 +106,7 @@ def test_csv_importer_with_mapping() -> None:
         b",2020,000,Drama,Missing title\n"  # dropped: no title
     )
     importer = CSVImporter(
-        category_slug="movies.dvd",
+        default_category_slug="movies.dvd",
         mapping={
             "Name": "title",
             "Year": "attr:year",
@@ -126,7 +126,7 @@ def test_csv_importer_with_mapping() -> None:
 
 def test_csv_importer_warns_on_unknown_column() -> None:
     csv_text = b"title,extra\nFoo,Bar\n"
-    importer = CSVImporter(category_slug="other.generic", mapping={"title": "title"})
+    importer = CSVImporter(default_category_slug="other.generic", mapping={"title": "title"})
     result = importer.parse(io.BytesIO(csv_text))
     assert len(result.items) == 1
     assert any("Ignoring unmapped" in w for w in result.warnings)

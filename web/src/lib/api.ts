@@ -138,6 +138,15 @@ export interface Tag {
     color: string | null;
 }
 
+export interface Contact {
+    id: string;
+    owner_id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    notes: string | null;
+}
+
 export type Role = 'viewer' | 'editor' | 'owner';
 
 export interface Membership {

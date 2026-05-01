@@ -63,6 +63,34 @@ data class CategoryDto(
 )
 
 @JsonClass(generateAdapter = true)
+data class TagDto(
+    val id: String,
+    val name: String,
+    val color: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ContactDto(
+    val id: String,
+    val owner_id: String,
+    val name: String,
+    val email: String? = null,
+    val phone: String? = null,
+    val notes: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class LoanDto(
+    val id: String,
+    val item_id: String,
+    val contact_id: String,
+    val loaned_at: String,
+    val due_at: String? = null,
+    val returned_at: String? = null,
+    val notes: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
 data class ScrapeResponse(
     val title: String? = null,
     val description: String? = null,
@@ -109,6 +137,8 @@ data class ItemDto(
     val identifiers: Map<String, Any?> = emptyMap(),
     val attrs: Map<String, Any?> = emptyMap(),
     val depleted: Boolean = false,
+    val wanted: Boolean = false,
+    val archived_at: String? = null,
     val purchased_at: String? = null,
     val use_by_date: String? = null,
     val date_frozen: String? = null,
@@ -137,6 +167,56 @@ data class ItemPatch(
     val currency: String? = null,
     val location: String? = null,
     val depleted: Boolean? = null,
+    val wanted: Boolean? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkPatchRequest(
+    val collection_id: String,
+    val item_ids: List<String>,
+    val depleted: Boolean? = null,
+    val wanted: Boolean? = null,
+    val location: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkTagRequest(
+    val collection_id: String,
+    val item_ids: List<String>,
+    val tag_ids: List<String>,
+    val mode: String = "add",
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkLendRequest(
+    val collection_id: String,
+    val item_ids: List<String>,
+    val contact_id: String,
+    val due_at: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkArchiveRequest(
+    val collection_id: String,
+    val item_ids: List<String>,
+    val disposition_type: String = "archived",
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkRestoreRequest(
+    val collection_id: String,
+    val item_ids: List<String>,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkDeleteRequest(
+    val collection_id: String,
+    val item_ids: List<String>,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemBulkDeleteResponse(
+    val deleted: Int,
 )
 
 @JsonClass(generateAdapter = true)

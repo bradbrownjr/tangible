@@ -2,12 +2,14 @@
     import { onMount, tick } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { api, type Category, type Collection, type Item, type ItemTemplate } from '$lib/api';
+    import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type Tag } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
     let templates = $state<ItemTemplate[]>([]);
+    let tags = $state<Tag[]>([]);
+    let contacts = $state<Contact[]>([]);
     let relatedItemTitles = $state<Record<string, string>>({});
     let categories = $state<Category[]>([]);
     let search = $state('');
@@ -52,6 +54,10 @@
     let archiveDispositionBuyer = $state('');
     let archiveDispositionNote = $state('');
     let bulkBusy = $state(false);
+    let selectedBulkTagId = $state('');
+    let bulkMoveLocation = $state('');
+    let selectedBulkContactId = $state('');
+    let bulkLoanDueAt = $state('');
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
@@ -266,12 +272,22 @@
             params.set('sort_by', sortBy);
             params.set('sort_dir', sortDir);
             if (sortBy === 'attr' && sortAttr.trim()) params.set('sort_attr', sortAttr.trim());
-            const [fetchedItems, fetchedTemplates] = await Promise.all([
+            const [fetchedItems, fetchedTemplates, fetchedTags, fetchedContacts] = await Promise.all([
                 api.get<Item[]>(`/items?${params.toString()}`),
                 api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
+                api.get<Tag[]>('/tags'),
+                api.get<Contact[]>('/contacts'),
             ]);
             items = fetchedItems;
             templates = fetchedTemplates;
+            tags = fetchedTags;
+            contacts = fetchedContacts;
+            if (selectedBulkTagId && !fetchedTags.some((t) => t.id === selectedBulkTagId)) {
+                selectedBulkTagId = '';
+            }
+            if (selectedBulkContactId && !fetchedContacts.some((c) => c.id === selectedBulkContactId)) {
+                selectedBulkContactId = '';
+            }
             selectedItemIds = selectedItemIds.filter((id) => fetchedItems.some((i) => i.id === id));
             await hydrateRelatedItemTitles(fetchedItems);
         } catch (e) {
@@ -348,6 +364,69 @@
             });
             await load();
             clearSelection();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
+        }
+    }
+
+    async function bulkTag(mode: 'add' | 'remove') {
+        if (!selectedItemIds.length || !selectedBulkTagId) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-tags', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+                tag_ids: [selectedBulkTagId],
+                mode,
+            });
+            await load();
+            clearSelection();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
+        }
+    }
+
+    async function runBulkMoveLocation(clear = false) {
+        if (!selectedItemIds.length) return;
+        const location = clear ? '' : bulkMoveLocation.trim();
+        if (!clear && !location) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-patch', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+                location,
+            });
+            await load();
+            clearSelection();
+            if (clear) bulkMoveLocation = '';
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
+        }
+    }
+
+    async function bulkLend() {
+        if (!selectedItemIds.length || !selectedBulkContactId) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-lend', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+                contact_id: selectedBulkContactId,
+                due_at: bulkLoanDueAt ? new Date(bulkLoanDueAt).toISOString() : undefined,
+            });
+            await load();
+            clearSelection();
+            bulkLoanDueAt = '';
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -855,6 +934,25 @@
             <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: false })} disabled={!selectedItemIds.length || bulkBusy}>Bulk owned</button>
             <button type="button" class="secondary" onclick={bulkArchive} disabled={!selectedItemIds.length || bulkBusy}>Bulk archive</button>
             <button type="button" class="secondary" onclick={bulkRestore} disabled={!selectedItemIds.length || bulkBusy}>Bulk restore</button>
+            <select bind:value={selectedBulkTagId} disabled={bulkBusy || tags.length === 0} title="Tag for bulk tagging">
+                <option value="">Tag…</option>
+                {#each tags as t (t.id)}
+                    <option value={t.id}>{t.name}</option>
+                {/each}
+            </select>
+            <button type="button" class="secondary" onclick={() => bulkTag('add')} disabled={!selectedItemIds.length || !selectedBulkTagId || bulkBusy}>Bulk add tag</button>
+            <button type="button" class="secondary" onclick={() => bulkTag('remove')} disabled={!selectedItemIds.length || !selectedBulkTagId || bulkBusy}>Bulk remove tag</button>
+            <input bind:value={bulkMoveLocation} placeholder="Location (e.g. Garage shelf A)" title="Bulk location move" />
+            <button type="button" class="secondary" onclick={() => runBulkMoveLocation(false)} disabled={!selectedItemIds.length || !bulkMoveLocation.trim() || bulkBusy}>Bulk move location</button>
+            <button type="button" class="secondary" onclick={() => runBulkMoveLocation(true)} disabled={!selectedItemIds.length || bulkBusy}>Clear location</button>
+            <select bind:value={selectedBulkContactId} disabled={bulkBusy || contacts.length === 0} title="Contact for bulk lend">
+                <option value="">Lend to…</option>
+                {#each contacts as c (c.id)}
+                    <option value={c.id}>{c.name}</option>
+                {/each}
+            </select>
+            <input type="datetime-local" bind:value={bulkLoanDueAt} title="Bulk lend due date" />
+            <button type="button" class="secondary" onclick={bulkLend} disabled={!selectedItemIds.length || !selectedBulkContactId || bulkBusy}>Bulk lend</button>
             <button type="button" class="danger" onclick={bulkDelete} disabled={!selectedItemIds.length || bulkBusy}>Bulk delete</button>
         </div>
     {/if}

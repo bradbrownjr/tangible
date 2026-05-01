@@ -49,11 +49,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import io.github.bradbrownjr.covet.data.remote.CategoryDto
+import io.github.bradbrownjr.covet.data.remote.ContactDto
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 import io.github.bradbrownjr.covet.data.remote.BarcodeCandidateDto
 import io.github.bradbrownjr.covet.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.covet.data.remote.ScrapeRequest
+import io.github.bradbrownjr.covet.data.remote.TagDto
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.repo.CategoryRepository
 import io.github.bradbrownjr.covet.data.repo.CollectionRepository
@@ -98,6 +100,12 @@ data class DetailUi(
     // Collection delete confirmation dialog
     val showDeleteConfirm: Boolean = false,
     val deleted: Boolean = false,
+    val selectedItemIds: Set<String> = emptySet(),
+    val tags: List<TagDto> = emptyList(),
+    val contacts: List<ContactDto> = emptyList(),
+    val selectedBulkTagId: String = "",
+    val selectedBulkContactId: String = "",
+    val bulkMoveLocation: String = "",
 )
 
 private fun formatItemValue(item: ItemDto): String? {
@@ -133,6 +141,8 @@ class CollectionDetailViewModel @Inject constructor(
                 val c = collections.get(collectionId)
                 val list = items.list(collectionId)
                 val cats = categories.load()
+                val tags = items.listTags()
+                val contacts = items.listContacts()
                 val roots = cats.filter { it.parent_id == null }
                 // Only pre-select a category when the collection has an explicit default.
                 // Collections without a default get no pre-selection so the user must choose.
@@ -153,6 +163,14 @@ class CollectionDetailViewModel @Inject constructor(
                     leafCategories = leaves,
                     selectedRoot = defaultRoot,
                     selectedLeaf = defaultLeaf,
+                    tags = tags,
+                    contacts = contacts,
+                    selectedBulkTagId = _state.value.selectedBulkTagId.takeIf { id ->
+                        id.isNotBlank() && tags.any { it.id == id }
+                    } ?: "",
+                    selectedBulkContactId = _state.value.selectedBulkContactId.takeIf { id ->
+                        id.isNotBlank() && contacts.any { it.id == id }
+                    } ?: "",
                 )
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(loading = false, error = t.message)
@@ -348,6 +366,152 @@ class CollectionDetailViewModel @Inject constructor(
         }
     }
 
+    fun toggleSelected(itemId: String) {
+        val selected = _state.value.selectedItemIds
+        _state.value = _state.value.copy(
+            selectedItemIds = if (itemId in selected) selected - itemId else selected + itemId,
+        )
+    }
+
+    fun clearSelection() {
+        _state.value = _state.value.copy(selectedItemIds = emptySet())
+    }
+
+    fun selectVisible(displayed: List<ItemDto>) {
+        _state.value = _state.value.copy(selectedItemIds = displayed.map { it.id }.toSet())
+    }
+
+    fun bulkSetDepleted(value: Boolean) {
+        val ids = _state.value.selectedItemIds.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                items.bulkPatch(collectionId, ids, depleted = value)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun bulkSetWanted(value: Boolean) {
+        val ids = _state.value.selectedItemIds.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                items.bulkPatch(collectionId, ids, wanted = value)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun bulkArchive() {
+        val ids = _state.value.selectedItemIds.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                items.bulkArchive(collectionId, ids)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun bulkRestore() {
+        val ids = _state.value.selectedItemIds.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                items.bulkRestore(collectionId, ids)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun bulkDelete() {
+        val ids = _state.value.selectedItemIds.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                items.bulkDelete(collectionId, ids)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun setBulkTag(tagId: String) {
+        _state.value = _state.value.copy(selectedBulkTagId = tagId)
+    }
+
+    fun setBulkContact(contactId: String) {
+        _state.value = _state.value.copy(selectedBulkContactId = contactId)
+    }
+
+    fun setBulkMoveLocation(location: String) {
+        _state.value = _state.value.copy(bulkMoveLocation = location)
+    }
+
+    fun bulkMoveLocation(clear: Boolean = false) {
+        val ids = _state.value.selectedItemIds.toList()
+        if (ids.isEmpty()) return
+        val location = if (clear) null else _state.value.bulkMoveLocation.trim().ifEmpty { null }
+        if (!clear && location == null) return
+        viewModelScope.launch {
+            try {
+                items.bulkMoveLocation(collectionId, ids, location)
+                _state.value = _state.value.copy(
+                    selectedItemIds = emptySet(),
+                    bulkMoveLocation = if (clear) "" else _state.value.bulkMoveLocation,
+                )
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun bulkTag(mode: String) {
+        val s = _state.value
+        val ids = s.selectedItemIds.toList()
+        if (ids.isEmpty() || s.selectedBulkTagId.isBlank()) return
+        viewModelScope.launch {
+            try {
+                items.bulkTag(collectionId, ids, s.selectedBulkTagId, mode)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun bulkLend() {
+        val s = _state.value
+        val ids = s.selectedItemIds.toList()
+        if (ids.isEmpty() || s.selectedBulkContactId.isBlank()) return
+        viewModelScope.launch {
+            try {
+                items.bulkLend(collectionId, ids, s.selectedBulkContactId)
+                _state.value = _state.value.copy(selectedItemIds = emptySet())
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
     fun startEdit() {
         val c = _state.value.collection ?: return
         _state.value = _state.value.copy(
@@ -511,6 +675,8 @@ fun CollectionDetailScreen(
             if (filter == null) s.items
             else s.items.filter { it.category_slug == filter.slug }
         }
+        val selectedCount = s.selectedItemIds.size
+        val allVisibleSelected = displayItems.isNotEmpty() && displayItems.all { it.id in s.selectedItemIds }
 
         PullToRefreshBox(
             isRefreshing = s.refreshing,
@@ -546,6 +712,32 @@ fun CollectionDetailScreen(
                             onSearch = { vm.search() },
                             onClear = vm::clearSearch,
                         )
+                        BulkActionBar(
+                            selectedCount = selectedCount,
+                            allVisibleSelected = allVisibleSelected,
+                            tags = s.tags,
+                            contacts = s.contacts,
+                            selectedBulkTagId = s.selectedBulkTagId,
+                            selectedBulkContactId = s.selectedBulkContactId,
+                            bulkMoveLocation = s.bulkMoveLocation,
+                            onSetBulkTag = vm::setBulkTag,
+                            onSetBulkContact = vm::setBulkContact,
+                            onSetBulkMoveLocation = vm::setBulkMoveLocation,
+                            onSelectVisible = { vm.selectVisible(displayItems) },
+                            onClearSelection = vm::clearSelection,
+                            onBulkDepleted = { vm.bulkSetDepleted(true) },
+                            onBulkInStock = { vm.bulkSetDepleted(false) },
+                            onBulkWanted = { vm.bulkSetWanted(true) },
+                            onBulkOwned = { vm.bulkSetWanted(false) },
+                            onBulkArchive = vm::bulkArchive,
+                            onBulkRestore = vm::bulkRestore,
+                            onBulkTagAdd = { vm.bulkTag("add") },
+                            onBulkTagRemove = { vm.bulkTag("remove") },
+                            onBulkMoveLocation = { vm.bulkMoveLocation(false) },
+                            onBulkClearLocation = { vm.bulkMoveLocation(true) },
+                            onBulkLend = vm::bulkLend,
+                            onBulkDelete = vm::bulkDelete,
+                        )
                     }
                     if (s.viewMode == ViewMode.GRID) {
                         LazyVerticalGrid(
@@ -566,6 +758,8 @@ fun CollectionDetailScreen(
                                 items(displayItems, key = { it.id }) { item ->
                                     ItemCard(
                                         item = item,
+                                        selected = item.id in s.selectedItemIds,
+                                        onToggleSelected = { vm.toggleSelected(item.id) },
                                         onClick = { onItem(item.id) },
                                         onDelete = { vm.delete(item.id) },
                                     )
@@ -586,6 +780,12 @@ fun CollectionDetailScreen(
                                 items(displayItems, key = { it.id }) { item ->
                                     val valueText = formatItemValue(item)
                                     ListItem(
+                                        leadingContent = {
+                                            Checkbox(
+                                                checked = item.id in s.selectedItemIds,
+                                                onCheckedChange = { vm.toggleSelected(item.id) },
+                                            )
+                                        },
                                         headlineContent = { Text(item.title) },
                                         supportingContent = {
                                             val category = item.category_slug
@@ -814,6 +1014,8 @@ private fun CategoryDropdown(
 @Composable
 private fun ItemCard(
     item: ItemDto,
+    selected: Boolean,
+    onToggleSelected: () -> Unit,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -848,6 +1050,15 @@ private fun ItemCard(
                 }
             }
             Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = { onToggleSelected() },
+                    )
+                }
                 item.category_slug?.let { slug ->
                     Text(
                         slug.substringAfterLast('.'),
@@ -886,6 +1097,127 @@ private fun ItemCard(
                     Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(16.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BulkActionBar(
+    selectedCount: Int,
+    allVisibleSelected: Boolean,
+    tags: List<TagDto>,
+    contacts: List<ContactDto>,
+    selectedBulkTagId: String,
+    selectedBulkContactId: String,
+    bulkMoveLocation: String,
+    onSetBulkTag: (String) -> Unit,
+    onSetBulkContact: (String) -> Unit,
+    onSetBulkMoveLocation: (String) -> Unit,
+    onSelectVisible: () -> Unit,
+    onClearSelection: () -> Unit,
+    onBulkDepleted: () -> Unit,
+    onBulkInStock: () -> Unit,
+    onBulkWanted: () -> Unit,
+    onBulkOwned: () -> Unit,
+    onBulkArchive: () -> Unit,
+    onBulkRestore: () -> Unit,
+    onBulkTagAdd: () -> Unit,
+    onBulkTagRemove: () -> Unit,
+    onBulkMoveLocation: () -> Unit,
+    onBulkClearLocation: () -> Unit,
+    onBulkLend: () -> Unit,
+    onBulkDelete: () -> Unit,
+) {
+    var tagMenuOpen by remember { mutableStateOf(false) }
+    var contactMenuOpen by remember { mutableStateOf(false) }
+    val selectedTagName = tags.firstOrNull { it.id == selectedBulkTagId }?.name ?: "Tag…"
+    val selectedContactName = contacts.firstOrNull { it.id == selectedBulkContactId }?.name ?: "Lend to…"
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AssistChip(onClick = {}, label = { Text("Selected: $selectedCount") })
+        OutlinedButton(onClick = onSelectVisible, enabled = !allVisibleSelected) { Text("Select visible") }
+        OutlinedButton(onClick = onClearSelection, enabled = selectedCount > 0) { Text("Clear") }
+        OutlinedButton(onClick = onBulkDepleted, enabled = selectedCount > 0) { Text("Depleted") }
+        OutlinedButton(onClick = onBulkInStock, enabled = selectedCount > 0) { Text("In stock") }
+        OutlinedButton(onClick = onBulkWanted, enabled = selectedCount > 0) { Text("Wanted") }
+        OutlinedButton(onClick = onBulkOwned, enabled = selectedCount > 0) { Text("Owned") }
+        OutlinedButton(onClick = onBulkArchive, enabled = selectedCount > 0) { Text("Archive") }
+        OutlinedButton(onClick = onBulkRestore, enabled = selectedCount > 0) { Text("Restore") }
+        Box {
+            OutlinedButton(onClick = { tagMenuOpen = true }, enabled = tags.isNotEmpty()) {
+                Text(selectedTagName)
+            }
+            DropdownMenu(expanded = tagMenuOpen, onDismissRequest = { tagMenuOpen = false }) {
+                tags.forEach { tag ->
+                    DropdownMenuItem(
+                        text = { Text(tag.name) },
+                        onClick = {
+                            onSetBulkTag(tag.id)
+                            tagMenuOpen = false
+                        },
+                    )
+                }
+            }
+        }
+        OutlinedButton(
+            onClick = onBulkTagAdd,
+            enabled = selectedCount > 0 && selectedBulkTagId.isNotBlank(),
+        ) { Text("Add tag") }
+        OutlinedButton(
+            onClick = onBulkTagRemove,
+            enabled = selectedCount > 0 && selectedBulkTagId.isNotBlank(),
+        ) { Text("Remove tag") }
+        OutlinedTextField(
+            value = bulkMoveLocation,
+            onValueChange = onSetBulkMoveLocation,
+            label = { Text("Location") },
+            singleLine = true,
+            modifier = Modifier.width(220.dp),
+        )
+        OutlinedButton(
+            onClick = onBulkMoveLocation,
+            enabled = selectedCount > 0 && bulkMoveLocation.isNotBlank(),
+        ) { Text("Move") }
+        OutlinedButton(
+            onClick = onBulkClearLocation,
+            enabled = selectedCount > 0,
+        ) { Text("Clear location") }
+        Box {
+            OutlinedButton(onClick = { contactMenuOpen = true }, enabled = contacts.isNotEmpty()) {
+                Text(selectedContactName)
+            }
+            DropdownMenu(expanded = contactMenuOpen, onDismissRequest = { contactMenuOpen = false }) {
+                contacts.forEach { contact ->
+                    DropdownMenuItem(
+                        text = { Text(contact.name) },
+                        onClick = {
+                            onSetBulkContact(contact.id)
+                            contactMenuOpen = false
+                        },
+                    )
+                }
+            }
+        }
+        OutlinedButton(
+            onClick = onBulkLend,
+            enabled = selectedCount > 0 && selectedBulkContactId.isNotBlank(),
+        ) { Text("Lend") }
+        Button(
+            onClick = onBulkDelete,
+            enabled = selectedCount > 0,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+            ),
+        ) {
+            Text("Delete")
         }
     }
 }

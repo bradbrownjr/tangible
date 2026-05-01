@@ -132,6 +132,25 @@ class ItemBulkPatchRequest(BaseModel):
     item_ids: list[str] = Field(min_length=1, max_length=500)
     depleted: bool | None = None
     wanted: bool | None = None
+    location: str | None = None
+    category_id: str | None = None
+    category: str | None = None
+
+
+class ItemBulkTagRequest(BaseModel):
+    collection_id: str
+    item_ids: list[str] = Field(min_length=1, max_length=500)
+    tag_ids: list[str] = Field(min_length=1, max_length=100)
+    mode: Literal["add", "remove"] = "add"
+
+
+class ItemBulkLendRequest(BaseModel):
+    collection_id: str
+    item_ids: list[str] = Field(min_length=1, max_length=500)
+    contact_id: str
+    loaned_at: datetime | None = None
+    due_at: datetime | None = None
+    notes: str | None = Field(default=None, max_length=2048)
 
 
 class ItemBulkArchiveRequest(BaseModel):
