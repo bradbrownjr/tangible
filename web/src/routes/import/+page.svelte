@@ -136,12 +136,41 @@
         a.click();
         URL.revokeObjectURL(url);
     }
+
+    async function downloadCsvExport() {
+        if (!collectionId) return;
+        const res = await fetch(`/api/imports/csv/export?collection_id=${encodeURIComponent(collectionId)}`, {
+            credentials: 'include'
+        });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const label = collections.find((c) => c.id === collectionId)?.name ?? 'collection';
+        const safe = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `covet-${safe || 'collection'}-roundtrip.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
 </script>
 
 <h1>Import / Backup</h1>
 
 <div class="card" style="margin-bottom: 1rem">
     <button class="secondary" onclick={downloadBackup}>Download JSON backup</button>
+    {#if collections.length}
+        <div class="field" style="margin-top: .75rem">
+            <label>Collection CSV export (parent/child preserved)</label>
+            <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center">
+                <select bind:value={collectionId}>
+                    {#each collections as c}
+                        <option value={c.id}>{c.name}</option>
+                    {/each}
+                </select>
+                <button class="secondary" type="button" onclick={downloadCsvExport}>Download round-trip CSV</button>
+            </div>
+        </div>
+    {/if}
     <p class="muted" style="margin-top:.5rem">
         Includes collections, items, tags, contacts, loans &amp; share links. Photo files are not
         included; copy <code>data/photos/</code> separately.
@@ -221,8 +250,9 @@
                 <p class="muted">
                     Targets: <code>title</code>, <code>subtitle</code>, <code>notes</code>,
                     <code>quantity</code>, <code>condition</code>, <code>currency</code>,
-                    <code>location</code>, or <code>id:&lt;name&gt;</code> /
-                    <code>attr:&lt;name&gt;</code>.
+                    <code>location</code>, <code>category_slug</code>,
+                    <code>ref:item_ref</code>, <code>ref:parent_ref</code>,
+                    or <code>id:&lt;name&gt;</code> / <code>attr:&lt;name&gt;</code>.
                 </p>
             </div>
         {:else if mode === 'list'}

@@ -59,6 +59,10 @@ All notable changes to **Covet** are documented here. Format follows
 - **Bulk item actions (web + API).** Collection views now support multi-select
   with bulk status updates (wanted/owned, depleted/in-stock) and bulk delete.
   The server adds `POST /items/bulk-patch` and `POST /items/bulk-delete`.
+- **CSV hierarchy round-trip (web + API).** You can now export a collection as
+  CSV with stable item/parent references (`GET /imports/csv/export`) and
+  re-import it while preserving parent/child relationships using
+  `ref:item_ref` + `ref:parent_ref` mapping targets.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

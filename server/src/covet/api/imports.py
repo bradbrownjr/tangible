@@ -7,6 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse, PlainTextResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 
 from covet.auth.deps import (
@@ -16,7 +17,7 @@ from covet.auth.deps import (
 )
 from covet.db import get_session
 from covet.importers import CLZ_IMPORTERS, BackupStats, CSVImporter, export_user, import_backup
-from covet.models import Item
+from covet.models import Category, Item
 from covet.services.categories import resolve_slug
 
 router = APIRouter(prefix="/imports", tags=["imports"])
@@ -30,35 +31,129 @@ def _check_collection(db: DBSession, auth: AuthContext, collection_id: str) -> N
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
+def _check_collection_read(db: DBSession, auth: AuthContext, collection_id: str) -> None:
+    role = collection_role(db, auth.user, collection_id)
+    if role is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
 def _persist_items(
     db: DBSession, *, collection_id: str, items_data: list[dict]
 ) -> int:
     count = 0
     slug_cache: dict[str, str] = {}
+    ref_to_item: dict[str, Item] = {}
+    pending_parent_refs: list[tuple[Item, str]] = []
     for raw in items_data:
         slug = raw["category_slug"]
         if slug not in slug_cache:
             slug_cache[slug] = resolve_slug(db, slug).id
-        db.add(
-            Item(
-                collection_id=collection_id,
-                category_id=slug_cache[slug],
-                title=raw["title"],
-                subtitle=raw.get("subtitle"),
-                notes=raw.get("notes"),
-                condition=raw.get("condition"),
-                quantity=int(raw.get("quantity", 1)),
-                purchase_price=raw.get("purchase_price"),
-                current_value=raw.get("current_value"),
-                currency=raw.get("currency"),
-                location=raw.get("location"),
-                identifiers=raw.get("identifiers", {}) or {},
-                attrs=raw.get("attrs", {}) or {},
-            )
+
+        identifiers = dict(raw.get("identifiers", {}) or {})
+        item_ref = identifiers.pop("__csv_item_ref", None)
+        parent_ref = identifiers.pop("__csv_parent_ref", None)
+
+        item = Item(
+            collection_id=collection_id,
+            category_id=slug_cache[slug],
+            title=raw["title"],
+            subtitle=raw.get("subtitle"),
+            notes=raw.get("notes"),
+            condition=raw.get("condition"),
+            quantity=int(raw.get("quantity", 1)),
+            purchase_price=raw.get("purchase_price"),
+            current_value=raw.get("current_value"),
+            currency=raw.get("currency"),
+            location=raw.get("location"),
+            identifiers=identifiers,
+            attrs=raw.get("attrs", {}) or {},
         )
+        db.add(item)
+        db.flush()
+
+        if item_ref is not None and str(item_ref).strip():
+            ref_to_item[str(item_ref)] = item
+        if parent_ref is not None and str(parent_ref).strip():
+            pending_parent_refs.append((item, str(parent_ref)))
+
         count += 1
+
+    for item, parent_ref in pending_parent_refs:
+        parent = ref_to_item.get(parent_ref)
+        if parent is not None:
+            item.parent_id = parent.id
+
     db.commit()
     return count
+
+
+@router.get("/csv/export", status_code=status.HTTP_200_OK)
+def export_csv(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> PlainTextResponse:
+    _check_collection_read(db, auth, collection_id)
+
+    rows = db.execute(
+        select(Item, Category.slug)
+        .join(Category, Item.category_id == Category.id)
+        .where(Item.collection_id == collection_id)
+        .order_by(Item.created_at, Item.id)
+    ).all()
+
+    ref_by_item_id: dict[str, str] = {}
+    for index, (item, _) in enumerate(rows, start=1):
+        ref_by_item_id[item.id] = f"item-{index}"
+
+    import csv
+    import io
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "Item ref",
+            "Parent ref",
+            "Category",
+            "Title",
+            "Subtitle",
+            "Notes",
+            "Quantity",
+            "Condition",
+            "Location",
+            "Currency",
+            "Purchase price",
+            "Current value",
+            "Identifiers JSON",
+            "Attrs JSON",
+        ]
+    )
+    for item, category_slug in rows:
+        writer.writerow(
+            [
+                ref_by_item_id[item.id],
+                ref_by_item_id.get(item.parent_id, "") if item.parent_id else "",
+                category_slug,
+                item.title,
+                item.subtitle or "",
+                item.notes or "",
+                item.quantity,
+                item.condition or "",
+                item.location or "",
+                item.currency or "",
+                item.purchase_price if item.purchase_price is not None else "",
+                item.current_value if item.current_value is not None else "",
+                json.dumps(item.identifiers or {}),
+                json.dumps(item.attrs or {}),
+            ]
+        )
+
+    return PlainTextResponse(
+        buf.getvalue(),
+        media_type="text/csv",
+        headers={"content-disposition": 'attachment; filename="covet-export.csv"'},
+    )
 
 
 @router.post("/clz", status_code=status.HTTP_200_OK)
@@ -105,9 +200,12 @@ async def import_clz(
 @router.post("/csv", status_code=status.HTTP_200_OK)
 async def import_csv(
     collection_id: Annotated[str, Form(...)],
-    category: Annotated[str, Form(..., description="Category slug, e.g. 'movies.dvd'.")],
     mapping: Annotated[str, Form(..., description="JSON object: csv_header → target field")],
     file: Annotated[UploadFile, File(...)],
+    category: Annotated[
+        str | None,
+        Form(description="Default category slug when CSV rows omit category."),
+    ] = None,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> dict:
@@ -124,7 +222,7 @@ async def import_csv(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="mapping must be a JSON object",
         )
-    importer = CSVImporter(category_slug=category, mapping=column_map)
+    importer = CSVImporter(default_category_slug=category, mapping=column_map)
     result = importer.parse(file.file)
     inserted = _persist_items(
         db,

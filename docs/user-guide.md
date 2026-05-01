@@ -202,6 +202,10 @@ Open **Import** from the top nav.
   items in the chosen collection.
 - **Generic CSV** — upload any CSV; you'll get a column-mapping wizard
   that lets you map source columns to Covet fields (with a preview).
+- **Round-trip hierarchy CSV** — from the Import page you can download a
+  collection CSV export that includes stable item/parent refs, then import
+  it back with `ref:item_ref`, `ref:parent_ref`, and `category_slug` mapping
+  targets to preserve parent/child relationships.
 - **Covet JSON backup** — restore a `covet backup` export into a
   collection.
 

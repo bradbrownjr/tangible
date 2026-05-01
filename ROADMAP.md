@@ -84,8 +84,8 @@ bottleneck. This phase is about scaling the UX.
   one click converts to owned with acquisition date and price.
 - **Reports** — per-collection totals (count, value), BoM PDF export,
   insurance-friendly export bundle (CSV + photos + PDFs in a zip).
-- **CSV export with parent/child preserved** — round-trip the new item
-  hierarchy through CSV without losing relationships.
+- **CSV export with parent/child preserved** ✅ — round-trip the new
+  item hierarchy through CSV without losing relationships.
 - **Webhooks** — outbound HTTP on item events (created, updated,
   loaned, returned, maintenance-due) for Home Assistant, n8n, Discord.
 - **i18n scaffold** — moved to Phase 14 where translation rollout is

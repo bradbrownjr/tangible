@@ -2,9 +2,11 @@
 
 The mapping is a dict from CSV header name to a target field name. Target
 fields are: ``title``, ``subtitle``, ``notes``, ``condition``, ``quantity``,
-``purchase_price``, ``current_value``, ``currency``, ``location``, plus
-``id:<name>`` (goes into ``identifiers``) and ``attr:<name>`` (goes into
-``attrs``). Unmapped columns are dropped (with a warning).
+``purchase_price``, ``current_value``, ``currency``, ``location``,
+``category_slug`` (row-specific category), plus ``id:<name>`` (goes into
+``identifiers``), ``attr:<name>`` (goes into ``attrs``), and the reserved
+refs ``ref:item_ref`` / ``ref:parent_ref`` for hierarchy round-trips.
+Unmapped columns are dropped (with a warning).
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ from covet.importers.base import Importer, ImportItem, ImportResult
 _NUMERIC = {"purchase_price", "current_value"}
 _INT = {"quantity"}
 _STRING = {
+    "category_slug",
     "title",
     "subtitle",
     "notes",
@@ -32,7 +35,7 @@ _STRING = {
 class CSVImporter(Importer):
     """CSV → ImportItems given a column mapping."""
 
-    category_slug: str
+    default_category_slug: str | None
     mapping: dict[str, str]
     name: str = "csv"
     encoding: str = "utf-8-sig"  # tolerate BOM-prefixed files
@@ -64,7 +67,9 @@ class CSVImporter(Importer):
         return ImportResult(items=items, warnings=warnings)
 
     def _row_to_item(self, row: dict[str, str]) -> ImportItem | None:
-        kwargs: dict[str, object] = {"category_slug": self.category_slug}
+        kwargs: dict[str, object] = {}
+        if self.default_category_slug:
+            kwargs["category_slug"] = self.default_category_slug
         identifiers: dict[str, object] = {}
         attrs: dict[str, object] = {}
 
@@ -82,12 +87,18 @@ class CSVImporter(Importer):
                 identifiers[target[3:]] = raw
             elif target.startswith("attr:"):
                 attrs[target[5:]] = raw
+            elif target == "ref:item_ref":
+                identifiers["__csv_item_ref"] = raw
+            elif target == "ref:parent_ref":
+                identifiers["__csv_parent_ref"] = raw
             else:
                 # Unknown target — preserve as attr to avoid data loss.
                 attrs[target] = raw
 
         if "title" not in kwargs:
             return None
+        if "category_slug" not in kwargs:
+            raise ValueError("category_slug missing (provide default category or map a category column)")
         kwargs["identifiers"] = identifiers
         kwargs["attrs"] = attrs
         return ImportItem(**kwargs)  # type: ignore[arg-type]

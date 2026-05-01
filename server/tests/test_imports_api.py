@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import io
 import json
 
@@ -136,3 +137,65 @@ def test_restore_rejects_unknown_version(client) -> None:
         files={"file": ("b.json", io.BytesIO(bad), "application/json")},
     )
     assert r.status_code == 400
+
+
+def test_csv_export_import_roundtrip_preserves_parent_child(client) -> None:
+    _signup_and_login(client, "roundtrip")
+    source_cid = _make_collection(client, "Hierarchy source")
+    target_cid = _make_collection(client, "Hierarchy target")
+
+    parent = client.post(
+        "/api/items",
+        json={"collection_id": source_cid, "category": "games.software", "title": "Console"},
+    )
+    assert parent.status_code == 201, parent.text
+    parent_id = parent.json()["id"]
+
+    child = client.post(
+        "/api/items",
+        json={
+            "collection_id": source_cid,
+            "category": "games.software",
+            "title": "Controller",
+            "parent_id": parent_id,
+        },
+    )
+    assert child.status_code == 201, child.text
+
+    exported = client.get("/api/imports/csv/export", params={"collection_id": source_cid})
+    assert exported.status_code == 200, exported.text
+    text = exported.text
+    rows = list(csv.DictReader(io.StringIO(text)))
+    assert len(rows) == 2
+    assert {r["Title"] for r in rows} == {"Console", "Controller"}
+    assert any(r["Parent ref"] for r in rows)
+
+    mapping = {
+        "Item ref": "ref:item_ref",
+        "Parent ref": "ref:parent_ref",
+        "Category": "category_slug",
+        "Title": "title",
+        "Subtitle": "subtitle",
+        "Notes": "notes",
+        "Quantity": "quantity",
+        "Condition": "condition",
+        "Location": "location",
+        "Currency": "currency",
+        "Purchase price": "purchase_price",
+        "Current value": "current_value",
+    }
+    imported = client.post(
+        "/api/imports/csv",
+        data={
+            "collection_id": target_cid,
+            "mapping": json.dumps(mapping),
+        },
+        files={"file": ("roundtrip.csv", io.BytesIO(text.encode("utf-8")), "text/csv")},
+    )
+    assert imported.status_code == 200, imported.text
+    assert imported.json()["imported"] == 2
+
+    target_items = client.get("/api/items", params={"collection_id": target_cid}).json()
+    by_title = {i["title"]: i for i in target_items}
+    assert set(by_title) == {"Console", "Controller"}
+    assert by_title["Controller"]["parent_id"] == by_title["Console"]["id"]

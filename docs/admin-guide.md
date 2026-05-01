@@ -206,6 +206,9 @@ require new environment variables or reverse-proxy changes:
    with acquisition-date / purchase-price capture when marking owned.
 - Bulk item actions via `POST /items/bulk-patch` and `POST /items/bulk-delete`,
    with collection-scoped item-id validation and editor/owner role enforcement.
+- CSV hierarchy round-trip via `GET /imports/csv/export` plus CSV import
+   mapping targets `category_slug`, `ref:item_ref`, and `ref:parent_ref`
+   to preserve parent/child links.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.
