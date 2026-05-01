@@ -343,3 +343,21 @@ def get_insurance_export(
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename=insurance-export-{collection.name}.zip"},
     )
+
+
+@router.get("/{collection_id}/reports/disposed")
+def get_disposed_items_report(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> dict:
+    """Get report of disposed/sold/donated items with breakdown by type."""
+    if collection_role(db, auth.user, collection_id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    collection = db.get(Collection, collection_id)
+    if collection is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found")
+
+    report = CollectionReport(db, collection)
+    return report.generate_disposed_items_report()

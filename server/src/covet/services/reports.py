@@ -160,3 +160,64 @@ class CollectionReport:
                     lines.append(f"    > {item.subtitle}")
 
         return "\n".join(lines)
+
+    def generate_disposed_items_report(self) -> dict:
+        """Generate a report of disposed items (sold, donated, discarded)."""
+        # Get all archived items with disposition info
+        stmt = (
+            select(Item)
+            .where(Item.collection_id == self.collection.id)
+            .where(Item.archived_at.is_not(None))
+            .order_by(Item.disposition_at.desc())
+        )
+        items = self.db.scalars(stmt).all()
+
+        # Group by disposition type
+        by_type: dict[str, list[Item]] = {}
+        for item in items:
+            dtype = item.disposition_type or "archived"
+            if dtype not in by_type:
+                by_type[dtype] = []
+            by_type[dtype].append(item)
+
+        # Calculate totals
+        total_disposed_value = sum(
+            (item.disposition_amount or Decimal(0)) for item in items if item.disposition_amount
+        )
+        total_original_value = sum(
+            (item.current_value or Decimal(0)) for item in items
+        )
+
+        return {
+            "collection_id": self.collection.id,
+            "collection_name": self.collection.name,
+            "total_disposed": len(items),
+            "by_type": {
+                dtype: {
+                    "count": len(items_list),
+                    "total_disposition_value": float(
+                        sum(
+                            (i.disposition_amount or Decimal(0))
+                            for i in items_list
+                            if i.disposition_amount
+                        )
+                    ),
+                    "items": [
+                        {
+                            "id": i.id,
+                            "title": i.title,
+                            "disposition_at": i.disposition_at.isoformat() if i.disposition_at else None,
+                            "disposition_amount": float(i.disposition_amount) if i.disposition_amount else None,
+                            "disposition_buyer": i.disposition_buyer,
+                            "disposition_note": i.disposition_note,
+                            "original_value": float(i.current_value) if i.current_value else None,
+                        }
+                        for i in sorted(items_list, key=lambda x: x.disposition_at or datetime.min, reverse=True)
+                    ],
+                }
+                for dtype, items_list in sorted(by_type.items())
+            },
+            "total_disposition_value": float(total_disposed_value),
+            "total_original_value": float(total_original_value),
+            "generated_at": datetime.utcnow().isoformat(),
+        }

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import String, asc, cast, delete, desc, func, or_, select
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import selectinload
+from unidecode import unidecode
 
 from covet.api.item_templates import validate_attrs
 from covet.auth.deps import (
@@ -48,6 +49,7 @@ from covet.schemas import (
 )
 from covet.services.categories import resolve_slug, subtree_ids
 from covet.services.qr_labels import generate_qr_codes_pdf
+from covet.services import audit
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -258,6 +260,92 @@ def list_items(
     stmt = _apply_sort(stmt, sort_by=sort_by, sort_dir=sort_dir, sort_attr=sort_attr)
     stmt = stmt.limit(limit).offset(offset)
     return [_to_item_read(item, rollups) for item in db.scalars(stmt)]
+
+
+@router.get("/search", response_model=list[ItemRead])
+def search_items(
+    q: str = Query(..., min_length=1, max_length=256, description="Search query"),
+    limit: int = Query(default=50, ge=1, le=200, description="Max results"),
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    """Global search across all items in user's accessible collections.
+    
+    Supports fuzzy matching with accent-folding (é matches e, etc).
+    Returns items from all collections the user can access.
+    """
+    # Get all collections user has access to
+    from covet.models.user import CollectionMembership
+    
+    accessible_collections = db.scalars(
+        select(CollectionMembership.collection_id).where(
+            CollectionMembership.user_id == auth.user.id
+        )
+    ).all()
+    
+    if not accessible_collections:
+        return []
+    
+    # Search across all accessible collections
+    stmt = (
+        select(Item)
+        .where(Item.collection_id.in_(accessible_collections))
+        .where(Item.archived_at.is_(None))
+        .options(selectinload(Item.photos))
+    )
+    
+    items = db.scalars(stmt).all()
+    
+    # Normalize search term (accent-folding)
+    normalized_q = unidecode(q.lower().strip())
+    
+    # Filter items using fuzzy matching with accent-folding
+    matched_items: list[tuple[Item, float]] = []
+    
+    for item in items:
+        # Build searchable content
+        search_fields = [
+            item.title or "",
+            item.subtitle or "",
+            item.notes or "",
+            " ".join(str(v) for v in (item.attrs or {}).values()),
+            " ".join(str(v) for v in (item.identifiers or {}).values()),
+        ]
+        combined_text = " ".join(search_fields)
+        normalized_text = unidecode(combined_text.lower())
+        
+        # Simple fuzzy matching: check if query appears in text or vice versa
+        # Score: exact match > substring match > partial match
+        score = 0.0
+        if normalized_q == normalized_text:
+            score = 100.0
+        elif normalized_q in normalized_text:
+            score = 50.0 + (len(normalized_q) / len(normalized_text)) * 50.0
+        elif all(c in normalized_text for c in normalized_q):
+            # All characters present (fuzzy match)
+            score = 25.0
+        else:
+            continue  # No match, skip this item
+        
+        matched_items.append((item, score))
+    
+    # Sort by score descending, then by title
+    matched_items.sort(key=lambda x: (-x[1], x[0].title or ""))
+    
+    # Compute rollups per collection for accurate values
+    result = []
+    by_collection: dict[str, list[tuple[Item, float]]] = {}
+    for item, score in matched_items[:limit]:
+        if item.collection_id not in by_collection:
+            by_collection[item.collection_id] = []
+        by_collection[item.collection_id].append((item, score))
+    
+    for collection_id, items_in_collection in by_collection.items():
+        rollups = _compute_rollup_values(db, collection_id)
+        for item, _ in items_in_collection:
+            result.append(_to_item_read(item, rollups))
+    
+    return result
 
 
 @router.get("/grocery-list", response_model=list[ItemRead])
@@ -545,6 +633,26 @@ def bulk_archive_items(
         item.depleted = False
 
     db.commit()
+    
+    # Log audit entries for each archived item
+    for item in rows:
+        audit.log(
+            db,
+            actor_user_id=auth.user.id,
+            action="item.archived",
+            collection_id=payload.collection_id,
+            target_type="item",
+            target_id=item.id,
+            payload={
+                "title": item.title,
+                "disposition_type": item.disposition_type,
+                "disposition_amount": float(item.disposition_amount) if item.disposition_amount else None,
+                "disposition_buyer": item.disposition_buyer,
+                "bulk": True,
+            },
+        )
+    
+    db.commit()
     for item in rows:
         db.refresh(item)
     rollups = _compute_rollup_values(db, payload.collection_id)
@@ -581,6 +689,20 @@ def bulk_restore_items(
         item.disposition_buyer = None
         item.disposition_note = None
 
+    db.commit()
+    
+    # Log audit entries for each restored item
+    for item in rows:
+        audit.log(
+            db,
+            actor_user_id=auth.user.id,
+            action="item.restored",
+            collection_id=payload.collection_id,
+            target_type="item",
+            target_id=item.id,
+            payload={"title": item.title, "bulk": True},
+        )
+    
     db.commit()
     for item in rows:
         db.refresh(item)
@@ -792,6 +914,23 @@ def archive_item(
     # Archived items are not active wants/depleted state.
     item.wanted = False
     item.depleted = False
+    
+    # Log audit entry
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.archived",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={
+            "title": item.title,
+            "disposition_type": item.disposition_type,
+            "disposition_amount": float(item.disposition_amount) if item.disposition_amount else None,
+            "disposition_buyer": item.disposition_buyer,
+        },
+    )
+    
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
@@ -814,6 +953,18 @@ def restore_item(
     item.disposition_amount = None
     item.disposition_buyer = None
     item.disposition_note = None
+    
+    # Log audit entry
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.restored",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={"title": item.title},
+    )
+    
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
