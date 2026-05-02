@@ -81,6 +81,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
     app.include_router(api_router, prefix="/api")
+
+    # MCP server (Model Context Protocol) — mounted at /mcp
+    from covet.api.mcp_server import mcp_app
+
+    app.mount("/mcp", mcp_app(settings))
+
     _mount_web(app, settings)
     return app
 

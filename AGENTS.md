@@ -380,6 +380,7 @@ the affected file column is preserved.**
 | CI: multi-arch GHCR image | `.github/workflows/release-image.yml` | tag patterns `:X.Y.Z`, `:X.Y`, `:X`, `:edge` |
 | CI: Android build + APK artifact | `.github/workflows/android.yml` | `:app:lintDebug`, `:app:testDebugUnitTest`, `:app:assembleDebug` |
 | CI: auto-publish Release on tag | `.github/workflows/release.yml` | extracts `## [X.Y.Z]` from `CHANGELOG.md`; `prerelease` for `0.x` |
+| MCP server | `server/src/covet/api/mcp_server.py` | `FastMCP`, `mcp_app()`, mounted at `/mcp`, tools: `list_collections`, `search_items`, `get_item`, `list_maintenance`, `list_due_alerts`, `list_low_stock` |
 
 Update this table whenever a new feature lands or an existing feature moves.
 

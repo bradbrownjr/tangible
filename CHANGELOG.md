@@ -6,6 +6,12 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+- **MCP server** — Covet now exposes a [Model Context Protocol](https://modelcontextprotocol.io/)
+  endpoint at `/mcp`. AI assistants (Claude, Copilot, ChatGPT plugins, etc.)
+  can query your inventory, maintenance history, and stock levels in natural
+  language. Configure your AI client with your Covet server URL and a Bearer
+  API token. Tools available: `list_collections`, `search_items`, `get_item`,
+  `list_maintenance`, `list_due_alerts`, `list_low_stock`.
 - **Enforce 2FA site-wide**: admins can toggle `require_2fa` in the new
   Server Settings panel; unenrolled users are redirected to Settings and
   shown an enrollment prompt automatically on every page load until 2FA

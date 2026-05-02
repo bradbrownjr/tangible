@@ -386,10 +386,12 @@ Long-term work that makes Covet a foundation other things build on.
   downloads all their data (JSON backup + README ZIP via `GET /auth/me/export`,
   compatible with `covet restore` and the web import wizard), then deletes
   account via `DELETE /auth/me` (requires password + TOTP if enabled).
-- **MCP server** — Model Context Protocol server exposing Covet items,
-  maintenance history, and stock levels as AI context. Allows AI
-  assistants to answer "do I have a spare furnace filter?" or "when is
-  my car's next oil change?".
+- **MCP server** ✅ — Model Context Protocol server mounted at `/mcp`.
+  Exposes tools (`list_collections`, `search_items`, `get_item`,
+  `list_maintenance`, `list_due_alerts`, `list_low_stock`) over the
+  streamable HTTP transport. Auth via Bearer API token or session cookie.
+  AI assistants can answer "do I have a spare furnace filter?" or
+  "when is my car's next oil change?".
 - **Plugin / adapter system for metadata scrapers** — community can
   contribute scrapers for new sources (Home Depot, Amazon, AutoZone,
   manufacturer portals) without modifying core.
