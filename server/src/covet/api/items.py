@@ -113,6 +113,9 @@ def _apply_sort(
 ):
     direction = asc if sort_dir == "asc" else desc
 
+    if sort_by == "sort_order":
+        return stmt.order_by(direction(Item.sort_order), Item.title, Item.id)
+
     if sort_by == "title":
         return stmt.order_by(direction(Item.title), Item.id)
 
@@ -139,7 +142,7 @@ def _apply_sort(
 
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail="sort_by must be one of: title, value, acquired_at, attr",
+        detail="sort_by must be one of: sort_order, title, value, acquired_at, attr",
     )
 
 
@@ -205,6 +208,11 @@ def list_items(
     depleted: bool | None = Query(default=None, description="Filter by depleted status."),
     wanted: bool | None = Query(default=None, description="Filter by wanted status."),
     flagged: bool | None = Query(default=None, description="Filter by review flag status."),
+    tag_ids: list[str] = Query(default=[], description="Filter to items with these tag IDs."),
+    tag_mode: str = Query(
+        default="all",
+        description="Tag match mode: 'all' (AND, default) or 'any' (OR).",
+    ),
     sort_by: str = Query(
         default="title",
         description="Sort key: title, value (current_value), acquired_at, or attr.",
@@ -265,6 +273,25 @@ def list_items(
             stmt = stmt.where(Item.flagged_at.is_not(None))
         else:
             stmt = stmt.where(Item.flagged_at.is_(None))
+    if tag_ids:
+        if tag_mode not in {"all", "any"}:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="tag_mode must be 'all' or 'any'",
+            )
+        if tag_mode == "any":
+            stmt = stmt.where(
+                Item.id.in_(
+                    select(ItemTag.item_id).where(ItemTag.tag_id.in_(tag_ids))
+                )
+            )
+        else:
+            for tid in tag_ids:
+                stmt = stmt.where(
+                    Item.id.in_(
+                        select(ItemTag.item_id).where(ItemTag.tag_id == tid)
+                    )
+                )
     if sort_dir not in {"asc", "desc"}:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -274,6 +301,41 @@ def list_items(
     stmt = _apply_sort(stmt, sort_by=sort_by, sort_dir=sort_dir, sort_attr=sort_attr)
     stmt = stmt.limit(limit).offset(offset)
     return [_to_item_read(item, rollups) for item in db.scalars(stmt)]
+
+
+class ItemReorderEntry(BaseModel):
+    id: str
+    sort_order: int
+
+
+@router.put("/reorder", status_code=status.HTTP_204_NO_CONTENT)
+def reorder_items(
+    collection_id: str = Query(...),
+    payload: list[ItemReorderEntry] = ...,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> None:
+    """Batch-update sort_order for items in a collection (for drag-to-reorder)."""
+    _require_role(db, auth, collection_id, _EDITOR_ROLES)
+    ids = [e.id for e in payload]
+    owned = {
+        r.id
+        for r in db.scalars(
+            select(Item).where(Item.collection_id == collection_id).where(Item.id.in_(ids))
+        )
+    }
+    for entry in payload:
+        if entry.id not in owned:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Item {entry.id!r} not found in collection",
+            )
+        db.execute(
+            Item.__table__.update()
+            .where(Item.id == entry.id)
+            .values(sort_order=entry.sort_order)
+        )
+    db.commit()
 
 
 class AiPrefillRequest(BaseModel):

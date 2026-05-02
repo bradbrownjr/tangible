@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy import or_, select
+from sqlalchemy import distinct, or_, select
 from sqlalchemy.orm import Session as DBSession
 
 from covet.api.item_templates import _do_scaffold
@@ -361,3 +361,38 @@ def get_disposed_items_report(
 
     report = CollectionReport(db, collection)
     return report.generate_disposed_items_report()
+
+
+_ALLOWED_SUGGESTION_FIELDS = {"condition", "creator"}
+
+
+@router.get("/{collection_id}/field-suggestions", response_model=list[str])
+def get_field_suggestions(
+    collection_id: str,
+    field: str = Query(..., description="Field name: condition or creator"),
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[str]:
+    """Return distinct non-null values for a first-class item field across a collection.
+
+    Used by the web UI to power type-ahead / datalist suggestions.
+    """
+    if field not in _ALLOWED_SUGGESTION_FIELDS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"field must be one of: {', '.join(sorted(_ALLOWED_SUGGESTION_FIELDS))}",
+        )
+    if collection_role(db, auth.user, collection_id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    from covet.models import Item  # local to avoid circular
+
+    col = getattr(Item, field)
+    rows = db.scalars(
+        select(distinct(col))
+        .where(Item.collection_id == collection_id)
+        .where(col.is_not(None))
+        .where(col != "")
+        .order_by(col)
+    ).all()
+    return [str(r) for r in rows if r]

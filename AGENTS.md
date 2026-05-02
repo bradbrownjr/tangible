@@ -348,6 +348,11 @@ the affected file column is preserved.**
 | Tags / item-tags | `server/src/covet/api/tags.py`, `models/tag.py` | `tag`, `item_tag` |
 | Contacts + loans | `server/src/covet/api/loans.py`, `models/{contact,loan}.py` | `loan`, `contact` |
 | Photos (multipart, sha256 dedupe) | `server/src/covet/api/photos.py`, `models/photo.py` | `POST /photos`, `_photo_path` |
+| Photo thumbnails (lazy 400x400 JPEG) | `server/src/covet/api/photos.py` | `GET /photos/{id}/thumbnail`, `_ensure_thumbnail`, `_thumbnail_path` |
+| Photo drag-to-reorder | `server/src/covet/api/photos.py`, `web/src/lib/PhotoGallery.svelte` | `PUT /items/{id}/photos/reorder`, `PhotoReorderEntry`, `ondragstart/ondragover/ondragend` |
+| Item custom sort order | `server/src/covet/models/item.py`, `api/items.py`, `schemas/item.py`, `alembic/versions/0032_item_sort_order.py` | `sort_order`, `PUT /items/reorder`, `ItemReorderEntry`, `sort_by=sort_order` |
+| Tag filter chips (AND/OR) | `server/src/covet/api/items.py`, `web/src/routes/collections/[id]/+page.svelte` | `tag_ids`, `tag_mode`, `toggleTagFilter`, `.tag-chip`, `.tag-mode-toggle` |
+| Field-suggestions type-ahead | `server/src/covet/api/collections.py`, `web/src/routes/collections/[id]/+page.svelte` | `GET /{id}/field-suggestions`, `_ALLOWED_SUGGESTION_FIELDS`, `conditionSuggestions`, `creatorSuggestions` |
 | Manual / asset bundles | `server/src/covet/api/manual_bundles.py`, `models/manual_bundle.py`, `web/src/routes/collections/[id]/bundles/+page.svelte`, android `data/repo/Repositories.kt` (`BundleRepository`) | `GET/POST/PATCH/DELETE /collections/{id}/bundles`, `POST /bundles/{id}/assets`, `POST /bundles/{id}/items/{item_id}` |
 | Sync (CRDT changes + snapshots) | `server/src/covet/api/sync.py`, `sync/automerge.py` | `GET/POST /sync/{collection_id}`, `apply_changes` |
 | Importers (CLZ, generic CSV, JSON) | `server/src/covet/importers/{clz,csv_importer,json_backup}.py`, `api/imports.py` | `clz`, `csv`, `json_backup` |

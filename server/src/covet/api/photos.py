@@ -1,4 +1,4 @@
-"""Photo endpoints (upload, list, set-primary, delete, URL ingest)."""
+"""Photo endpoints (upload, list, set-primary, delete, URL ingest, thumbnails)."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     File,
     HTTPException,
@@ -18,6 +19,7 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse
 from PIL import Image, ImageOps
+from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session as DBSession
 
@@ -56,6 +58,33 @@ def _photo_storage_path(sha256: str) -> Path:
     p = base / sha256[0:2] / sha256[2:4] / sha256
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
+
+
+_THUMBNAIL_SIZE = (400, 400)
+
+
+def _thumbnail_path(sha256: str) -> Path:
+    """Return path for the cached thumbnail (stored next to the original)."""
+    base = get_settings().photos_dir
+    assert base is not None
+    p = base / sha256[0:2] / sha256[2:4] / f"{sha256}_thumb.jpg"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _ensure_thumbnail(sha256: str) -> Path:
+    """Generate thumbnail on first access; return its path."""
+    thumb = _thumbnail_path(sha256)
+    if not thumb.exists():
+        src = _photo_storage_path(sha256)
+        if not src.exists():
+            raise FileNotFoundError(sha256)
+        with Image.open(src) as img:
+            img = ImageOps.exif_transpose(img) or img
+            img.thumbnail(_THUMBNAIL_SIZE, Image.LANCZOS)
+            img = img.convert("RGB")
+            img.save(thumb, format="JPEG", quality=80, optimize=True)
+    return thumb
 
 
 def _normalize_image(raw: bytes, declared_mime: str) -> tuple[bytes, str, int, int]:
@@ -300,3 +329,63 @@ def delete_photo(
         if path.exists():
             with suppress(OSError):
                 path.unlink()
+
+
+@router.get("/photos/{photo_id}/thumbnail")
+def get_photo_thumbnail(
+    photo_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> FileResponse:
+    """Return a 400x400-max JPEG thumbnail. Generated on first request."""
+    photo = db.get(Photo, photo_id)
+    if photo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    item = db.get(Item, photo.item_id)
+    assert item is not None
+    _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
+    try:
+        thumb = _ensure_thumbnail(photo.sha256)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Missing file") from exc
+    return FileResponse(
+        thumb,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
+
+
+class PhotoReorderEntry(BaseModel):
+    id: str
+    sort_order: int
+
+
+@router.put("/items/{item_id}/photos/reorder", status_code=status.HTTP_204_NO_CONTENT)
+def reorder_photos(
+    item_id: str,
+    payload: list[PhotoReorderEntry] = Body(...),
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> None:
+    """Batch-update sort_order for photos on an item (drag-to-reorder)."""
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+    ids = {e.id for e in payload}
+    owned = {
+        r
+        for r in db.scalars(
+            select(Photo.id).where(Photo.item_id == item_id).where(Photo.id.in_(ids))
+        )
+    }
+    for entry in payload:
+        if entry.id not in owned:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Photo {entry.id!r} not found on this item",
+            )
+        db.execute(
+            update(Photo).where(Photo.id == entry.id).values(sort_order=entry.sort_order)
+        )
+    db.commit()

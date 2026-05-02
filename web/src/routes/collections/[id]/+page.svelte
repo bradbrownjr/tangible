@@ -17,9 +17,11 @@
     let rootFilter = $state(''); // only used when collection has no default category
     let wantedFilter = $state<'all' | 'wanted' | 'owned'>('all');
     let archivedFilter = $state<'active' | 'archived' | 'all'>('active');
-    let sortBy = $state<'title' | 'value' | 'acquired_at' | 'attr'>('title');
+    let sortBy = $state<'sort_order' | 'title' | 'value' | 'acquired_at' | 'attr'>('title');
     let sortDir = $state<'asc' | 'desc'>('asc');
     let sortAttr = $state('');
+    let activeTagIds = $state<string[]>([]);
+    let tagMode = $state<'all' | 'any'>('all');
     let selectedItemIds = $state<string[]>([]);
     let loading = $state(true);
     let error = $state('');
@@ -328,6 +330,10 @@
             params.set('sort_by', sortBy);
             params.set('sort_dir', sortDir);
             if (sortBy === 'attr' && sortAttr.trim()) params.set('sort_attr', sortAttr.trim());
+            if (activeTagIds.length) {
+                for (const tid of activeTagIds) params.append('tag_ids', tid);
+                params.set('tag_mode', tagMode);
+            }
             const [fetchedItems, fetchedTemplates, fetchedTags, fetchedContacts, fetchedLocations] = await Promise.all([
                 api.get<Item[]>(`/items?${params.toString()}`),
                 api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
@@ -634,6 +640,9 @@
         await load();
     }
 
+    let conditionSuggestions = $state<string[]>([]);
+    let creatorSuggestions = $state<string[]>([]);
+
     function startEdit(i: Item) {
         editingId = i.id;
         editTitle = i.title;
@@ -646,6 +655,17 @@
         editUseByDate = i.use_by_date ? new Date(i.use_by_date).toISOString().slice(0, 16) : '';
         editDateFrozen = i.date_frozen ? new Date(i.date_frozen).toISOString().slice(0, 16) : '';
         editDateOpened = i.date_opened ? new Date(i.date_opened).toISOString().slice(0, 16) : '';
+        // Lazy-load suggestions on first edit.
+        if (!conditionSuggestions.length) {
+            api.get<string[]>(`/collections/${cid}/field-suggestions?field=condition`)
+                .then((v) => { conditionSuggestions = v; })
+                .catch(() => {});
+        }
+        if (collectionCreatorLabel && !creatorSuggestions.length) {
+            api.get<string[]>(`/collections/${cid}/field-suggestions?field=creator`)
+                .then((v) => { creatorSuggestions = v; })
+                .catch(() => {});
+        }
     }
 
     function cancelEdit() {
@@ -829,6 +849,15 @@
         void load();
     }
 
+    function toggleTagFilter(tagId: string) {
+        if (activeTagIds.includes(tagId)) {
+            activeTagIds = activeTagIds.filter((t) => t !== tagId);
+        } else {
+            activeTagIds = [...activeTagIds, tagId];
+        }
+        void load();
+    }
+
     $effect(() => {
         localStorage.setItem('covet:viewMode', viewMode);
     });
@@ -960,6 +989,7 @@
         </div>
         <select bind:value={sortBy} onchange={() => load()} title="Sort by">
             <option value="title">Sort: Title</option>
+            <option value="sort_order">Sort: Custom order</option>
             <option value="value">Sort: Current value</option>
             <option value="acquired_at">Sort: Acquisition date</option>
             <option value="attr">Sort: Custom field</option>
@@ -993,6 +1023,29 @@
             />
         {/if}
     </div>
+    {#if tags.length}
+        <div class="tag-filters">
+            {#each tags as t (t.id)}
+                <button
+                    type="button"
+                    class="tag-chip"
+                    class:active={activeTagIds.includes(t.id)}
+                    onclick={() => toggleTagFilter(t.id)}
+                >{t.name}</button>
+            {/each}
+            {#if activeTagIds.length > 1}
+                <button
+                    type="button"
+                    class="tag-mode-toggle"
+                    onclick={() => { tagMode = tagMode === 'all' ? 'any' : 'all'; void load(); }}
+                    title="Toggle AND / OR matching"
+                >{tagMode === 'all' ? 'AND' : 'OR'}</button>
+            {/if}
+            {#if activeTagIds.length}
+                <button type="button" class="tag-clear" onclick={() => { activeTagIds = []; void load(); }}>Clear tags</button>
+            {/if}
+        </div>
+    {/if}
 
     {#if canEdit}
         <div class="bulk-toolbar">
@@ -1044,13 +1097,13 @@
                     <div class="item-card item-card-edit">
                         <div class="item-card-body">
                             {#if collectionCreatorLabel}
-                                <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" />
+                                <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" list="creator-suggestions" />
                             {/if}
                             <input bind:value={editTitle} placeholder="Title" class="edit-input" />
                             {#if showCollectionSubtitle}
                                 <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" />
                             {/if}
-                            <input bind:value={editCondition} placeholder="Condition" class="edit-input" />
+                            <input bind:value={editCondition} placeholder="Condition" class="edit-input" list="condition-suggestions" />
                             <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="width:5rem" />
                             {#if isConsumable(i.category_slug)}
                                 <input type="datetime-local" bind:value={editPurchasedAt} placeholder="Purchased" class="edit-input" title="Purchased date" />
@@ -1179,7 +1232,7 @@
                                 <td><input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" /></td>
                             {/if}
                             <td><input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input qty-input" /></td>
-                            <td><input bind:value={editCondition} placeholder="Condition" class="edit-input" /></td>
+                            <td><input bind:value={editCondition} placeholder="Condition" class="edit-input" list="condition-suggestions" /></td>
                             <td class="muted">{formatValue(i)}</td>
                             {#if canEdit}
                                 <td class="row-actions">
@@ -1385,6 +1438,20 @@
         </div>
     </div>
 {/if}
+
+<!-- Type-ahead datalists for inline edit -->
+<datalist id="condition-suggestions">
+    <option value="New" />
+    <option value="Mint" />
+    <option value="Excellent" />
+    <option value="Good" />
+    <option value="Fair" />
+    <option value="Poor" />
+    {#each conditionSuggestions as s (s)}<option value={s} />{/each}
+</datalist>
+<datalist id="creator-suggestions">
+    {#each creatorSuggestions as s (s)}<option value={s} />{/each}
+</datalist>
 
 <style>
     .subnav {
@@ -1608,7 +1675,56 @@
         color: inherit;
         text-align: left;
     }
+    .filter-link {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        color: inherit;
+        text-align: left;
+    }
     .filter-link:hover { text-decoration: underline; opacity: 0.8; }
+    .tag-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .tag-chip {
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-color, #ccc);
+        background: none;
+        font-size: 0.8rem;
+        cursor: pointer;
+        color: var(--text-muted, #555);
+        transition: background 0.1s, color 0.1s;
+    }
+    .tag-chip.active {
+        background: var(--accent, #5b8af5);
+        color: #fff;
+        border-color: var(--accent, #5b8af5);
+    }
+    .tag-mode-toggle {
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        border: 1px solid var(--accent, #5b8af5);
+        background: none;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--accent, #5b8af5);
+    }
+    .tag-clear {
+        background: none;
+        border: none;
+        font-size: 0.75rem;
+        color: var(--text-muted, #888);
+        cursor: pointer;
+        text-decoration: underline;
+    }
     .item-creator {
         font-size: 0.8rem;
         color: var(--text-muted, #888);

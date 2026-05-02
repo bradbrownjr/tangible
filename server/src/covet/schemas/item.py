@@ -86,6 +86,7 @@ class ItemUpdate(BaseModel):
     use_by_date: datetime | None = None
     date_frozen: datetime | None = None
     date_opened: datetime | None = None
+    sort_order: int | None = None
 
 
 class ItemRead(ItemBase):
@@ -94,6 +95,7 @@ class ItemRead(ItemBase):
     id: str
     collection_id: str
     category_id: str
+    sort_order: int = 0
     category_slug: str | None = None
     location_path: list[str] | None = None
     primary_photo_id: str | None = None

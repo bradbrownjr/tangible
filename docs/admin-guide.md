@@ -1,12 +1,47 @@
 # Admin guide
 
 Operating Covet for one or more users: first-run setup, accounts,
-SSO, backups, upgrades, observability, and routine maintenance.
+SSO, reverse proxies, backups, upgrades, observability, and routine
+maintenance.
 
 > Installing the server for the first time? Start with the
 > [Deployment guide](deployment.md). Looking up a specific environment
 > variable? See the [Configuration reference](configuration.md).
 > End-user documentation lives in the [User guide](user-guide.md).
+
+## Table of contents
+
+- [First-run setup](#first-run-setup)
+- [Users and roles](#users-and-roles)
+  - [Inviting a user](#inviting-a-user)
+  - [Resetting a password](#resetting-a-password)
+  - [Disabling / removing a user](#disabling--removing-a-user)
+- [SSO / OIDC](#sso--oidc)
+  - [Authentik](#authentik)
+  - [Keycloak](#keycloak)
+  - [Authelia](#authelia)
+  - [Google / GitHub (external OAuth)](#google--github-external-oauth)
+- [Reverse proxy setup](#reverse-proxy-setup)
+  - [Caddy](#caddy)
+  - [Traefik](#traefik)
+  - [nginx](#nginx)
+  - [Required Covet env vars (all proxies)](#required-covet-env-vars-all-proxies)
+- [Backups](#backups)
+  - [Logical backup](#logical-per-user-backup)
+  - [Volume snapshots](#volume-snapshots-recommended)
+  - [What to retain](#what-to-retain)
+- [Upgrading](#upgrading)
+  - [Recent client features with no extra server config](#recent-client-features-with-no-extra-server-config)
+  - [Rollback](#rollback)
+- [Observability](#observability)
+  - [Audit log](#audit-log)
+- [Rate limiting](#rate-limiting)
+- [Storage limits](#storage-limits)
+- [Routine tasks](#routine-tasks)
+- [Troubleshooting](#troubleshooting)
+- [Getting help](#getting-help)
+
+---
 
 ## First-run setup
 
@@ -73,37 +108,122 @@ the deleting admin and removes their sessions and tokens.
 ## SSO / OIDC
 
 Covet speaks OpenID Connect via Authlib. Multiple providers can be
-enabled simultaneously (e.g. Authentik *and* Google).
+enabled simultaneously (e.g. Authentik *and* Google). Set
+`COVET_OIDC_ENABLED=true` to activate the system, then configure one
+or more providers as shown below.
 
-### Minimum setup (Authentik example)
+Common env vars that apply to all providers:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `COVET_OIDC_ENABLED` | `false` | Master switch |
+| `COVET_OIDC_AUTO_CREATE_USERS` | `true` | Create local account on first login |
+| `COVET_OIDC_DEFAULT_ROLE` | `user` | Role for auto-created users (`user` or `admin`) |
+
+### Authentik
+
+Create an OAuth2/OIDC provider in Authentik. Set the redirect URI to
+`https://covet.example.com/auth/oidc/authentik/callback`.
 
 ```env
-COVET_OIDC_ENABLED=true
-COVET_OIDC_AUTO_CREATE_USERS=true
-COVET_OIDC_DEFAULT_ROLE=user
-
 COVET_OIDC_AUTHENTIK_DISPLAY_NAME=Authentik
 COVET_OIDC_AUTHENTIK_ISSUER=https://auth.example.com/application/o/covet/
 COVET_OIDC_AUTHENTIK_CLIENT_ID=covet
-COVET_OIDC_AUTHENTIK_CLIENT_SECRET_FILE=/run/secrets/authentik
+COVET_OIDC_AUTHENTIK_CLIENT_SECRET_FILE=/run/secrets/authentik_secret
 COVET_OIDC_AUTHENTIK_ADMIN_GROUPS=covet-admins
 ```
-
-The redirect URI defaults to
-`${COVET_PUBLIC_URL}/auth/oidc/authentik/callback`. Register that
-exact URL in your provider.
 
 `ADMIN_GROUPS` (comma-separated group claims) auto-promotes anyone in
 those groups to global admin. If not set, all OIDC users get
 `COVET_OIDC_DEFAULT_ROLE`.
 
+### Keycloak
+
+Create a client in your Keycloak realm. Set **Access Type** to
+`confidential` and add the redirect URI
+`https://covet.example.com/auth/oidc/keycloak/callback`.
+
+```env
+COVET_OIDC_KEYCLOAK_DISPLAY_NAME=Keycloak
+COVET_OIDC_KEYCLOAK_ISSUER=https://keycloak.example.com/realms/myrealm
+COVET_OIDC_KEYCLOAK_CLIENT_ID=covet
+COVET_OIDC_KEYCLOAK_CLIENT_SECRET_FILE=/run/secrets/keycloak_secret
+COVET_OIDC_KEYCLOAK_ADMIN_GROUPS=covet-admins
+```
+
+Keycloak issues group claims as `/group-name` paths by default. The
+admin-group check is a substring match, so `covet-admins` matches
+`/covet-admins`.
+
+### Authelia
+
+Authelia acts as an OIDC provider from version 4.38+. Create a client
+entry in `configuration.yml` and register the redirect URI
+`https://covet.example.com/auth/oidc/authelia/callback`.
+
+```yaml
+# authelia configuration.yml excerpt
+identity_providers:
+  oidc:
+    clients:
+      - id: covet
+        description: Covet
+        secret: '$pbkdf2-sha512$...'   # bcrypt or pbkdf2 hash of the secret
+        redirect_uris:
+          - https://covet.example.com/auth/oidc/authelia/callback
+        scopes: [openid, profile, email, groups]
+        grant_types: [authorization_code]
+```
+
+```env
+COVET_OIDC_AUTHELIA_DISPLAY_NAME=Authelia
+COVET_OIDC_AUTHELIA_ISSUER=https://authelia.example.com
+COVET_OIDC_AUTHELIA_CLIENT_ID=covet
+COVET_OIDC_AUTHELIA_CLIENT_SECRET_FILE=/run/secrets/authelia_secret
+COVET_OIDC_AUTHELIA_ADMIN_GROUPS=covet-admins
+```
+
+### Google / GitHub (external OAuth)
+
+For households that use Google or GitHub accounts, set the redirect URI
+in the provider's developer console to
+`https://covet.example.com/auth/oidc/<provider>/callback`.
+
+```env
+# Google
+COVET_OIDC_GOOGLE_DISPLAY_NAME=Google
+COVET_OIDC_GOOGLE_ISSUER=https://accounts.google.com
+COVET_OIDC_GOOGLE_CLIENT_ID=123456789.apps.googleusercontent.com
+COVET_OIDC_GOOGLE_CLIENT_SECRET_FILE=/run/secrets/google_secret
+
+# GitHub
+COVET_OIDC_GITHUB_DISPLAY_NAME=GitHub
+COVET_OIDC_GITHUB_ISSUER=https://token.actions.githubusercontent.com
+COVET_OIDC_GITHUB_CLIENT_ID=Ov23li...
+COVET_OIDC_GITHUB_CLIENT_SECRET_FILE=/run/secrets/github_secret
+```
+
+GitHub does not issue an `email` scope by default — enable it in the
+OAuth app settings or users will need to set a local email after first
+login.
+
 See the [Configuration reference](configuration.md#oidc--oauth-optional)
 for every per-provider setting.
 
-### Behind a reverse proxy
+---
 
-If Covet runs behind Caddy / nginx / Traefik with TLS terminated at
-the proxy, you **must** set:
+## Reverse proxy setup
+
+Most self-hosters already run a reverse proxy. Covet sits behind it
+on port 8000. All proxies must:
+
+- Forward the real client IP via `X-Forwarded-For`.
+- Pass `Host`, `X-Forwarded-Proto`, and `X-Real-IP` headers.
+- Terminate TLS (Covet does not manage certificates).
+
+### Required Covet env vars (all proxies)
+
+Set these regardless of which proxy you use:
 
 ```env
 COVET_PUBLIC_URL=https://covet.example.com
@@ -111,11 +231,109 @@ COVET_BEHIND_PROXY=true
 COVET_ALLOWED_HOSTS=covet.example.com
 ```
 
-Otherwise OIDC redirects, share links, cookies, and the host-header
-allowlist will all be wrong. See
-[Deployment guide → Caddy snippet](deployment.md#unraid).
+Without `COVET_BEHIND_PROXY=true`, Covet ignores forwarded-IP headers
+and will rate-limit your proxy's IP instead of the real clients'.
+Without `COVET_ALLOWED_HOSTS`, the host-header allowlist will reject
+requests for your domain with HTTP 400.
 
-## Backups
+### Caddy
+
+Caddy obtains and renews TLS automatically via Let's Encrypt or ZeroSSL.
+
+```caddy
+covet.example.com {
+    encode zstd gzip
+    reverse_proxy covet:8000
+}
+```
+
+Place this in your `Caddyfile` (global or per-site). Covet and Caddy
+must share a Docker network. A full reference snippet is also included at
+[`docker/Caddyfile.example`](../docker/Caddyfile.example).
+
+If you need the WebSocket upgrade header for future SSE support:
+
+```caddy
+covet.example.com {
+    encode zstd gzip
+    reverse_proxy covet:8000 {
+        header_up Connection {>Connection}
+        header_up Upgrade {>Upgrade}
+    }
+}
+```
+
+### Traefik
+
+Add Traefik labels to the Covet service in your Compose file. This
+assumes a Traefik instance already running with a `proxy` external
+network and an `https` entrypoint:
+
+```yaml
+services:
+  covet:
+    image: ghcr.io/bradbrownjr/covet:0
+    networks:
+      - proxy
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.covet.rule=Host(`covet.example.com`)"
+      - "traefik.http.routers.covet.entrypoints=https"
+      - "traefik.http.routers.covet.tls.certresolver=letsencrypt"
+      - "traefik.http.services.covet.loadbalancer.server.port=8000"
+    environment:
+      COVET_PUBLIC_URL: https://covet.example.com
+      COVET_BEHIND_PROXY: "true"
+      COVET_ALLOWED_HOSTS: covet.example.com
+
+networks:
+  proxy:
+    external: true
+```
+
+If you use Traefik's `forwardAuth` middleware (e.g. pointed at
+Authentik or Authelia), Covet's own OIDC auth still applies — the two
+layers are independent. Using the Traefik forwardAuth + `COVET_OIDC_*`
+together lets Traefik enforce network-level auth while Covet manages
+collection ACL and sessions inside.
+
+### nginx
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name covet.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/covet.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/covet.example.com/privkey.pem;
+
+    client_max_body_size 50M;   # match COVET_DOCUMENTS_MAX_BYTES
+
+    location / {
+        proxy_pass         http://covet:8000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   Connection        "";
+    }
+}
+
+server {
+    listen 80;
+    server_name covet.example.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+Pair with [Certbot](https://certbot.eff.org/) or
+[acme.sh](https://acme.sh/) for certificate management.
+
+---
+
+
 
 The `/data` volume holds your *content* and the `/config` volume holds
 *secrets*. A complete backup is both volumes captured at a consistent

@@ -85,6 +85,9 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     )
     disposition_note: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # User-assigned sort position for manual ordering within a collection.
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     # Optional pointer to the CRDT document for this item.
     doc_id: Mapped[str | None] = mapped_column(
         String(26), ForeignKey("automerge_docs.id", ondelete="SET NULL"), nullable=True

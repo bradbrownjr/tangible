@@ -8,6 +8,13 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Tag filter chips with AND/OR mode.** The collection item list now shows clickable tag chips below the filter bar. Select one or more tags to filter items; a toggle switches between **All** (item must have every selected tag) and **Any** (item must have at least one).
+- **Drag-to-reorder photos.** In the photo gallery thumbnail strip, photos can be reordered by drag-and-drop while in edit mode. The new order is saved via `PUT /items/{id}/photos/reorder`.
+- **Custom sort order on items.** Items have a new `sort_order` integer field. Select "Sort: Custom order" from the sort dropdown to show items in this order. The field is exposed in `PATCH /items/{id}` and a new `PUT /items/reorder` bulk endpoint lets clients rearrange items.
+- **Server thumbnail endpoint.** `GET /photos/{id}/thumbnail` returns a 400x400 JPEG thumbnail (lazy-generated on first access using Pillow, cached with `Cache-Control: public, max-age=604800`).
+- **Type-ahead autofill for Condition and Creator.** When editing an item inline, the Condition and Creator fields now show a datalist of existing values from the collection so you can stay consistent without typing from scratch. Suggestions are fetched lazily from `GET /collections/{id}/field-suggestions?field=condition|creator`.
+- **Admin guide: reverse proxy setup.** The admin guide now includes a full "Reverse proxy setup" section with copy-paste examples for Caddy, Traefik (Docker labels), and nginx, plus an "OIDC provider setup" subsection with Authentik, Keycloak, Authelia, Google, and GitHub configuration notes. A table of contents was also added to the admin guide.
+
 - **Photo gallery with captions.** Each photo now stores an optional caption (migration `0031_photo_caption`). The web collection page shows an inline `PhotoGallery` component with a lightbox viewer, thumbnail strip, keyboard navigation (← → Esc), set-as-primary, delete, and click-to-edit captions.
 - **Field-value hyperlink filters.** Category badges, creator, condition, and location tags in the collection grid and table views are now interactive buttons; clicking any value instantly filters the item list to that value.
 - **Insurance export web trigger.** The collection subnav now includes an **Export** tab that downloads the insurance-export PDF directly via `GET /api/collections/{id}/reports/insurance-export`.

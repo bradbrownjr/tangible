@@ -27,6 +27,7 @@
     let uploading = $state(false);
     let editingCaption = $state<string | null>(null);
     let captionDraft = $state('');
+    let dragFromIdx = $state<number | null>(null);
 
     function photoUrl(id: string) {
         return `/api/photos/${id}/download`;
@@ -82,6 +83,32 @@
         editingCaption = null;
     }
 
+    function onDragStart(idx: number) {
+        dragFromIdx = idx;
+    }
+
+    function onDragOver(e: DragEvent, idx: number) {
+        e.preventDefault();
+        if (dragFromIdx === null || dragFromIdx === idx) return;
+        const reordered = [...photos];
+        const [moved] = reordered.splice(dragFromIdx, 1);
+        reordered.splice(idx, 0, moved);
+        photos = reordered;
+        dragFromIdx = idx;
+    }
+
+    async function onDragEnd() {
+        dragFromIdx = null;
+        if (!canEdit) return;
+        const payload = photos.map((p, i) => ({ id: p.id, sort_order: i * 10 }));
+        try {
+            await api.put(`/items/${itemId}/photos/reorder`, payload);
+            photos = photos.map((p, i) => ({ ...p, sort_order: i * 10 }));
+        } catch {
+            await load();
+        }
+    }
+
     function prevLightbox() {
         if (lightboxIdx === null) return;
         lightboxIdx = (lightboxIdx - 1 + photos.length) % photos.length;
@@ -108,6 +135,11 @@
                 <button
                     class="thumb-btn"
                     class:primary-thumb={photo.is_primary}
+                    class:dragging={dragFromIdx === idx}
+                    draggable={canEdit}
+                    ondragstart={() => onDragStart(idx)}
+                    ondragover={(e) => onDragOver(e, idx)}
+                    ondragend={onDragEnd}
                     onclick={() => (lightboxIdx = idx)}
                     title={photo.caption ?? ''}
                 >
@@ -204,6 +236,8 @@
     }
     .gallery.compact .thumb-btn { width: 48px; height: 48px; }
     .thumb-btn.primary-thumb { border-color: var(--accent, #3b82f6); }
+    .thumb-btn.dragging { opacity: 0.4; cursor: grabbing; }
+    .thumb-btn[draggable="true"] { cursor: grab; }
     .thumb-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     .upload-btn {

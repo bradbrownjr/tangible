@@ -379,9 +379,6 @@ tools query and react to.
 
 Long-term work that makes Covet a foundation other things build on.
 
-- **i18n & localization** ✅ scaffold exists — finish string extraction,
-  wire Crowdin or Weblate, ship initial translations (French, German,
-  Spanish, Japanese).
 - **Two-factor auth (TOTP)** for local accounts; FIDO2/passkey as
   stretch goal.
 - **Account deletion & data export self-service** — GDPR-friendly: user
@@ -391,9 +388,6 @@ Long-term work that makes Covet a foundation other things build on.
   maintenance history, and stock levels as AI context. Allows AI
   assistants to answer "do I have a spare furnace filter?" or "when is
   my car's next oil change?".
-- **Native iOS app** — after Android stabilizes; share the Kotlin
-  Multiplatform or React Native business logic, or build SwiftUI with
-  the REST API.
 - **Plugin / adapter system for metadata scrapers** — community can
   contribute scrapers for new sources (Home Depot, Amazon, AutoZone,
   manufacturer portals) without modifying core.
@@ -402,25 +396,31 @@ Long-term work that makes Covet a foundation other things build on.
   can ask questions, record observations ("I noticed the generator
   sounded rough — ran it 10 min"), or flag issues. Useful for shared
   maintenance logs. Notifications on replies.
-- **Compose example: Traefik + Authentik**.
+- **i18n & localization** ✅ scaffold exists — finish string extraction,
+  wire Crowdin or Weblate, ship initial translations (French, German,
+  Spanish, Japanese).
+- **Drag-and-drop photo reorder** — reorder the photo gallery by
+  dragging thumbnails; server persists sort_order per photo.
+- **Server-side thumbnail generation** — generate resized thumbnails on
+  upload; serve via `GET /photos/{id}/thumbnail`; web and Android use
+  thumbnails in lists to reduce bandwidth.
+- **Autofill custom fields (type-ahead)** — when entering a value in a
+  template custom field, suggest values already used in that field
+  across the collection.
+- **AND/OR toggle for multi-tag filters** — when multiple tags are
+  selected in the collection filter bar, a toggle switches between
+  "match all" (AND, default) and "match any" (OR).
+- **Custom sort field** — user-assigned integer on items for manual
+  ordering within a collection, independent of any data field.
+  Drag-to-reorder in the web item list persists this field.
 
----
-
-## Backlog (not yet phased)
-
-Smaller items that don't slot cleanly into a phase yet:
-
-- Duplicate item button ✅.
-- Drag-and-drop reorder of photos.
-- Server-side thumbnail generation pipeline.
-- Autofill custom fields based on previous entries (type-ahead from
-  existing values in the same collection).
-- AND/OR toggle for multi-tag filters.
-- Sort options (by value, by acquisition date, by custom field) ✅.
-- Parent item value rollup (container value = sum of contents) ✅.
-- Scan still image for barcode (vs. live camera preview only) ✅.
-- Custom sort field on items (user-assigned integer for manual ordering
-  within a collection, independent of any data field).
+> **iOS app:** deferred indefinitely. Apple's developer program
+> requirements make distribution costly for a self-hosted open-source
+> app. Users on iPhone/iPad can use the responsive mobile web UI.
+> Reverse-proxy and IDP (Caddy, Traefik, nginx, Authentik, Keycloak)
+> setup is covered in the [admin guide](docs/admin-guide.md) rather
+> than as Compose examples — most self-hosters already run their own
+> proxy stack.
 
 ---
 
