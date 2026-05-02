@@ -319,7 +319,7 @@ moves all of its contents.
 
 ---
 
-## Phase 12 — Maintenance & operations hub (in progress)
+## Phase 12 — Maintenance & operations hub ✅ COMPLETE
 
 Core maintenance APIs and due-date alerts now exist. This phase expands
 that foundation into a first-class operations center: scheduled care,
@@ -399,18 +399,18 @@ Long-term work that makes Covet a foundation other things build on.
 - **i18n & localization** ✅ scaffold exists — finish string extraction,
   wire Crowdin or Weblate, ship initial translations (French, German,
   Spanish, Japanese).
-- **Drag-and-drop photo reorder** — reorder the photo gallery by
+- **Drag-and-drop photo reorder** ✅ — reorder the photo gallery by
   dragging thumbnails; server persists sort_order per photo.
-- **Server-side thumbnail generation** — generate resized thumbnails on
+- **Server-side thumbnail generation** ✅ — generate resized thumbnails on
   upload; serve via `GET /photos/{id}/thumbnail`; web and Android use
   thumbnails in lists to reduce bandwidth.
-- **Autofill custom fields (type-ahead)** — when entering a value in a
+- **Autofill custom fields (type-ahead)** ✅ — when entering a value in a
   template custom field, suggest values already used in that field
   across the collection.
-- **AND/OR toggle for multi-tag filters** — when multiple tags are
+- **AND/OR toggle for multi-tag filters** ✅ — when multiple tags are
   selected in the collection filter bar, a toggle switches between
   "match all" (AND, default) and "match any" (OR).
-- **Custom sort field** — user-assigned integer on items for manual
+- **Custom sort field** ✅ — user-assigned integer on items for manual
   ordering within a collection, independent of any data field.
   Drag-to-reorder in the web item list persists this field.
 
