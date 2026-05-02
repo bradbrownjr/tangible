@@ -197,6 +197,19 @@ Set a **minimum quantity** on any inventory item. When the item's quantity
 falls at or below the minimum, it surfaces in the Maintenance alerts page
 as a "low stock" alert.
 
+### Notification preferences
+
+Covet supports three delivery channels for alerts, configurable per alert kind
+in **Settings → Notifications**:
+
+| Channel | How it works |
+|---------|-------------|
+| **Email** | Server sends an email digest on demand ("Send email digest now") or via a scheduled job. Requires SMTP configured by the server operator. |
+| **Browser** | A Web Notification fires once per day when the app is open and browser permission is granted. Click "Enable browser notifications" to grant permission. |
+| **App** | The Android app checks for alerts daily in the background and posts a system notification for enabled kinds. |
+
+Each alert kind (maintenance tasks, chores, use-by dates, expiry, lot use-by, low stock) can be toggled independently per channel. The **Lead time** (days) column controls how far ahead of the due date an alert becomes active — this applies to all three channels.
+
 ### Loans
 
 Mark an item as **lent out** to a contact. Set an optional due date.

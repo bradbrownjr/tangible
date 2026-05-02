@@ -25,7 +25,7 @@ NOTIFICATION_KINDS = (
 
 
 class NotificationPreference(ULIDPrimaryKey, TimestampMixin, Base):
-    """Per-user, per-kind opt-in email notification preference."""
+    """Per-user, per-kind notification preference across three delivery channels."""
 
     __tablename__ = "notification_preferences"
     __table_args__ = (
@@ -39,7 +39,9 @@ class NotificationPreference(ULIDPrimaryKey, TimestampMixin, Base):
         index=True,
     )
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
-    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    push_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    browser_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     lead_days: Mapped[int] = mapped_column(Integer, nullable=False, default=7)
 
     user: Mapped[User] = relationship()

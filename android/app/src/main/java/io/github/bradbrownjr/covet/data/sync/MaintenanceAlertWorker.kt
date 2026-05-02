@@ -43,7 +43,16 @@ class MaintenanceAlertWorker @AssistedInject constructor(
         if (!session.isLoggedIn()) return Result.success()
 
         return try {
-            val alerts = api.getAlerts(withinDays = 7)
+            // Load per-kind notification preferences and respect push_enabled.
+            val prefs = api.listNotificationPrefs()
+            val pushEnabled = prefs.filter { it.push_enabled }
+            if (pushEnabled.isEmpty()) return Result.success()
+
+            val enabledKinds = pushEnabled.map { it.kind }.toSet()
+            val withinDays = pushEnabled.maxOf { it.lead_days }
+
+            val alerts = api.getAlerts(withinDays = withinDays)
+                .filter { it.kind in enabledKinds }
             if (alerts.isEmpty()) return Result.success()
 
             val overdue = alerts.filter { a ->

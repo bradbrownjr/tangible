@@ -331,11 +331,13 @@ history, and proactive notifications across every asset.
 - **Completion history with notes** — ✅ each mark-complete records
   odometer/hours reading, cost, technician (free text), and a note.
   History is paginated; exportable to CSV.
-- **Push & email notifications** — ✅ opt-in email digests at configurable lead
-  times per kind. Settings UI in web and managed via `/notifications` API.
-  Android daily alert poll: WorkManager fires once a day, fetches overdue and
-  due-within-7-days alerts, and posts a grouped local notification. No Firebase
-  or APK recompilation required — works with any self-hosted server.
+- **Push & email notifications** — ✅ three-channel opt-in per alert kind: Email
+  digest, Browser push (Web Notifications API), and App (Android WorkManager).
+  Each kind has independent on/off toggles and configurable lead time. Settings
+  UI in web (**Settings → Notifications**) and Android (**Settings → Notifications**).
+  Android daily alert poll: WorkManager fires once a day, fetches alerts up to
+  the max lead time for push-enabled kinds, and posts a grouped local notification.
+  No Firebase or APK recompilation required — works with any self-hosted server.
 - **Low-stock alerts** — ✅ when a consumable item's quantity drops below
   its minimum, surface it in the alerts feed. `minimum_quantity` field
   added to Item model.

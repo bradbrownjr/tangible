@@ -4,12 +4,16 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { me, refreshMe, loadPublicConfig, logout, publicConfig } from '$lib/session';
-    import { userLabel } from '$lib/api';
+    import { userLabel, api } from '$lib/api';
     import { get } from 'svelte/store';
     import { initTheme } from '$lib/theme';
     import WhatsNew from '$lib/WhatsNew.svelte';
 
     const SEEN_KEY = 'covet:whatsnew-seen-version';
+    const BROWSER_NOTIF_KEY = 'covet:browser-notif-fired';
+
+    interface NotificationPref { kind: string; browser_enabled: boolean; lead_days: number; }
+    interface DueAlert { id: string; title: string; details: string | null; due_at: string; kind: string; severity: string; }
 
     let { children } = $props();
     let ready = $state(false);
@@ -53,6 +57,36 @@
             await goto(cfg?.setup_required ? '/register' : '/login');
         } else if ($me && onAuth) {
             await goto('/');
+        }
+
+        // Browser push notifications: fire once per session for browser_enabled kinds.
+        if ($me && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            try {
+                const todayKey = new Date().toISOString().slice(0, 10);
+                const fired = localStorage.getItem(BROWSER_NOTIF_KEY);
+                if (fired !== todayKey) {
+                    const [prefs, alerts] = await Promise.all([
+                        api.get<NotificationPref[]>('/notifications'),
+                        api.get<DueAlert[]>('/alerts?within_days=30'),
+                    ]);
+                    const enabledKinds = new Set(
+                        prefs.filter(p => p.browser_enabled).map(p => p.kind)
+                    );
+                    const kindLeadDays = Object.fromEntries(prefs.map(p => [p.kind, p.lead_days]));
+                    const now = Date.now();
+                    for (const alert of alerts) {
+                        if (!enabledKinds.has(alert.kind)) continue;
+                        const lead = (kindLeadDays[alert.kind] ?? 7) * 86400 * 1000;
+                        const due = new Date(alert.due_at).getTime();
+                        if (due - now <= lead) {
+                            new Notification(alert.title, { body: alert.details ?? undefined, tag: alert.id });
+                        }
+                    }
+                    localStorage.setItem(BROWSER_NOTIF_KEY, todayKey);
+                }
+            } catch {
+                // Non-fatal: browser notification errors must never break the app shell.
+            }
         }
     });
 

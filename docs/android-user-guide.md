@@ -127,7 +127,7 @@ Access **Maintenance** from the hamburger menu on the Collections screen. It sho
 
 ### Daily alert notifications
 
-The app checks for overdue and due-within-7-days alerts once per day in the background (when the device has network). If any alerts are found, a notification appears in the system tray summarising how many are overdue and how many are due soon. Tapping the notification opens the Maintenance screen.
+The app checks for alerts within your configured lead time once per day in the background (when the device has network). If any alerts are found for kinds where **App** notifications are enabled, a single grouped notification appears in the system tray. Tapping it opens the Maintenance screen.
 
 - **Android 13+:** The app asks for notification permission on first launch. Without it, daily notifications are silently suppressed but the Maintenance screen still works.
 - **No setup required by the server admin** — this uses Android's built-in alarm system, not Firebase.
@@ -140,6 +140,7 @@ Access Settings from the hamburger menu on the Collections screen.
 
 - **Server URL** — the address of your Covet server.
 - **Test connection** — pings the server and reports the result.
+- **Notifications** — per-kind toggle for **App** push notifications. Enable or disable each alert kind (maintenance, chores, expiry, etc.) independently. The toggle here controls whether the daily background job posts a notification for that kind; web browser and email channels are managed in the web settings.
 - **Sign out** — clears your session.
 
 ---

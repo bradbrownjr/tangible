@@ -325,3 +325,20 @@ data class ManualBundleDto(
     val assets: List<BundleAssetDto> = emptyList(),
     val item_ids: List<String> = emptyList(),
 )
+
+@JsonClass(generateAdapter = true)
+data class NotificationPrefDto(
+    val kind: String,
+    val email_enabled: Boolean,
+    val push_enabled: Boolean,
+    val browser_enabled: Boolean,
+    val lead_days: Int,
+)
+
+@JsonClass(generateAdapter = true)
+data class NotificationPrefUpdate(
+    val email_enabled: Boolean,
+    val push_enabled: Boolean,
+    val browser_enabled: Boolean,
+    val lead_days: Int,
+)

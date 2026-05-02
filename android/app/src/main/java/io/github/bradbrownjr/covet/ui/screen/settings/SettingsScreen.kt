@@ -28,8 +28,19 @@ import kotlinx.coroutines.launch
 import io.github.bradbrownjr.covet.data.auth.SessionStore
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.remote.DueAlertDto
+import io.github.bradbrownjr.covet.data.remote.NotificationPrefDto
+import io.github.bradbrownjr.covet.data.remote.NotificationPrefUpdate
 import io.github.bradbrownjr.covet.data.repo.AuthRepository
 import javax.inject.Inject
+
+private val KIND_LABELS = mapOf(
+    "maintenance_due" to "Maintenance due",
+    "chore_due" to "Chore due",
+    "item_use_by" to "Item use-by",
+    "item_expires" to "Item expires",
+    "lot_use_by" to "Package use-by",
+    "low_stock" to "Low stock",
+)
 
 data class SettingsUi(
     val baseUrl: String? = null,
@@ -41,6 +52,8 @@ data class SettingsUi(
     val themeMode: String? = null,
     val alerts: List<DueAlertDto> = emptyList(),
     val alertsBusy: Boolean = false,
+    val notifPrefs: List<NotificationPrefDto> = emptyList(),
+    val notifBusy: Boolean = false,
 )
 
 @HiltViewModel
@@ -65,6 +78,39 @@ class SettingsViewModel @Inject constructor(
             }
         }
         refreshAlerts()
+        loadNotifPrefs()
+    }
+
+    fun loadNotifPrefs() {
+        if (_state.value.notifBusy) return
+        _state.value = _state.value.copy(notifBusy = true)
+        viewModelScope.launch {
+            val prefs = try {
+                api.listNotificationPrefs()
+            } catch (_: Throwable) {
+                emptyList()
+            }
+            _state.value = _state.value.copy(notifPrefs = prefs, notifBusy = false)
+        }
+    }
+
+    fun saveNotifPref(kind: String, pushEnabled: Boolean, emailEnabled: Boolean, browserEnabled: Boolean, leadDays: Int) {
+        viewModelScope.launch {
+            try {
+                val updated = api.updateNotificationPref(
+                    kind,
+                    NotificationPrefUpdate(
+                        email_enabled = emailEnabled,
+                        push_enabled = pushEnabled,
+                        browser_enabled = browserEnabled,
+                        lead_days = leadDays,
+                    ),
+                )
+                _state.value = _state.value.copy(
+                    notifPrefs = _state.value.notifPrefs.map { if (it.kind == kind) updated else it }
+                )
+            } catch (_: Throwable) { /* non-fatal */ }
+        }
     }
 
     fun signOut(after: () -> Unit) {
@@ -170,6 +216,34 @@ fun SettingsScreen(
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                             label = { Text(label) },
                         )
+                    }
+                }
+            }
+            item { HorizontalDivider() }
+            item {
+                Text("Notifications", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (s.notifPrefs.isEmpty() && !s.notifBusy) {
+                item { Text("No notification preferences.", style = MaterialTheme.typography.bodySmall) }
+            } else {
+                items(s.notifPrefs, key = { "notif-${it.kind}" }) { pref ->
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(KIND_LABELS[pref.kind] ?: pref.kind, style = MaterialTheme.typography.bodyMedium)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Switch(
+                                    checked = pref.push_enabled,
+                                    onCheckedChange = { checked ->
+                                        vm.saveNotifPref(pref.kind, checked, pref.email_enabled, pref.browser_enabled, pref.lead_days)
+                                    },
+                                )
+                                Text("App", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
             }

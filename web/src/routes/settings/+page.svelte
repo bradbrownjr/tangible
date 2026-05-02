@@ -27,7 +27,9 @@
 
     interface NotificationPref {
         kind: string;
-        enabled: boolean;
+        email_enabled: boolean;
+        push_enabled: boolean;
+        browser_enabled: boolean;
         lead_days: number;
     }
 
@@ -66,13 +68,32 @@
         }
     }
 
-    async function saveNotifPref(kind: string, enabled: boolean, leadDays: number) {
+    async function saveNotifPref(kind: string, updates: Partial<Omit<NotificationPref, 'kind'>>) {
         try {
-            const updated = await api.put<NotificationPref>(`/notifications/${kind}`, { enabled, lead_days: leadDays });
+            const current = notifPrefs.find(p => p.kind === kind)!;
+            const payload = {
+                email_enabled: current.email_enabled,
+                push_enabled: current.push_enabled,
+                browser_enabled: current.browser_enabled,
+                lead_days: current.lead_days,
+                ...updates,
+            };
+            const updated = await api.put<NotificationPref>(`/notifications/${kind}`, payload);
             notifPrefs = notifPrefs.map(p => p.kind === kind ? updated : p);
         } catch (e) {
             error = (e as Error).message;
         }
+    }
+
+    async function requestBrowserPermission() {
+        if (typeof Notification === 'undefined') {
+            digestMessage = 'Browser notifications are not supported in this browser.';
+            return;
+        }
+        const perm = await Notification.requestPermission();
+        digestMessage = perm === 'granted'
+            ? 'Browser notifications enabled.'
+            : 'Permission denied — check your browser settings.';
     }
 
     async function sendDigest() {
@@ -176,14 +197,16 @@
 </div>
 
 <div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">Email notifications</h3>
-    <p class="muted">Receive an email digest for selected alert types. Requires an email address on your account and SMTP configured on the server.</p>
+    <h3 style="margin-top:0">Notifications</h3>
+    <p class="muted">Choose how you're notified per alert type. Email requires SMTP configured on the server. Browser notifications require permission (prompted below). App notifications appear daily on your Android device.</p>
     {#if notifPrefs.length > 0}
         <table class="notif-table">
             <thead>
                 <tr>
                     <th>Alert type</th>
-                    <th>Enabled</th>
+                    <th title="Send email digest">Email</th>
+                    <th title="Browser notification when the app is open">Browser</th>
+                    <th title="Daily notification on the Android app">App</th>
                     <th>Lead time (days)</th>
                 </tr>
             </thead>
@@ -194,8 +217,22 @@
                         <td>
                             <input
                                 type="checkbox"
-                                checked={p.enabled}
-                                onchange={(e) => saveNotifPref(p.kind, (e.target as HTMLInputElement).checked, p.lead_days)}
+                                checked={p.email_enabled}
+                                onchange={(e) => saveNotifPref(p.kind, { email_enabled: (e.target as HTMLInputElement).checked })}
+                            />
+                        </td>
+                        <td>
+                            <input
+                                type="checkbox"
+                                checked={p.browser_enabled}
+                                onchange={(e) => saveNotifPref(p.kind, { browser_enabled: (e.target as HTMLInputElement).checked })}
+                            />
+                        </td>
+                        <td>
+                            <input
+                                type="checkbox"
+                                checked={p.push_enabled}
+                                onchange={(e) => saveNotifPref(p.kind, { push_enabled: (e.target as HTMLInputElement).checked })}
                             />
                         </td>
                         <td>
@@ -205,7 +242,7 @@
                                 max="365"
                                 value={p.lead_days}
                                 style="width:5rem"
-                                onchange={(e) => saveNotifPref(p.kind, p.enabled, parseInt((e.target as HTMLInputElement).value) || 7)}
+                                onchange={(e) => saveNotifPref(p.kind, { lead_days: parseInt((e.target as HTMLInputElement).value) || 7 })}
                             />
                         </td>
                     </tr>
@@ -214,7 +251,8 @@
         </table>
     {/if}
     <div style="margin-top:0.75rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
-        <button onclick={sendDigest}>Send digest now</button>
+        <button onclick={sendDigest}>Send email digest now</button>
+        <button class="secondary" onclick={requestBrowserPermission}>Enable browser notifications</button>
         {#if digestMessage}
             <span class={digestQueued ? 'ok' : 'muted'}>{digestMessage}</span>
         {/if}

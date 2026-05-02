@@ -23,14 +23,18 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 class NotificationPrefRead(BaseModel):
     kind: str
-    enabled: bool
+    email_enabled: bool
+    push_enabled: bool
+    browser_enabled: bool
     lead_days: int
 
     model_config = {"from_attributes": True}
 
 
 class NotificationPrefUpdate(BaseModel):
-    enabled: bool = True
+    email_enabled: bool = True
+    push_enabled: bool = True
+    browser_enabled: bool = True
     lead_days: int = Field(default=7, ge=1, le=365)
 
 
@@ -62,7 +66,9 @@ def list_preferences(
             # Return a virtual row with defaults (not persisted yet)
             pref = NotificationPreference()
             pref.kind = kind
-            pref.enabled = True
+            pref.email_enabled = True
+            pref.push_enabled = True
+            pref.browser_enabled = True
             pref.lead_days = 7
             result.append(pref)
     return result
@@ -90,7 +96,9 @@ def upsert_preference(
     if pref is None:
         pref = NotificationPreference(user_id=auth.user.id, kind=kind)
         db.add(pref)
-    pref.enabled = payload.enabled
+    pref.email_enabled = payload.email_enabled
+    pref.push_enabled = payload.push_enabled
+    pref.browser_enabled = payload.browser_enabled
     pref.lead_days = payload.lead_days
     db.commit()
     db.refresh(pref)
@@ -119,7 +127,7 @@ def send_digest(
     prefs = db.execute(
         select(NotificationPreference).where(
             NotificationPreference.user_id == auth.user.id,
-            NotificationPreference.enabled.is_(True),
+            NotificationPreference.email_enabled.is_(True),
         )
     ).scalars().all()
 

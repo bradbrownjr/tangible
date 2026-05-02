@@ -142,4 +142,14 @@ interface CovetApi {
 
     @GET("bundles/{id}")
     suspend fun getBundle(@Path("id") bundleId: String): ManualBundleDto
+
+    // --- Notification preferences ---
+    @GET("notifications")
+    suspend fun listNotificationPrefs(): List<NotificationPrefDto>
+
+    @PUT("notifications/{kind}")
+    suspend fun updateNotificationPref(
+        @Path("kind") kind: String,
+        @Body body: NotificationPrefUpdate,
+    ): NotificationPrefDto
 }
