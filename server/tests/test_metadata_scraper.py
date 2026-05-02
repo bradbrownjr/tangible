@@ -218,3 +218,127 @@ def test_registry_pin_requires_admin(client) -> None:
         json={"trusted": False},
     )
     assert denied.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Plugin adapter tests
+# ---------------------------------------------------------------------------
+
+
+def test_register_barcode_adapter_prepends() -> None:
+    """register_barcode_adapter() inserts the new adapter at index 0."""
+    orig = md._BARCODE_ADAPTERS[:]
+
+    class _FakeBarcodeAdapter:
+        name = "test_barcode_prepend"
+
+        def lookup(self, barcode: str, *, client) -> list[md.ScrapeResult]:
+            return []
+
+    adapter = _FakeBarcodeAdapter()
+    try:
+        md.register_barcode_adapter(adapter)
+        assert md._BARCODE_ADAPTERS[0] is adapter
+        assert md._BARCODE_ADAPTERS[0].name == "test_barcode_prepend"
+    finally:
+        md._BARCODE_ADAPTERS[:] = orig
+
+
+def test_list_adapters_returns_names() -> None:
+    """list_adapters() returns dicts of adapter names for url and barcode."""
+    info = md.list_adapters()
+    assert "url" in info
+    assert "barcode" in info
+    assert "opengraph" in info["url"]
+    assert "openlibrary" in info["barcode"]
+
+
+def test_discover_plugins_registers_via_entry_points(monkeypatch) -> None:
+    """discover_plugins() loads entry-point classes and registers them."""
+    import importlib.metadata
+
+    class _FakeUrlAdapter:
+        name = "fake_plugin_url"
+
+        def matches(self, url: str) -> bool:
+            return "fake.example" in url
+
+        def fetch(self, url: str, *, client) -> md.ScrapeResult:
+            return md.ScrapeResult(provider="fake_plugin_url", url=url, title="Fake")
+
+    class _FakeBarcodeAdapter:
+        name = "fake_plugin_barcode"
+
+        def lookup(self, barcode: str, *, client) -> list[md.ScrapeResult]:
+            return []
+
+    class _FakeEP:
+        def __init__(self, name, cls):
+            self.name = name
+            self._cls = cls
+
+        def load(self):
+            return self._cls
+
+    def _mock_eps(*, group):
+        if group == "covet.scraper_adapter":
+            return [_FakeEP("fake-url", _FakeUrlAdapter)]
+        if group == "covet.barcode_adapter":
+            return [_FakeEP("fake-barcode", _FakeBarcodeAdapter)]
+        return []
+
+    monkeypatch.setattr(importlib.metadata, "entry_points", _mock_eps)
+
+    orig_adapters = md._ADAPTERS[:]
+    orig_barcode = md._BARCODE_ADAPTERS[:]
+    try:
+        md.discover_plugins()
+        assert md._ADAPTERS[0].name == "fake_plugin_url"
+        assert md._BARCODE_ADAPTERS[0].name == "fake_plugin_barcode"
+    finally:
+        md._ADAPTERS[:] = orig_adapters
+        md._BARCODE_ADAPTERS[:] = orig_barcode
+
+
+def test_discover_plugins_skips_broken_entry_point(monkeypatch) -> None:
+    """discover_plugins() logs a warning and skips adapters that fail to load."""
+    import importlib.metadata
+
+    class _BrokenEP:
+        name = "broken"
+
+        def load(self):
+            raise ImportError("no such module")
+
+    monkeypatch.setattr(
+        importlib.metadata, "entry_points",
+        lambda *, group: [_BrokenEP()] if group == "covet.scraper_adapter" else [],
+    )
+
+    orig = md._ADAPTERS[:]
+    try:
+        md.discover_plugins()  # must not raise
+        assert orig == md._ADAPTERS  # nothing registered
+    finally:
+        md._ADAPTERS[:] = orig
+
+
+def test_adapters_endpoint_requires_admin(client) -> None:
+    r = client.get("/api/metadata/adapters")
+    assert r.status_code == 401
+
+
+def test_adapters_endpoint_returns_adapter_names(client) -> None:
+    client.post(
+        "/api/auth/register",
+        json={"username": "adaptersadmin", "password": "hunter22-secure", "email": "aa@x.io"},
+    )
+    client.post("/api/auth/login", json={"username": "adaptersadmin", "password": "hunter22-secure"})
+
+    r = client.get("/api/metadata/adapters")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert "url" in body
+    assert "barcode" in body
+    assert "opengraph" in body["url"]
+    assert "openlibrary" in body["barcode"]

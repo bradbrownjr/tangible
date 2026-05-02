@@ -392,9 +392,11 @@ Long-term work that makes Covet a foundation other things build on.
   streamable HTTP transport. Auth via Bearer API token or session cookie.
   AI assistants can answer "do I have a spare furnace filter?" or
   "when is my car's next oil change?".
-- **Plugin / adapter system for metadata scrapers** — community can
-  contribute scrapers for new sources (Home Depot, Amazon, AutoZone,
-  manufacturer portals) without modifying core.
+- **Plugin / adapter system for metadata scrapers** ✅ — community can
+  contribute scrapers for new sources without modifying core. Declare adapters
+  via `covet.scraper_adapter` / `covet.barcode_adapter` entry-point groups;
+  auto-discovered at startup. `GET /metadata/adapters` lists active adapters
+  (admin). Full entry-points discovery with broken-plugin resilience.
 - **Item comment threads** ✅ — threaded, time-stamped annotations on
   items beyond the single `notes` field. Multi-user: household members
   can ask questions, record observations, or flag issues. One level of

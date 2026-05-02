@@ -11,7 +11,7 @@ from covet.auth.deps import AuthContext, collection_role, require_admin, require
 from covet.db import get_session
 from covet.models import ItemTemplate, ScraperRegistryPin
 from covet.schemas import ItemTemplateRead
-from covet.services.metadata import ScrapeError, barcode_lookup, scrape
+from covet.services.metadata import ScrapeError, barcode_lookup, list_adapters, scrape
 from covet.services.scraper_registry import get_entry, list_entries
 
 router = APIRouter(prefix="/metadata", tags=["metadata"])
@@ -57,6 +57,11 @@ class RegistryImportRequest(BaseModel):
 
 class RegistryTrustUpdate(BaseModel):
     trusted: bool
+
+
+class AdaptersResponse(BaseModel):
+    url: list[str]
+    barcode: list[str]
 
 
 @router.post("/barcode", response_model=BarcodeLookupResponse)
@@ -205,3 +210,17 @@ def import_registry_entries(
     for tmpl in imported:
         db.refresh(tmpl)
     return [ItemTemplateRead.model_validate(t) for t in imported]
+
+
+@router.get("/adapters", response_model=AdaptersResponse)
+def list_active_adapters(
+    _: AuthContext = Depends(require_admin),
+) -> AdaptersResponse:
+    """Return the currently active URL and barcode adapters, in priority order.
+
+    Admin only. Useful for verifying that third-party plugin packages have
+    been loaded via the ``covet.scraper_adapter`` / ``covet.barcode_adapter``
+    entry-point groups.
+    """
+    info = list_adapters()
+    return AdaptersResponse(url=info["url"], barcode=info["barcode"])

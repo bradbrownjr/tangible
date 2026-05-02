@@ -412,8 +412,63 @@ _BARCODE_ADAPTERS: list[BarcodeAdapter] = [
 
 
 def register_adapter(adapter: Adapter) -> None:
-    # Prepend so custom adapters win over OpenGraph fallback.
+    """Prepend a URL adapter so it is tried before the built-ins (and before OpenGraph)."""
     _ADAPTERS.insert(0, adapter)
+
+
+def register_barcode_adapter(adapter: BarcodeAdapter) -> None:
+    """Prepend a barcode adapter so it is tried before the built-ins."""
+    _BARCODE_ADAPTERS.insert(0, adapter)
+
+
+def list_adapters() -> dict[str, list[str]]:
+    """Return adapter names keyed by type (url, barcode), in priority order."""
+    return {
+        "url": [a.name for a in _ADAPTERS],
+        "barcode": [a.name for a in _BARCODE_ADAPTERS],
+    }
+
+
+def discover_plugins() -> None:
+    """Auto-register adapter plugins declared via Python package entry points.
+
+    URL adapters (``covet.scraper_adapter`` group) are prepended before the
+    OpenGraph fallback. Barcode adapters (``covet.barcode_adapter`` group) are
+    prepended before the built-in barcode adapters.
+
+    Third-party packages declare adapters in their ``pyproject.toml``::
+
+        [project.entry-points."covet.scraper_adapter"]
+        myadapter = "mypackage.adapters:MyUrlAdapterClass"
+
+        [project.entry-points."covet.barcode_adapter"]
+        myadapter = "mypackage.adapters:MyBarcodeAdapterClass"
+
+    Each value must point to a **class** (not an instance) that implements the
+    ``Adapter`` or ``BarcodeAdapter`` protocol; it will be instantiated with no
+    arguments. Any adapter that fails to load is skipped with a warning logged.
+    """
+    import importlib.metadata
+
+    import structlog as _structlog
+
+    _log = _structlog.get_logger(__name__)
+
+    for ep in importlib.metadata.entry_points(group="covet.scraper_adapter"):
+        try:
+            cls = ep.load()
+            register_adapter(cls())
+            _log.info("scraper_plugin_loaded", name=ep.name, adapter=cls.__name__)
+        except Exception as exc:
+            _log.warning("scraper_plugin_load_failed", name=ep.name, error=str(exc))
+
+    for ep in importlib.metadata.entry_points(group="covet.barcode_adapter"):
+        try:
+            cls = ep.load()
+            register_barcode_adapter(cls())
+            _log.info("barcode_plugin_loaded", name=ep.name, adapter=cls.__name__)
+        except Exception as exc:
+            _log.warning("barcode_plugin_load_failed", name=ep.name, error=str(exc))
 
 
 def barcode_lookup(barcode: str, *, client: httpx.Client | None = None) -> list[ScrapeResult]:

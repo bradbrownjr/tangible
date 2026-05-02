@@ -16,6 +16,7 @@ from covet.bootstrap import bootstrap_admin_if_needed, ensure_data_dirs, run_mig
 from covet.config import Settings, get_settings
 from covet.db import init_engine
 from covet.logging import configure_logging
+from covet.services.metadata import discover_plugins
 
 
 @asynccontextmanager
@@ -24,6 +25,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     if settings.db_auto_migrate:
         run_migrations(settings)
     bootstrap_admin_if_needed(settings)
+    discover_plugins()
     yield
 
 

@@ -6,6 +6,12 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+- **Plugin/adapter system for metadata scrapers** — third-party packages can
+  now register custom URL and barcode adapters without modifying Covet's core.
+  Declare adapters in your package's `pyproject.toml` under the
+  `covet.scraper_adapter` or `covet.barcode_adapter` entry-point groups;
+  Covet auto-discovers and loads them at startup. Admins can verify loaded
+  adapters via `GET /metadata/adapters`.
 - **Item comment threads** — users can now post, reply to, edit, and delete
   comments on individual items. Comments are threaded (one level of replies),
   shown in a collapsible panel on each item card and table row. Any collection
