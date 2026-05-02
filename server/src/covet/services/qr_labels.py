@@ -12,6 +12,8 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     Image as RLImage,
+)
+from reportlab.platypus import (
     Paragraph,
     SimpleDocTemplate,
     Spacer,

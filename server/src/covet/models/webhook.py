@@ -5,15 +5,15 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, Boolean, Integer
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from covet.db import Base
 from covet.models.base import TimestampMixin, ULIDPrimaryKey
 
 if TYPE_CHECKING:
-    from covet.models.user import User
     from covet.models.collection import Collection
+    from covet.models.user import User
 
 
 class WebhookEventType(str, Enum):

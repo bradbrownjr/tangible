@@ -2,8 +2,18 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import io
+import json
+import secrets
+import zipfile
+
+import pyotp
+import qrcode
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 
@@ -23,8 +33,22 @@ from covet.schemas import (
     UserCreate,
     UserRead,
 )
+from covet.schemas.auth import (
+    AccountDeleteRequest,
+    TOTPDisableRequest,
+    TOTPLoginChallenge,
+    TOTPLoginRequest,
+    TOTPSetupResponse,
+    TOTPStatusResponse,
+    TOTPVerifyRequest,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+_TOTP_TICKET_SALT = "covet-totp-login"
+_TOTP_TICKET_MAX_AGE = 300  # 5 minutes
+_BACKUP_CODE_COUNT = 8
+_BACKUP_CODE_LEN = 10
 
 
 def _set_session_cookie(response: Response, raw: str, settings: Settings) -> None:
@@ -39,7 +63,55 @@ def _set_session_cookie(response: Response, raw: str, settings: Settings) -> Non
     )
 
 
-@router.post("/login", response_model=SessionInfo)
+def _sign_totp_ticket(user_id: str, secret_key: str) -> str:
+    s = URLSafeTimedSerializer(secret_key, salt=_TOTP_TICKET_SALT)
+    return s.dumps(user_id)
+
+
+def _unsign_totp_ticket(ticket: str, secret_key: str) -> str | None:
+    s = URLSafeTimedSerializer(secret_key, salt=_TOTP_TICKET_SALT)
+    try:
+        return s.loads(ticket, max_age=_TOTP_TICKET_MAX_AGE)
+    except (BadSignature, SignatureExpired):
+        return None
+
+
+def _hash_backup_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def _generate_backup_codes() -> tuple[list[str], list[str]]:
+    """Return (plaintext_codes, hashed_codes)."""
+    plain = [secrets.token_urlsafe(_BACKUP_CODE_LEN)[:_BACKUP_CODE_LEN].upper() for _ in range(_BACKUP_CODE_COUNT)]
+    hashed = [_hash_backup_code(c) for c in plain]
+    return plain, hashed
+
+
+def _verify_totp_or_backup(user: User, code: str) -> bool:
+    """Verify a 6-digit TOTP code or a backup code. Consumes backup codes."""
+    if not user.totp_secret:
+        return False
+    totp = pyotp.TOTP(user.totp_secret)
+    if totp.verify(code, valid_window=1):
+        return True
+    # Check backup codes
+    stored: list[str] = json.loads(user.totp_backup_codes) if user.totp_backup_codes else []
+    code_hash = _hash_backup_code(code.upper().strip())
+    if code_hash in stored:
+        stored.remove(code_hash)
+        user.totp_backup_codes = json.dumps(stored)
+        return True
+    return False
+
+
+def _make_qr_png_b64(uri: str) -> str:
+    img = qrcode.make(uri)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+@router.post("/login")
 @limiter.limit(DEFAULT_LOGIN_LIMIT)
 def login(
     payload: LoginRequest,
@@ -47,11 +119,50 @@ def login(
     response: Response,
     db: DBSession = Depends(get_session),
     settings: Settings = Depends(get_settings),
-) -> SessionInfo:
+) -> SessionInfo | TOTPLoginChallenge:
     user = auth_service.authenticate(db, username=payload.username, password=payload.password)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
+    if user.totp_enabled:
+        ticket = _sign_totp_ticket(user.id, settings.secret_key)
+        return TOTPLoginChallenge(totp_required=True, ticket=ticket)
+    session, raw = auth_service.create_session(
+        db,
+        user=user,
+        settings=settings,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
+    db.commit()
+    _set_session_cookie(response, raw, settings)
+    return SessionInfo(user=UserRead.model_validate(user), expires_at=session.expires_at)
+
+
+@router.post("/totp/confirm-login", response_model=SessionInfo)
+@limiter.limit(DEFAULT_LOGIN_LIMIT)
+def totp_confirm_login(
+    payload: TOTPLoginRequest,
+    request: Request,
+    response: Response,
+    db: DBSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> SessionInfo:
+    user_id = _unsign_totp_ticket(payload.ticket, settings.secret_key)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="TOTP ticket expired or invalid",
+        )
+    user = db.get(User, user_id)
+    if user is None or not user.is_active or not user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
+    if not _verify_totp_or_backup(user, payload.code):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid TOTP code"
         )
     session, raw = auth_service.create_session(
         db,
@@ -88,9 +199,6 @@ def register(
     db: DBSession = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> UserRead:
-    # First-run: if there are no users yet, allow registration regardless of
-    # COVET_REGISTRATION_ENABLED and promote the first user to admin so a
-    # fresh deployment can be bootstrapped without any environment vars.
     is_first_user = db.scalar(select(User.id).limit(1)) is None
     if not is_first_user and not settings.registration_enabled:
         raise HTTPException(
@@ -119,11 +227,6 @@ def update_me(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> UserRead:
-    """Update the signed-in user's own profile (display name, email, password).
-
-    Cannot change ``is_admin`` / ``is_active`` from this endpoint — that would
-    let any user self-promote. Use the admin user endpoints for that.
-    """
     user = auth.user
     if payload.display_name is not None:
         user.display_name = payload.display_name or None
@@ -136,6 +239,235 @@ def update_me(
     db.flush()
     db.commit()
     return UserRead.model_validate(user)
+
+
+# --- TOTP 2FA -------------------------------------------------------------------------
+
+
+@router.get("/totp", response_model=TOTPStatusResponse)
+def totp_status(auth: AuthContext = Depends(require_user)) -> TOTPStatusResponse:
+    user = auth.user
+    remaining = 0
+    if user.totp_enabled and user.totp_backup_codes:
+        remaining = len(json.loads(user.totp_backup_codes))
+    return TOTPStatusResponse(enabled=user.totp_enabled, backup_codes_remaining=remaining)
+
+
+@router.post("/totp/setup", response_model=TOTPSetupResponse)
+def totp_setup(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> TOTPSetupResponse:
+    """Generate a TOTP secret for the account. Does NOT enable 2FA yet — call
+    POST /auth/totp/verify with a valid code to activate."""
+    user = auth.user
+    if user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="2FA is already enabled"
+        )
+    secret = pyotp.random_base32()
+    user.totp_secret = secret
+    db.commit()
+    totp = pyotp.TOTP(secret)
+    qr_uri = totp.provisioning_uri(name=user.username, issuer_name="Covet")
+    return TOTPSetupResponse(
+        secret=secret,
+        qr_uri=qr_uri,
+        qr_png_b64=_make_qr_png_b64(qr_uri),
+    )
+
+
+@router.post("/totp/verify")
+def totp_verify(
+    payload: TOTPVerifyRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> dict:
+    """Verify a TOTP code and activate 2FA. Returns plaintext backup codes (shown once)."""
+    user = auth.user
+    if not user.totp_secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Call /auth/totp/setup first",
+        )
+    if user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="2FA is already enabled"
+        )
+    totp = pyotp.TOTP(user.totp_secret)
+    if not totp.verify(payload.code, valid_window=1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TOTP code"
+        )
+    plain_codes, hashed_codes = _generate_backup_codes()
+    user.totp_enabled = True
+    user.totp_backup_codes = json.dumps(hashed_codes)
+    db.commit()
+    return {"enabled": True, "backup_codes": plain_codes}
+
+
+@router.delete("/totp", status_code=status.HTTP_204_NO_CONTENT)
+def totp_disable(
+    payload: TOTPDisableRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    """Disable 2FA. Requires current password and (if 2FA is active) a valid TOTP code."""
+    user = auth.user
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot disable 2FA on an OIDC-only account",
+        )
+    from covet.security import verify_password
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
+        )
+    if user.totp_enabled:
+        if not payload.totp_code:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="totp_code is required to disable 2FA",
+            )
+        if not _verify_totp_or_backup(user, payload.totp_code):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid TOTP code"
+            )
+    user.totp_secret = None
+    user.totp_enabled = False
+    user.totp_backup_codes = None
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/totp/regenerate-backup-codes")
+def totp_regenerate_backup_codes(
+    payload: TOTPVerifyRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> dict:
+    """Regenerate backup codes (requires a valid TOTP code to prove device access)."""
+    user = auth.user
+    if not user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="2FA is not enabled"
+        )
+    if not _verify_totp_or_backup(user, payload.code):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid TOTP code"
+        )
+    plain_codes, hashed_codes = _generate_backup_codes()
+    user.totp_backup_codes = json.dumps(hashed_codes)
+    db.commit()
+    return {"backup_codes": plain_codes}
+
+
+# --- Account self-service (export + delete) -------------------------------------------
+
+
+@router.get("/me/export")
+def export_account(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> StreamingResponse:
+    """Download a ZIP of all account data (JSON backup + photo/document file list).
+
+    The JSON backup uses the same format as ``covet backup`` CLI and can be
+    restored via ``covet restore`` or the web import wizard.
+    """
+    from covet.importers.json_backup import export_user
+
+    user = auth.user
+    payload = export_user(db, user=user)
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "backup.json",
+            json.dumps(payload, indent=2, default=str),
+        )
+        zf.writestr(
+            "README.txt",
+            (
+                "This archive was exported from Covet.\n\n"
+                "backup.json contains all collections, items, tags, contacts, and loans.\n"
+                "Restore it via: covet restore backup.json\n"
+                "or through the web UI at /import (JSON restore tab).\n"
+            ),
+        )
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="covet-export-{user.username}.zip"'},
+    )
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    payload: AccountDeleteRequest,
+    request: Request,
+    response: Response,
+    db: DBSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+    auth: AuthContext = Depends(require_user),
+) -> Response:
+    """Permanently delete the signed-in account and all owned data.
+
+    Requires current password. If 2FA is enabled, ``totp_code`` is also required.
+    Collections where this user is the **sole owner** are deleted (cascade). Collections
+    with other owners are left intact; only this user's membership is removed.
+    """
+    from covet.models.collection import Collection, CollectionMembership
+
+    user = auth.user
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete an OIDC-only account via this endpoint",
+        )
+    from covet.security import verify_password
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
+        )
+    if user.totp_enabled:
+        if not payload.totp_code:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="totp_code is required",
+            )
+        if not _verify_totp_or_backup(user, payload.totp_code):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid TOTP code"
+            )
+
+    # Delete collections where this user is the sole owner.
+    owned = db.scalars(
+        select(Collection).where(Collection.owner_id == user.id)
+    ).all()
+    for col in owned:
+        other_owners = db.scalar(
+            select(CollectionMembership).where(
+                CollectionMembership.collection_id == col.id,
+                CollectionMembership.user_id != user.id,
+                CollectionMembership.role == "owner",
+            )
+        )
+        if other_owners is None:
+            db.delete(col)
+
+    db.delete(user)
+    db.commit()
+
+    cookie = request.cookies.get(settings.session_cookie_name)
+    if cookie:
+        response.delete_cookie(settings.session_cookie_name, path="/")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # --- Admin user management ---------------------------------------------------------------
@@ -223,7 +555,6 @@ def revoke_token(
 
 
 def _redirect_uri(request: Request, settings: Settings, provider_name: str) -> str:
-    """Build the absolute callback URL for the given provider."""
     provider = oidc_service.get_provider(settings, provider_name)
     if provider and provider.redirect_uri:
         return provider.redirect_uri
@@ -265,7 +596,7 @@ async def oidc_callback(
 
     try:
         token = await client.authorize_access_token(request)
-    except Exception as exc:  # authlib raises a few different errors here
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"OIDC exchange failed: {exc.__class__.__name__}",
@@ -273,7 +604,6 @@ async def oidc_callback(
 
     claims = token.get("userinfo") or {}
     if not claims:
-        # Some providers don't return userinfo with the token; ask explicitly.
         try:
             resp = await client.userinfo(token=token)
             claims = dict(resp)
@@ -304,4 +634,6 @@ async def oidc_callback(
     response = RedirectResponse(url=next_url, status_code=status.HTTP_303_SEE_OTHER)
     _set_session_cookie(response, raw, settings)
     return response
+
+
 

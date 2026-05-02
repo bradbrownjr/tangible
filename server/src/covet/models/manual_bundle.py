@@ -25,7 +25,6 @@ from covet.models.base import TimestampMixin, ULIDPrimaryKey
 
 if TYPE_CHECKING:
     from covet.models.collection import Collection
-    from covet.models.item import Item
     from covet.models.user import User
 
 

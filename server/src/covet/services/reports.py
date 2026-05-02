@@ -117,7 +117,7 @@ class CollectionReport:
                                 # Store with a readable path structure
                                 zip_path = f"photos/{item.id}/{photo.id}.jpg"
                                 zip_file.writestr(zip_path, photo_data)
-                        except (IOError, OSError):
+                        except OSError:
                             # Skip photos that can't be read
                             pass
 

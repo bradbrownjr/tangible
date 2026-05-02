@@ -34,6 +34,47 @@ class SessionInfo(BaseModel):
     expires_at: datetime
 
 
+class TOTPLoginChallenge(BaseModel):
+    """Returned by POST /auth/login when the account has TOTP enabled."""
+
+    totp_required: bool = True
+    ticket: str
+
+
+class TOTPSetupResponse(BaseModel):
+    """Returned by POST /auth/totp/setup — contains the provisioning URI and QR PNG."""
+
+    secret: str
+    qr_uri: str
+    qr_png_b64: str
+
+
+class TOTPVerifyRequest(BaseModel):
+    """Verify a TOTP code to activate 2FA, or to confirm login."""
+
+    code: str = Field(min_length=6, max_length=8)
+
+
+class TOTPLoginRequest(BaseModel):
+    ticket: str
+    code: str = Field(min_length=6, max_length=8)
+
+
+class TOTPStatusResponse(BaseModel):
+    enabled: bool
+    backup_codes_remaining: int
+
+
+class TOTPDisableRequest(BaseModel):
+    password: str
+    totp_code: str | None = None
+
+
+class AccountDeleteRequest(BaseModel):
+    password: str
+    totp_code: str | None = None
+
+
 class TokenInfo(BaseModel):
     id: str
     name: str

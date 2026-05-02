@@ -56,6 +56,26 @@
     let scrubResult = $state('');
     const scrubPhrase = 'SCRUB INVENTORY';
 
+    // 2FA state
+    interface TOTPStatus { enabled: boolean; backup_codes_remaining: number; }
+    interface TOTPSetup { secret: string; qr_uri: string; qr_png_b64: string; }
+    let totpStatus = $state<TOTPStatus | null>(null);
+    let totpSetup = $state<TOTPSetup | null>(null);
+    let totpSetupCode = $state('');
+    let totpSetupMessage = $state('');
+    let totpBackupCodes = $state<string[]>([]);
+    let totpDisableOpen = $state(false);
+    let totpDisablePassword = $state('');
+    let totpDisableCode = $state('');
+    let totpRegenCode = $state('');
+    let totpRegenOpen = $state(false);
+
+    // Account state
+    let deleteAccountOpen = $state(false);
+    let deletePassword = $state('');
+    let deleteTotpCode = $state('');
+    let deleteMessage = $state('');
+
     async function load() {
         try {
             [tokens, alerts, notifPrefs] = await Promise.all([
@@ -150,9 +170,92 @@
         }
     }
 
+    // --- 2FA helpers ---
+    async function loadTotpStatus() {
+        try {
+            totpStatus = await api.get<TOTPStatus>('/auth/totp');
+        } catch { /* not critical */ }
+    }
+
+    async function startTotpSetup() {
+        totpSetupMessage = '';
+        totpSetup = null;
+        try {
+            totpSetup = await api.post<TOTPSetup>('/auth/totp/setup', undefined);
+        } catch (e) {
+            totpSetupMessage = (e as Error).message;
+        }
+    }
+
+    async function verifyTotpSetup() {
+        if (!totpSetupCode.trim()) return;
+        try {
+            const res = await api.post<{ enabled: boolean; backup_codes: string[] }>(
+                '/auth/totp/verify', { code: totpSetupCode }
+            );
+            totpBackupCodes = res.backup_codes;
+            totpSetup = null;
+            totpSetupCode = '';
+            await loadTotpStatus();
+        } catch (e) {
+            totpSetupMessage = (e as Error).message;
+        }
+    }
+
+    async function disableTotp() {
+        try {
+            await api.delete(`/auth/totp?password=${encodeURIComponent(totpDisablePassword)}&totp_code=${encodeURIComponent(totpDisableCode)}`);
+        } catch {
+            // delete with body requires fetch directly
+            await fetch('/api/auth/totp', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: totpDisablePassword, totp_code: totpDisableCode || null }),
+                credentials: 'include',
+            });
+        }
+        totpDisableOpen = false;
+        totpDisablePassword = '';
+        totpDisableCode = '';
+        await loadTotpStatus();
+    }
+
+    async function regenBackupCodes() {
+        try {
+            const res = await api.post<{ backup_codes: string[] }>(
+                '/auth/totp/regenerate-backup-codes', { code: totpRegenCode }
+            );
+            totpBackupCodes = res.backup_codes;
+            totpRegenOpen = false;
+            totpRegenCode = '';
+            await loadTotpStatus();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
+    // --- Account helpers ---
+    async function exportAccount() {
+        window.location.href = '/api/auth/me/export';
+    }
+
+    async function deleteAccount() {
+        try {
+            await fetch('/api/auth/me', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: deletePassword, totp_code: deleteTotpCode || null }),
+                credentials: 'include',
+            });
+            window.location.href = '/login';
+        } catch (e) {
+            deleteMessage = (e as Error).message;
+        }
+    }
+
     onMount(async () => {
         await refreshMe();
-        await load();
+        await Promise.all([load(), loadTotpStatus()]);
     });
 </script>
 
@@ -306,6 +409,49 @@
     {/if}
 </div>
 
+<div class="card" style="margin-bottom: 1rem">
+    <h3 style="margin-top:0">Two-factor authentication</h3>
+    {#if totpStatus?.enabled}
+        <p class="muted">2FA is <strong>enabled</strong>. Backup codes remaining: {totpStatus.backup_codes_remaining}.</p>
+        {#if totpBackupCodes.length}
+            <div class="card" style="background: var(--surface-2); margin-bottom: 0.75rem">
+                <p><strong>Save these backup codes — they won't be shown again:</strong></p>
+                <ul class="backup-codes">
+                    {#each totpBackupCodes as c (c)}<li><code>{c}</code></li>{/each}
+                </ul>
+                <button class="secondary" onclick={() => (totpBackupCodes = [])}>Dismiss</button>
+            </div>
+        {/if}
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+            <button class="secondary" onclick={() => (totpRegenOpen = true)}>Regenerate backup codes</button>
+            <button class="danger" onclick={() => (totpDisableOpen = true)}>Disable 2FA</button>
+        </div>
+    {:else if totpSetup}
+        <p class="muted">Scan the QR code with your authenticator app, then enter the 6-digit code to activate.</p>
+        <img src="data:image/png;base64,{totpSetup.qr_png_b64}" alt="TOTP QR code" style="display:block; margin: 0.75rem 0; max-width:200px; image-rendering:pixelated" />
+        <p class="muted">Or enter the secret manually: <code>{totpSetup.secret}</code></p>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap">
+            <input bind:value={totpSetupCode} placeholder="6-digit code" maxlength={6} inputmode="numeric" autocomplete="one-time-code" style="width:9rem" />
+            <button onclick={verifyTotpSetup}>Activate 2FA</button>
+            <button class="secondary" onclick={() => { totpSetup = null; totpSetupCode = ''; }}>Cancel</button>
+        </div>
+        {#if totpSetupMessage}<p class="error">{totpSetupMessage}</p>{/if}
+    {:else}
+        <p class="muted">Add a second factor to protect your account. You'll need an authenticator app (Google Authenticator, Authy, etc.).</p>
+        <button onclick={startTotpSetup}>Set up 2FA</button>
+        {#if totpSetupMessage}<p class="error">{totpSetupMessage}</p>{/if}
+    {/if}
+</div>
+
+<div class="card" style="margin-bottom: 1rem">
+    <h3 style="margin-top:0">Account</h3>
+    <p class="muted">Export all your data or permanently delete your account.</p>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+        <button class="secondary" onclick={exportAccount}>Export my data</button>
+        <button class="danger" onclick={() => (deleteAccountOpen = true)}>Delete account</button>
+    </div>
+</div>
+
 {#if $me?.is_admin}
     <div class="card" style="margin-top: 1rem">
         <h3 style="margin-top:0">System Maintenance</h3>
@@ -347,6 +493,53 @@
                     disabled={scrubConfirmText.trim().toUpperCase() !== scrubPhrase}
                     onclick={scrubInventory}
                 >Scrub now</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if totpDisableOpen}
+    <div class="modal-backdrop" role="presentation" onclick={() => (totpDisableOpen = false)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="totp-disable-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="totp-disable-title">Disable two-factor authentication?</h3>
+            <p class="muted">Enter your password and current authenticator code to disable 2FA.</p>
+            <div class="field"><label>Password<input type="password" bind:value={totpDisablePassword} autocomplete="current-password" /></label></div>
+            <div class="field"><label>Authenticator code<input bind:value={totpDisableCode} maxlength={10} inputmode="numeric" placeholder="000000" /></label></div>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (totpDisableOpen = false)}>Cancel</button>
+                <button type="button" class="danger" onclick={disableTotp}>Disable 2FA</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if totpRegenOpen}
+    <div class="modal-backdrop" role="presentation" onclick={() => (totpRegenOpen = false)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="totp-regen-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="totp-regen-title">Regenerate backup codes?</h3>
+            <p class="muted">Old backup codes will be invalidated. Enter your current authenticator code to confirm.</p>
+            <div class="field"><label>Authenticator code<input bind:value={totpRegenCode} maxlength={10} inputmode="numeric" placeholder="000000" /></label></div>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (totpRegenOpen = false)}>Cancel</button>
+                <button type="button" onclick={regenBackupCodes}>Regenerate</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if deleteAccountOpen}
+    <div class="modal-backdrop" role="presentation" onclick={() => (deleteAccountOpen = false)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="delete-account-title">Delete account?</h3>
+            <p class="muted">This permanently deletes your account and all collections you own. This cannot be undone.</p>
+            <div class="field"><label>Password<input type="password" bind:value={deletePassword} autocomplete="current-password" /></label></div>
+            {#if totpStatus?.enabled}
+                <div class="field"><label>Authenticator code<input bind:value={deleteTotpCode} maxlength={10} inputmode="numeric" placeholder="000000" /></label></div>
+            {/if}
+            {#if deleteMessage}<p class="error">{deleteMessage}</p>{/if}
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (deleteAccountOpen = false)}>Cancel</button>
+                <button type="button" class="danger" onclick={deleteAccount}>Delete my account</button>
             </div>
         </div>
     </div>
@@ -420,5 +613,26 @@
         font-size: 0.875rem;
     }
     .notif-table { border-collapse: collapse; width: 100%; }
+
+    .backup-codes {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin: 0.5rem 0;
+    }
+    .backup-codes li code {
+        font-size: 0.85rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0.2rem 0.45rem;
+        letter-spacing: 0.05em;
+    }
+
+    .field { display: grid; gap: 0.25rem; }
+    .field label { font-size: 0.875rem; font-weight: 500; }
+    .field input { width: 100%; }
     .notif-table thead tr { border-bottom: 1px solid var(--border); }
 </style>

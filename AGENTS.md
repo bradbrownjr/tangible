@@ -342,6 +342,8 @@ the affected file column is preserved.**
 | Local auth (register, login, password) | `server/src/covet/api/auth.py`, `auth/service.py`, `auth/passwords.py` | `register`, `login`, `Argon2`, `create_user` |
 | API tokens (CLI / mobile) | `server/src/covet/api/auth.py` | `POST/GET/DELETE /auth/tokens`, `create_token` |
 | Sessions / cookie auth | `server/src/covet/auth/session.py`, `api/auth.py` | `SessionInfoDto`, cookie name from settings |
+| TOTP 2FA | `server/src/covet/api/auth.py`, `models/user.py`, `alembic/versions/0033_totp.py`, `web/src/routes/settings/+page.svelte`, `web/src/routes/login/+page.svelte` | `totp_enabled`, `totp_secret`, `totp_backup_codes`, `POST /auth/totp/setup`, `POST /auth/totp/verify`, `DELETE /auth/totp`, `POST /auth/totp/confirm-login` |
+| Account export + deletion | `server/src/covet/api/auth.py` | `GET /auth/me/export`, `DELETE /auth/me`, `AccountDeleteRequest` |
 | Collections CRUD | `server/src/covet/api/collections.py`, `models/collection.py` | `GET/POST/PATCH/DELETE /collections` |
 | Items CRUD + filtering | `server/src/covet/api/items.py`, `models/item.py` | `GET/POST/PATCH/DELETE /items`, `?search`, `?type` |
 | Location hierarchy (tree, item.location_id) | `server/src/covet/api/locations.py`, `models/location.py`, `web/src/routes/collections/[id]/locations/+page.svelte`, android `data/local/CovetDatabase.kt` (`LocationEntity`/`LocationDao`) | `GET/POST/PATCH/DELETE /collections/{id}/locations`, `home\|floor\|room\|zone\|container`, `Item.location_id` |

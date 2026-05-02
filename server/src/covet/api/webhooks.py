@@ -13,7 +13,7 @@ from covet.auth.deps import (
 )
 from covet.db import get_session
 from covet.models import Webhook, WebhookDelivery
-from covet.schemas import WebhookCreate, WebhookRead, WebhookUpdate, WebhookDeliveryRead
+from covet.schemas import WebhookCreate, WebhookDeliveryRead, WebhookRead, WebhookUpdate
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 

@@ -379,11 +379,13 @@ tools query and react to.
 
 Long-term work that makes Covet a foundation other things build on.
 
-- **Two-factor auth (TOTP)** for local accounts; FIDO2/passkey as
-  stretch goal.
-- **Account deletion & data export self-service** — GDPR-friendly: user
-  initiates download of all their data (JSON + photos + docs zip), then
-  deletes account.
+- **Two-factor auth (TOTP)** ✅ for local accounts — setup QR code + secret in
+  Settings, 8 backup codes on activation, second-step prompt on login,
+  regenerate/disable flow. FIDO2/passkey remains a stretch goal.
+- **Account deletion & data export self-service** ✅ — GDPR-friendly: user
+  downloads all their data (JSON backup + README ZIP via `GET /auth/me/export`,
+  compatible with `covet restore` and the web import wizard), then deletes
+  account via `DELETE /auth/me` (requires password + TOTP if enabled).
 - **MCP server** — Model Context Protocol server exposing Covet items,
   maintenance history, and stock levels as AI context. Allows AI
   assistants to answer "do I have a spare furnace filter?" or "when is

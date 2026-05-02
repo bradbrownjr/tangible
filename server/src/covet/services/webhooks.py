@@ -5,14 +5,14 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 from structlog import get_logger
 
-from covet.models import Webhook, WebhookDelivery, WebhookEventType
+from covet.models import Webhook, WebhookDelivery
 
 logger = get_logger(__name__)
 
@@ -138,7 +138,7 @@ async def _deliver_webhook(
 
     # Schedule retry if delivery failed
     if not delivery.success and delivery.attempt_number < webhook.retry_count:
-        retry_at = datetime.now(timezone.utc) + timedelta(seconds=webhook.retry_delay_seconds)
+        retry_at = datetime.now(UTC) + timedelta(seconds=webhook.retry_delay_seconds)
         delivery.next_retry_at = retry_at.isoformat()
 
     db.commit()
@@ -146,7 +146,7 @@ async def _deliver_webhook(
 
 async def retry_failed_webhooks(db: DBSession) -> None:
     """Retry failed webhook deliveries that are due for retry."""
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     # Find deliveries that need retry
     pending = db.scalars(

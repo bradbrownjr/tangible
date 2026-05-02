@@ -13,8 +13,8 @@ from covet.models.base import TimestampMixin, ULIDPrimaryKey
 if TYPE_CHECKING:
     from covet.models.item import Item
     from covet.models.share_link import ShareLink
-    from covet.models.webhook import Webhook
     from covet.models.user import CollectionMembership, User
+    from covet.models.webhook import Webhook
 
 
 class Collection(ULIDPrimaryKey, TimestampMixin, Base):

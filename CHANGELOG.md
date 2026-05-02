@@ -8,6 +8,10 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Two-factor authentication (TOTP).** Local accounts can now enable 2FA using any TOTP-compatible authenticator app (Google Authenticator, Authy, etc.). Setup generates a QR code and secret displayed in Settings. Activation verifies the first code and issues 8 one-time backup codes. Login detects 2FA and presents a second-step code prompt. Backup codes can be regenerated; 2FA can be disabled with password + current code. API: `POST /auth/totp/setup`, `POST /auth/totp/verify`, `DELETE /auth/totp`, `POST /auth/totp/regenerate-backup-codes`, `POST /auth/totp/confirm-login`.
+- **Account data export.** `GET /auth/me/export` downloads a ZIP containing a full JSON backup (compatible with the `covet restore` CLI and the web import wizard) plus a README.
+- **Account self-deletion.** `DELETE /auth/me` permanently deletes the signed-in account and all sole-owned collections. Requires current password; also requires a TOTP code if 2FA is enabled. Web UI provides a confirmation modal in Settings.
+
 - **Tag filter chips with AND/OR mode.** The collection item list now shows clickable tag chips below the filter bar. Select one or more tags to filter items; a toggle switches between **All** (item must have every selected tag) and **Any** (item must have at least one).
 - **Drag-to-reorder photos.** In the photo gallery thumbnail strip, photos can be reordered by drag-and-drop while in edit mode. The new order is saved via `PUT /items/{id}/photos/reorder`.
 - **Custom sort order on items.** Items have a new `sort_order` integer field. Select "Sort: Custom order" from the sort dropdown to show items in this order. The field is exposed in `PATCH /items/{id}` and a new `PUT /items/reorder` bulk endpoint lets clients rearrange items.
