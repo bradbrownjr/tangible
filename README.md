@@ -1,6 +1,6 @@
 <h1>
   <img src="web/static/icon-512.png" alt="" width="48" height="48" align="left" style="vertical-align: middle; margin-right: 12px;" />
-  Covet
+  Tangible
 </h1>
 
 Self-hosted personal inventory management for collectibles, tools, spices —
@@ -13,7 +13,7 @@ internet connection.
 - **Multi-user** with local accounts and OIDC/SSO
 - **Pluggable database**: SQLite, PostgreSQL, MySQL/MariaDB
 - **Imports** from CLZ products, generic CSV (with column mapping), and
-  Covet JSON backups
+  Tangible JSON backups
 - **Exports** to CSV and JSON
 - **Self-hosted**, container-first (Docker/Unraid)
 
@@ -39,7 +39,7 @@ internet connection.
 - [Deployment guide](docs/deployment.md) — Docker, Unraid, Postgres,
   reverse proxy
 - [Configuration reference](docs/configuration.md) — every
-  `COVET_*` environment variable
+  `TANGIBLE_*` environment variable
 - [Development guide](docs/development.md) — running the stack locally
 
 ## Quick start (development)

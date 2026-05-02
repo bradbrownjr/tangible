@@ -1,4 +1,4 @@
-# Covet Android
+# Tangible Android
 
 Native Android client (Kotlin + Jetpack Compose + Hilt + Retrofit + Room).
 
@@ -32,7 +32,7 @@ Open the `android/` directory as a project in Android Studio and hit Run, or:
 
 ```bash
 ./gradlew :app:installDebug
-adb shell am start -n io.github.bradbrownjr.covet.debug/io.github.bradbrownjr.covet.MainActivity
+adb shell am start -n io.github.bradbrownjr.tangible.debug/io.github.bradbrownjr.tangible.MainActivity
 ```
 
 ## Tests
@@ -45,8 +45,8 @@ adb shell am start -n io.github.bradbrownjr.covet.debug/io.github.bradbrownjr.co
 ## App layout
 
 ```
-app/src/main/java/io/github/bradbrownjr/covet/
-├── CovetApp.kt                — Application + Hilt + WorkManager bootstrap
+app/src/main/java/io/github/bradbrownjr/tangible/
+├── TangibleApp.kt                — Application + Hilt + WorkManager bootstrap
 ├── MainActivity.kt
 ├── data/
 │   ├── auth/SessionStore.kt   — DataStore-backed (server URL + bearer token)
@@ -55,7 +55,7 @@ app/src/main/java/io/github/bradbrownjr/covet/
 ├── di/NetworkModule.kt        — Moshi/OkHttp/Retrofit Hilt providers
 └── ui/
     ├── theme/Theme.kt
-    ├── CovetApp.kt            — root NavHost
+    ├── TangibleApp.kt            — root NavHost
     └── screen/
         ├── login/             — server URL + credentials
         ├── collections/       — list + create
@@ -68,7 +68,7 @@ app/src/main/java/io/github/bradbrownjr/covet/
 
 Implemented:
 
-- Sign in to a Covet server (URL + username + password) → server returns a session
+- Sign in to a Tangible server (URL + username + password) → server returns a session
   cookie, client immediately mints a long-lived API token via `POST /auth/tokens`
 - Browse collections, create new collection
 - View items in a collection, add an item, delete an item

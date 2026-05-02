@@ -13,7 +13,7 @@ def test_metrics_endpoint_exposes_prometheus_format(client: TestClient) -> None:
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/plain")
     body = r.text
-    assert "covet_http_requests_total" in body
-    assert "covet_http_request_duration_seconds" in body
+    assert "tangible_http_requests_total" in body
+    assert "tangible_http_request_duration_seconds" in body
     # Healthz traffic should be visible by route template.
     assert "/healthz" in body

@@ -2,5 +2,5 @@
 <full-backup-content>
     <!-- Don't auto-back-up the encrypted token store; force users to log in on a new device. -->
     <exclude domain="sharedpref" path="auth.xml" />
-    <exclude domain="database" path="covet.db" />
+    <exclude domain="database" path="tangible.db" />
 </full-backup-content>

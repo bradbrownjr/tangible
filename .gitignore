@@ -57,4 +57,4 @@ secret.key
 
 # Generated clients
 shared/generated/
-covet-release.keystore
+tangible-release.keystore

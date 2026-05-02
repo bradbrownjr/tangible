@@ -1,16 +1,16 @@
 # syntax=docker/dockerfile:1.7
 #
-# Multi-stage build for Covet.
+# Multi-stage build for Tangible.
 #
 #   1. web-builder  — builds the SvelteKit static SPA
 #   2. py-builder   — builds the Python wheel
 #   3. runtime      — minimal image, non-root, configurable UID/GID
 #
 # Build:
-#   docker build -t ghcr.io/bradbrownjr/covet:dev .
+#   docker build -t ghcr.io/bradbrownjr/tangible:dev .
 # Run:
 #   docker run --rm -p 8000:8000 -v $PWD/data:/data -v $PWD/config:/config \
-#       ghcr.io/bradbrownjr/covet:dev
+#       ghcr.io/bradbrownjr/tangible:dev
 
 ARG PYTHON_VERSION=3.12
 ARG NODE_VERSION=22
@@ -51,12 +51,12 @@ COPY server/alembic.ini ./server/alembic.ini
 COPY server/alembic ./server/alembic
 
 # Build wheel + collect runtime dependencies into a venv we can copy across
-RUN uv venv --python python${PYTHON_VERSION} /opt/covet \
-    && uv pip install --python /opt/covet/bin/python --no-cache ./server \
-    && mkdir -p /opt/covet/share/covet \
-    && cp -r /src/server/alembic /opt/covet/share/covet/alembic \
-    && cp /src/server/alembic.ini /opt/covet/share/covet/alembic.ini \
-    && cp /src/CHANGELOG.md /opt/covet/share/covet/CHANGELOG.md
+RUN uv venv --python python${PYTHON_VERSION} /opt/tangible \
+    && uv pip install --python /opt/tangible/bin/python --no-cache ./server \
+    && mkdir -p /opt/tangible/share/tangible \
+    && cp -r /src/server/alembic /opt/tangible/share/tangible/alembic \
+    && cp /src/server/alembic.ini /opt/tangible/share/tangible/alembic.ini \
+    && cp /src/CHANGELOG.md /opt/tangible/share/tangible/CHANGELOG.md
 
 # ----------------------------------------------------------------------------
 # Stage 3: runtime
@@ -65,13 +65,13 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PATH="/opt/covet/bin:${PATH}" \
-    COVET_DATA_DIR=/data \
-    COVET_CONFIG_DIR=/config \
-    COVET_WEB_DIR=/app/web \
-    COVET_ALEMBIC_DIR=/opt/covet/share/covet/alembic \
-    COVET_HOST=0.0.0.0 \
-    COVET_PORT=8000 \
+    PATH="/opt/tangible/bin:${PATH}" \
+    TANGIBLE_DATA_DIR=/data \
+    TANGIBLE_CONFIG_DIR=/config \
+    TANGIBLE_WEB_DIR=/app/web \
+    TANGIBLE_ALEMBIC_DIR=/opt/tangible/share/tangible/alembic \
+    TANGIBLE_HOST=0.0.0.0 \
+    TANGIBLE_PORT=8000 \
     PUID=1000 \
     PGID=1000 \
     UMASK=0022
@@ -80,36 +80,36 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update \
     && apt-get install -y --no-install-recommends tini gosu ca-certificates curl \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system --gid 1000 covet \
-    && useradd  --system --uid 1000 --gid covet --home-dir /app --shell /usr/sbin/nologin covet \
+    && groupadd --system --gid 1000 tangible \
+    && useradd  --system --uid 1000 --gid tangible --home-dir /app --shell /usr/sbin/nologin tangible \
     && mkdir -p /data /config /app/web
 
-# Python venv with covet + deps
-COPY --from=py-builder /opt/covet /opt/covet
+# Python venv with tangible + deps
+COPY --from=py-builder /opt/tangible /opt/tangible
 
 # SvelteKit static build (served by FastAPI)
 COPY --from=web-builder /src/web/build /app/web
 
 # Entrypoint
-COPY docker/entrypoint.sh /usr/local/bin/covet-entrypoint
-RUN chmod +x /usr/local/bin/covet-entrypoint
+COPY docker/entrypoint.sh /usr/local/bin/tangible-entrypoint
+RUN chmod +x /usr/local/bin/tangible-entrypoint
 
 VOLUME ["/data", "/config"]
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:${COVET_PORT}/healthz || exit 1
+    CMD curl -fsS http://127.0.0.1:${TANGIBLE_PORT}/healthz || exit 1
 
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/covet-entrypoint"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/tangible-entrypoint"]
 CMD ["serve"]
 
 # OCI labels (populated by CI on tag builds)
 ARG VCS_REF=
 ARG BUILD_DATE=
 ARG VERSION=dev
-LABEL org.opencontainers.image.title="Covet" \
+LABEL org.opencontainers.image.title="Tangible" \
       org.opencontainers.image.description="Self-hosted personal inventory management" \
-      org.opencontainers.image.source="https://github.com/bradbrownjr/covet" \
+      org.opencontainers.image.source="https://github.com/bradbrownjr/tangible" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \

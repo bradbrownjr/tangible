@@ -1,4 +1,4 @@
-package io.github.bradbrownjr.covet.data.remote
+package io.github.bradbrownjr.tangible.data.remote
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory

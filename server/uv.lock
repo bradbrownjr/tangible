@@ -374,7 +374,7 @@ wheels = [
 ]
 
 [[package]]
-name = "covet"
+name = "tangible"
 version = "0.17.0rc2"
 source = { editable = "." }
 dependencies = [

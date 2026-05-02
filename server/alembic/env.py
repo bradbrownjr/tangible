@@ -7,10 +7,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from covet import models  # noqa: F401
+from tangible import models  # noqa: F401
 
 # Import all models so metadata is populated.
-from covet.db import Base
+from tangible.db import Base
 
 config = context.config
 

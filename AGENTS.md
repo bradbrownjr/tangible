@@ -1,7 +1,7 @@
-# Agent Guide for Covet
+# Agent Guide for Tangible
 
 This file is the persistent shared memory for any AI assistant working on
-Covet (GitHub Copilot, Claude, etc.). It captures the rules of engagement,
+Tangible (GitHub Copilot, Claude, etc.). It captures the rules of engagement,
 project-specific gotchas, and a registry of every shipped feature so that
 large refactors don't silently regress them.
 
@@ -116,7 +116,7 @@ push. The `release.yml` workflow auto-publishes the GitHub Release from the
 tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
 
 1. Bump version in:
-   - `server/src/covet/__init__.py` (`__version__`)
+   - `server/src/tangible/__init__.py` (`__version__`)
    - `server/pyproject.toml` (`version`)
    - `web/package.json` (`"version"`)
    - `android/app/build.gradle.kts` (`versionCode` + `versionName`)
@@ -170,9 +170,9 @@ This is a learned rule: Phase 10 and early Phase 11 were marked complete prematu
 ## Project Layout
 
 ```
-covet/
+tangible/
 ├── server/              # FastAPI + SQLAlchemy + Alembic (Python 3.12, uv, ruff, pytest)
-│   ├── src/covet/
+│   ├── src/tangible/
 │   │   ├── api/         # Routers (auth, items, collections, sync, meta, ...)
 │   │   ├── models/      # SQLAlchemy models
 │   │   ├── schemas/     # Pydantic schemas
@@ -182,12 +182,12 @@ covet/
 │   │   ├── bootstrap.py
 │   │   ├── cli.py
 │   │   └── main.py
-│   ├── alembic/         # Migrations (shipped to /opt/covet/share/covet/alembic in image)
+│   ├── alembic/         # Migrations (shipped to /opt/tangible/share/tangible/alembic in image)
 │   └── tests/           # pytest, currently 42 passing
 ├── web/                 # SvelteKit 2.8 / Svelte 5 runes / adapter-static
 │   └── src/{lib,routes,app.html}
 ├── android/             # AGP 8.7.2, Kotlin 2.0.21, Hilt, Room, Compose
-│   └── app/src/main/java/io/github/bradbrownjr/covet/
+│   └── app/src/main/java/io/github/bradbrownjr/tangible/
 ├── docker/              # Compose examples (standard / postgres / unraid)
 ├── Dockerfile           # Multi-stage; runs as non-root via PUID/PGID/UMASK
 ├── .github/workflows/   # ci.yml, release-image.yml, android.yml, release.yml
@@ -209,7 +209,7 @@ covet/
 - **CI / Dependency audit** — `pip-audit` + `npm audit` (soft-fail today; tighten later).
 - **CI / Docker build (smoke)** — image builds and `/healthz` answers within timeout.
 - **Android / Lint, test, build APK** — `:app:lintDebug`, `:app:testDebugUnitTest`, `:app:assembleDebug`.
-- **Release Docker image** — multi-arch push to `ghcr.io/bradbrownjr/covet`.
+- **Release Docker image** — multi-arch push to `ghcr.io/bradbrownjr/tangible`.
 - **Release** — auto-publish GitHub Release on `v*.*.*` tag.
 
 All workflows opt into Node 24 via `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
@@ -229,11 +229,11 @@ that could match a source package anywhere in the tree.
 
 ### Alembic migrations must be shipped into the Docker image
 
-The runtime image installs Covet as a wheel under `/opt/covet`, so
+The runtime image installs Tangible as a wheel under `/opt/tangible`, so
 `alembic/` and `alembic.ini` next to `server/src` are not present at
-runtime. The Dockerfile copies them to `/opt/covet/share/covet/` and sets
-`COVET_ALEMBIC_DIR`. `bootstrap._find_alembic_dir()` honors this env var,
-falls back to the dev repo layout, then to `<sys.prefix>/share/covet/alembic`.
+runtime. The Dockerfile copies them to `/opt/tangible/share/tangible/` and sets
+`TANGIBLE_ALEMBIC_DIR`. `bootstrap._find_alembic_dir()` honors this env var,
+falls back to the dev repo layout, then to `<sys.prefix>/share/tangible/alembic`.
 **If you add new migrations, no Dockerfile change is needed**, but if you
 ever move `alembic/` you must update both copies.
 
@@ -258,7 +258,7 @@ the AA worker.
 In our slowapi version, the dynamic `limit-from-request` callable is
 invoked with zero args, which breaks any signature taking `request`. Keep
 `DEFAULT_GLOBAL_LIMIT` and `DEFAULT_LOGIN_LIMIT` as module-level string
-constants in `covet/hardening.py`. Also keep `headers_enabled=False` —
+constants in `tangible/hardening.py`. Also keep `headers_enabled=False` —
 `True` requires a `response: Response` parameter on every route or all
 routes 500.
 
@@ -321,7 +321,7 @@ export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
 yes | sdkmanager --licenses >/dev/null
 sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-cd /home/vscode/code/covet/android
+cd /home/vscode/code/tangible/android
 ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug --no-daemon
 ```
 
@@ -339,29 +339,29 @@ the affected file column is preserved.**
 
 | Feature | Key file(s) | Key identifiers |
 |---|---|---|
-| Local auth (register, login, password) | `server/src/covet/api/auth.py`, `auth/service.py`, `auth/passwords.py` | `register`, `login`, `Argon2`, `create_user` |
-| API tokens (CLI / mobile) | `server/src/covet/api/auth.py` | `POST/GET/DELETE /auth/tokens`, `create_token` |
-| Sessions / cookie auth | `server/src/covet/auth/session.py`, `api/auth.py` | `SessionInfoDto`, cookie name from settings |
-| TOTP 2FA | `server/src/covet/api/auth.py`, `models/user.py`, `alembic/versions/0033_totp.py`, `web/src/routes/settings/+page.svelte`, `web/src/routes/login/+page.svelte` | `totp_enabled`, `totp_secret`, `totp_backup_codes`, `POST /auth/totp/setup`, `POST /auth/totp/verify`, `DELETE /auth/totp`, `POST /auth/totp/confirm-login` |
-| Account export + deletion | `server/src/covet/api/auth.py` | `GET /auth/me/export`, `DELETE /auth/me`, `AccountDeleteRequest` |
-| Collections CRUD | `server/src/covet/api/collections.py`, `models/collection.py` | `GET/POST/PATCH/DELETE /collections` |
-| Items CRUD + filtering | `server/src/covet/api/items.py`, `models/item.py` | `GET/POST/PATCH/DELETE /items`, `?search`, `?type` |
-| Location hierarchy (tree, item.location_id) | `server/src/covet/api/locations.py`, `models/location.py`, `web/src/routes/collections/[id]/locations/+page.svelte`, android `data/local/CovetDatabase.kt` (`LocationEntity`/`LocationDao`) | `GET/POST/PATCH/DELETE /collections/{id}/locations`, `home\|floor\|room\|zone\|container`, `Item.location_id` |
-| Tags / item-tags | `server/src/covet/api/tags.py`, `models/tag.py` | `tag`, `item_tag` |
-| Contacts + loans | `server/src/covet/api/loans.py`, `models/{contact,loan}.py` | `loan`, `contact` |
-| Photos (multipart, sha256 dedupe) | `server/src/covet/api/photos.py`, `models/photo.py` | `POST /photos`, `_photo_path` |
-| Photo thumbnails (lazy 400x400 JPEG) | `server/src/covet/api/photos.py` | `GET /photos/{id}/thumbnail`, `_ensure_thumbnail`, `_thumbnail_path` |
-| Photo drag-to-reorder | `server/src/covet/api/photos.py`, `web/src/lib/PhotoGallery.svelte` | `PUT /items/{id}/photos/reorder`, `PhotoReorderEntry`, `ondragstart/ondragover/ondragend` |
-| Item custom sort order | `server/src/covet/models/item.py`, `api/items.py`, `schemas/item.py`, `alembic/versions/0032_item_sort_order.py` | `sort_order`, `PUT /items/reorder`, `ItemReorderEntry`, `sort_by=sort_order` |
-| Tag filter chips (AND/OR) | `server/src/covet/api/items.py`, `web/src/routes/collections/[id]/+page.svelte` | `tag_ids`, `tag_mode`, `toggleTagFilter`, `.tag-chip`, `.tag-mode-toggle` |
-| Field-suggestions type-ahead | `server/src/covet/api/collections.py`, `web/src/routes/collections/[id]/+page.svelte` | `GET /{id}/field-suggestions`, `_ALLOWED_SUGGESTION_FIELDS`, `conditionSuggestions`, `creatorSuggestions` |
-| Manual / asset bundles | `server/src/covet/api/manual_bundles.py`, `models/manual_bundle.py`, `web/src/routes/collections/[id]/bundles/+page.svelte`, android `data/repo/Repositories.kt` (`BundleRepository`) | `GET/POST/PATCH/DELETE /collections/{id}/bundles`, `POST /bundles/{id}/assets`, `POST /bundles/{id}/items/{item_id}` |
-| Sync (CRDT changes + snapshots) | `server/src/covet/api/sync.py`, `sync/automerge.py` | `GET/POST /sync/{collection_id}`, `apply_changes` |
-| Importers (CLZ, generic CSV, JSON) | `server/src/covet/importers/{clz,csv_importer,json_backup}.py`, `api/imports.py` | `clz`, `csv`, `json_backup` |
-| Backup / restore CLI | `server/src/covet/cli.py`, `importers/json_backup.py` | `covet backup`, `covet restore`, `covet version` |
-| Hardening (CSP, rate limit, CSRF) | `server/src/covet/hardening.py` | `SecurityHeadersMiddleware`, `OriginCsrfMiddleware`, `limiter` |
-| Observability (access log, metrics) | `server/src/covet/observability.py`, `api/meta.py` | `AccessLogMiddleware`, `/metrics`, `covet_http_requests_total` |
-| Health / readiness | `server/src/covet/api/meta.py` | `/healthz`, `/readyz` |
+| Local auth (register, login, password) | `server/src/tangible/api/auth.py`, `auth/service.py`, `auth/passwords.py` | `register`, `login`, `Argon2`, `create_user` |
+| API tokens (CLI / mobile) | `server/src/tangible/api/auth.py` | `POST/GET/DELETE /auth/tokens`, `create_token` |
+| Sessions / cookie auth | `server/src/tangible/auth/session.py`, `api/auth.py` | `SessionInfoDto`, cookie name from settings |
+| TOTP 2FA | `server/src/tangible/api/auth.py`, `models/user.py`, `alembic/versions/0033_totp.py`, `web/src/routes/settings/+page.svelte`, `web/src/routes/login/+page.svelte` | `totp_enabled`, `totp_secret`, `totp_backup_codes`, `POST /auth/totp/setup`, `POST /auth/totp/verify`, `DELETE /auth/totp`, `POST /auth/totp/confirm-login` |
+| Account export + deletion | `server/src/tangible/api/auth.py` | `GET /auth/me/export`, `DELETE /auth/me`, `AccountDeleteRequest` |
+| Collections CRUD | `server/src/tangible/api/collections.py`, `models/collection.py` | `GET/POST/PATCH/DELETE /collections` |
+| Items CRUD + filtering | `server/src/tangible/api/items.py`, `models/item.py` | `GET/POST/PATCH/DELETE /items`, `?search`, `?type` |
+| Location hierarchy (tree, item.location_id) | `server/src/tangible/api/locations.py`, `models/location.py`, `web/src/routes/collections/[id]/locations/+page.svelte`, android `data/local/TangibleDatabase.kt` (`LocationEntity`/`LocationDao`) | `GET/POST/PATCH/DELETE /collections/{id}/locations`, `home\|floor\|room\|zone\|container`, `Item.location_id` |
+| Tags / item-tags | `server/src/tangible/api/tags.py`, `models/tag.py` | `tag`, `item_tag` |
+| Contacts + loans | `server/src/tangible/api/loans.py`, `models/{contact,loan}.py` | `loan`, `contact` |
+| Photos (multipart, sha256 dedupe) | `server/src/tangible/api/photos.py`, `models/photo.py` | `POST /photos`, `_photo_path` |
+| Photo thumbnails (lazy 400x400 JPEG) | `server/src/tangible/api/photos.py` | `GET /photos/{id}/thumbnail`, `_ensure_thumbnail`, `_thumbnail_path` |
+| Photo drag-to-reorder | `server/src/tangible/api/photos.py`, `web/src/lib/PhotoGallery.svelte` | `PUT /items/{id}/photos/reorder`, `PhotoReorderEntry`, `ondragstart/ondragover/ondragend` |
+| Item custom sort order | `server/src/tangible/models/item.py`, `api/items.py`, `schemas/item.py`, `alembic/versions/0032_item_sort_order.py` | `sort_order`, `PUT /items/reorder`, `ItemReorderEntry`, `sort_by=sort_order` |
+| Tag filter chips (AND/OR) | `server/src/tangible/api/items.py`, `web/src/routes/collections/[id]/+page.svelte` | `tag_ids`, `tag_mode`, `toggleTagFilter`, `.tag-chip`, `.tag-mode-toggle` |
+| Field-suggestions type-ahead | `server/src/tangible/api/collections.py`, `web/src/routes/collections/[id]/+page.svelte` | `GET /{id}/field-suggestions`, `_ALLOWED_SUGGESTION_FIELDS`, `conditionSuggestions`, `creatorSuggestions` |
+| Manual / asset bundles | `server/src/tangible/api/manual_bundles.py`, `models/manual_bundle.py`, `web/src/routes/collections/[id]/bundles/+page.svelte`, android `data/repo/Repositories.kt` (`BundleRepository`) | `GET/POST/PATCH/DELETE /collections/{id}/bundles`, `POST /bundles/{id}/assets`, `POST /bundles/{id}/items/{item_id}` |
+| Sync (CRDT changes + snapshots) | `server/src/tangible/api/sync.py`, `sync/automerge.py` | `GET/POST /sync/{collection_id}`, `apply_changes` |
+| Importers (CLZ, generic CSV, JSON) | `server/src/tangible/importers/{clz,csv_importer,json_backup}.py`, `api/imports.py` | `clz`, `csv`, `json_backup` |
+| Backup / restore CLI | `server/src/tangible/cli.py`, `importers/json_backup.py` | `tangible backup`, `tangible restore`, `tangible version` |
+| Hardening (CSP, rate limit, CSRF) | `server/src/tangible/hardening.py` | `SecurityHeadersMiddleware`, `OriginCsrfMiddleware`, `limiter` |
+| Observability (access log, metrics) | `server/src/tangible/observability.py`, `api/meta.py` | `AccessLogMiddleware`, `/metrics`, `tangible_http_requests_total` |
+| Health / readiness | `server/src/tangible/api/meta.py` | `/healthz`, `/readyz` |
 | Web auth flow (login, register, gating) | `web/src/routes/{login,register,+layout.svelte}`, `lib/session.ts` | `me`, `refreshMe`, `logout` |
 | Web collections list / detail | `web/src/routes/collections/...` | list view + card grid view, `viewMode` localStorage toggle |
 | Web item creator + subtitle fields | `web/src/routes/collections/[id]/+page.svelte` | `newCreator`, `newSubtitle`, Enter-key flow, `attrs.creator` in table |
@@ -372,18 +372,18 @@ the affected file column is preserved.**
 | Android collections / items list / add / delete | `android/.../ui/screen/{collections,collection}/...` | `CollectionListViewModel`, `CollectionDetailViewModel` |
 | Android pull-to-refresh | `android/.../ui/screen/collection/CollectionDetailScreen.kt` | `PullToRefreshBox`, `pullRefresh()`, `DetailUi.refreshing` |
 | Android barcode scanner | `android/.../ui/screen/scan/ScannerScreen.kt` | CameraX + ML Kit `BarcodeScanning` |
-| Android Room cache (offline reads) | `android/.../data/local/{CovetDatabase,Mappers}.kt`, `di/DatabaseModule.kt`, `data/repo/Repositories.kt` | `CollectionEntity`, `ItemEntity`, `observe()`, `deleteMissing` |
-| Android sync worker (15-min refresh) | `android/.../data/sync/SyncWorker.kt`, `CovetApp.kt` | `SyncWorker.schedule`, `UNIQUE_NAME`, `KEEP` policy |
-| Docker image (multi-arch, non-root) | `Dockerfile`, `docker/entrypoint.sh` | `PUID/PGID/UMASK`, `tini`, `gosu`, `COVET_ALEMBIC_DIR` |
+| Android Room cache (offline reads) | `android/.../data/local/{TangibleDatabase,Mappers}.kt`, `di/DatabaseModule.kt`, `data/repo/Repositories.kt` | `CollectionEntity`, `ItemEntity`, `observe()`, `deleteMissing` |
+| Android sync worker (15-min refresh) | `android/.../data/sync/SyncWorker.kt`, `TangibleApp.kt` | `SyncWorker.schedule`, `UNIQUE_NAME`, `KEEP` policy |
+| Docker image (multi-arch, non-root) | `Dockerfile`, `docker/entrypoint.sh` | `PUID/PGID/UMASK`, `tini`, `gosu`, `TANGIBLE_ALEMBIC_DIR` |
 | Compose examples | `docker/docker-compose.{standard,postgres,unraid}.yml` | — |
 | CI: server lint+tests, web check, audit, docker smoke | `.github/workflows/ci.yml` | jobs `server`, `web`, `audit`, `docker` |
 | CI: multi-arch GHCR image | `.github/workflows/release-image.yml` | tag patterns `:X.Y.Z`, `:X.Y`, `:X`, `:edge` |
 | CI: Android build + APK artifact | `.github/workflows/android.yml` | `:app:lintDebug`, `:app:testDebugUnitTest`, `:app:assembleDebug` |
 | CI: auto-publish Release on tag | `.github/workflows/release.yml` | extracts `## [X.Y.Z]` from `CHANGELOG.md`; `prerelease` for `0.x` |
-| MCP server | `server/src/covet/api/mcp_server.py` | `FastMCP`, `mcp_app()`, mounted at `/mcp`, tools: `list_collections`, `search_items`, `get_item`, `list_maintenance`, `list_due_alerts`, `list_low_stock` |
-| Item comment threads | `server/src/covet/api/comments.py`, `models/item_comment.py`, `alembic/versions/0035_item_comments.py`, `web/src/lib/ItemComments.svelte` | `GET/POST /items/{id}/comments`, `GET /items/{id}/comments/{parent_id}/replies`, `PATCH/DELETE /comments/{id}`, `ItemComment`, `CommentAuthor`, `ItemComments` component |
-| Scraper plugin/adapter system | `server/src/covet/services/metadata.py`, `api/metadata.py` | `register_adapter`, `register_barcode_adapter`, `discover_plugins`, `list_adapters`, `GET /metadata/adapters`, entry-point groups `covet.scraper_adapter` / `covet.barcode_adapter` |
-| Shared grocery list (ad-hoc + depleted-item feed) | `server/src/covet/api/grocery.py`, `models/grocery.py`, `schemas/grocery.py`, `web/src/routes/grocery-list/+page.svelte`, `web/src/routes/+layout.svelte` | `GroceryItem`, `GET/POST/PATCH/DELETE /grocery`, `POST /grocery/{id}/purchase`, `GET /grocery/count`, `GroceryFeedEntry`, conditional nav badge |
+| MCP server | `server/src/tangible/api/mcp_server.py` | `FastMCP`, `mcp_app()`, mounted at `/mcp`, tools: `list_collections`, `search_items`, `get_item`, `list_maintenance`, `list_due_alerts`, `list_low_stock` |
+| Item comment threads | `server/src/tangible/api/comments.py`, `models/item_comment.py`, `alembic/versions/0035_item_comments.py`, `web/src/lib/ItemComments.svelte` | `GET/POST /items/{id}/comments`, `GET /items/{id}/comments/{parent_id}/replies`, `PATCH/DELETE /comments/{id}`, `ItemComment`, `CommentAuthor`, `ItemComments` component |
+| Scraper plugin/adapter system | `server/src/tangible/services/metadata.py`, `api/metadata.py` | `register_adapter`, `register_barcode_adapter`, `discover_plugins`, `list_adapters`, `GET /metadata/adapters`, entry-point groups `tangible.scraper_adapter` / `tangible.barcode_adapter` |
+| Shared grocery list (ad-hoc + depleted-item feed) | `server/src/tangible/api/grocery.py`, `models/grocery.py`, `schemas/grocery.py`, `web/src/routes/grocery-list/+page.svelte`, `web/src/routes/+layout.svelte` | `GroceryItem`, `GET/POST/PATCH/DELETE /grocery`, `POST /grocery/{id}/purchase`, `GET /grocery/count`, `GroceryFeedEntry`, conditional nav badge |
 
 Update this table whenever a new feature lands or an existing feature moves.
 

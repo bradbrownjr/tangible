@@ -1,8 +1,8 @@
-# Unraid-friendly Docker Compose for Covet.
+# Unraid-friendly Docker Compose for Tangible.
 #
 # Pre-create:
-#   /mnt/user/appdata/covet/data
-#   /mnt/user/appdata/covet/config
+#   /mnt/user/appdata/tangible/data
+#   /mnt/user/appdata/tangible/config
 #
 # Usage (from any working dir):
 #   docker compose -f docker-compose.unraid.yml up -d
@@ -10,9 +10,9 @@
 # This file uses absolute host paths; copy and edit as needed.
 
 services:
-  covet:
-    image: ${COVET_IMAGE:-ghcr.io/bradbrownjr/covet:edge}
-    container_name: covet
+  tangible:
+    image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:edge}
+    container_name: tangible
     restart: unless-stopped
     # Unraid Docker tab labels. [IP] resolves to the host's LAN IP and
     # [PORT:8000] resolves to whichever host port you mapped to 8000
@@ -21,7 +21,7 @@ services:
     labels:
       net.unraid.docker.webui: "http://[IP]:[PORT:8000]/"
       net.unraid.docker.shell: "bash"
-      net.unraid.docker.icon: "https://raw.githubusercontent.com/bradbrownjr/covet/main/web/static/icon-512.png"
+      net.unraid.docker.icon: "https://raw.githubusercontent.com/bradbrownjr/tangible/main/web/static/icon-512.png"
     ports:
       - "8000:8000"
     environment:
@@ -34,22 +34,22 @@ services:
       # Wildcard allows any Host header so you can reach the container
       # at http://<unraid-ip>:8000/ immediately. Once you put a reverse
       # proxy in front, narrow this to your real hostname and set
-      # COVET_PUBLIC_URL + COVET_BEHIND_PROXY to match.
-      COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-}
-      COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-*}
-      # COVET_BEHIND_PROXY: "true"
-      COVET_REGISTRATION_ENABLED: ${COVET_REGISTRATION_ENABLED:-true}
+      # TANGIBLE_PUBLIC_URL + TANGIBLE_BEHIND_PROXY to match.
+      TANGIBLE_PUBLIC_URL: ${TANGIBLE_PUBLIC_URL:-}
+      TANGIBLE_ALLOWED_HOSTS: ${TANGIBLE_ALLOWED_HOSTS:-*}
+      # TANGIBLE_BEHIND_PROXY: "true"
+      TANGIBLE_REGISTRATION_ENABLED: ${TANGIBLE_REGISTRATION_ENABLED:-true}
       # Optional: bootstrap an admin from env on first launch.
       # If you leave both unset, browse to http://<unraid-ip>:8000/ after
       # the container is healthy and click 'Register' — the very first
       # user to sign up is automatically promoted to admin (regardless
-      # of the COVET_REGISTRATION_ENABLED setting). Set these only if
+      # of the TANGIBLE_REGISTRATION_ENABLED setting). Set these only if
       # you want a specific admin baked into the deployment.
-      # COVET_ADMIN_USERNAME: admin
-      # COVET_ADMIN_PASSWORD_FILE: /run/secrets/covet_admin_password
+      # TANGIBLE_ADMIN_USERNAME: admin
+      # TANGIBLE_ADMIN_PASSWORD_FILE: /run/secrets/tangible_admin_password
     volumes:
-      - /mnt/user/appdata/covet/data:/data
-      - /mnt/user/appdata/covet/config:/config
+      - /mnt/user/appdata/tangible/data:/data
+      - /mnt/user/appdata/tangible/config:/config
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
       interval: 30s
@@ -57,15 +57,15 @@ services:
       retries: 3
       start_period: 20s
     networks:
-      - covet
+      - tangible
 
 networks:
   # Default: a Compose-managed bridge network created on first 'up'.
-  # If you front Covet with a reverse proxy (SWAG / Nginx Proxy Manager /
+  # If you front Tangible with a reverse proxy (SWAG / Nginx Proxy Manager /
   # Traefik) running on a shared external network, replace the block
   # below with:
-  #   covet:
+  #   tangible:
   #     external: true
   #     name: proxy        # or whatever your proxy network is called
-  covet:
+  tangible:
     driver: bridge

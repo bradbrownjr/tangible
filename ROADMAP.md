@@ -1,4 +1,4 @@
-# Covet Roadmap
+# Tangible Roadmap
 
 This is a living plan, not a commitment. Order and scope shift as we learn.
 For shipped work see [CHANGELOG.md](CHANGELOG.md). For agent rules see
@@ -11,7 +11,7 @@ Within a phase, items are roughly ordered by leverage.
 
 ## Phase 8 — Make it shareable ✅
 
-Today Covet treats every user as an island. The biggest gap vs. comparable
+Today Tangible treats every user as an island. The biggest gap vs. comparable
 self-hosted inventory tools is multi-user / shared collections. This phase
 lands the auth + ACL plumbing once, then several user-visible features fall
 out of it.
@@ -119,7 +119,7 @@ bottleneck. This phase is about scaling the UX.
 
 ## Phase 11 — Become the whole-home database ✅ COMPLETE
 
-Covet starts as a collectibles tracker. This phase broadens it into a
+Tangible starts as a collectibles tracker. This phase broadens it into a
 complete home inventory: every room, every appliance, every tool, every
 consumable. The goal is to replace the spreadsheet every homeowner
 eventually makes and then stops maintaining.
@@ -362,12 +362,12 @@ history, and proactive notifications across every asset.
 
 ## Phase 13 — Smart home integration & discovery ✅
 
-With rich data in place, Covet can become a hub that other smart home
+With rich data in place, Tangible can become a hub that other smart home
 tools query and react to.
 
 - **Home Assistant integration** ✅ — `GET /api/ha/sensors` returns per-collection sensor data (item count, low-stock count, overdue/due-soon alerts) in HA REST sensor format. `GET /api/ha/blueprint.yaml` serves a downloadable automation blueprint. Both accept Bearer token or session auth.
-- **NFC tag support (Android)** ✅ — Write `covet://item/<id>` to an NFC tag from the item detail screen. Tap any Covet NFC tag to navigate directly to the item. QR scanner also handles `covet://` URIs.
-- **Unified physical labeling** ✅ — `GET /api/items/{id}/qr.png` serves a machine-readable PNG QR code. The bulk QR-label PDF now embeds real `covet://item/` QR images. Both NFC and QR scans route to the same item detail screen.
+- **NFC tag support (Android)** ✅ — Write `tangible://item/<id>` to an NFC tag from the item detail screen. Tap any Tangible NFC tag to navigate directly to the item. QR scanner also handles `tangible://` URIs.
+- **Unified physical labeling** ✅ — `GET /api/items/{id}/qr.png` serves a machine-readable PNG QR code. The bulk QR-label PDF now embeds real `tangible://item/` QR images. Both NFC and QR scans route to the same item detail screen.
 - **AI-assisted item creation** ✅ — `POST /api/items/ai-prefill` accepts `{ barcode }` and queries Open Library, MusicBrainz, Open Food Facts, and Google Books; returns `{ title, subtitle, category_slug, attrs, source }` for pre-filling the add-item form.
 - **Insurance export bundle** ✅ — `GET /api/collections/{id}/reports/insurance-export` already served the CSV+photos ZIP. An **Export** tab in the collection subnav now triggers it directly from the browser.
 - **Field-value hyperlink filters** ✅ — Category badges, creator, condition, and location values in the collection grid and table are interactive filter buttons; clicking any value instantly narrows the item list.
@@ -377,14 +377,14 @@ tools query and react to.
 
 ## Phase 14 — Platform & ecosystem (planned)
 
-Long-term work that makes Covet a foundation other things build on.
+Long-term work that makes Tangible a foundation other things build on.
 
 - **Two-factor auth (TOTP)** ✅ for local accounts — setup QR code + secret in
   Settings, 8 backup codes on activation, second-step prompt on login,
   regenerate/disable flow. FIDO2/passkey remains a stretch goal.
 - **Account deletion & data export self-service** ✅ — GDPR-friendly: user
   downloads all their data (JSON backup + README ZIP via `GET /auth/me/export`,
-  compatible with `covet restore` and the web import wizard), then deletes
+  compatible with `tangible restore` and the web import wizard), then deletes
   account via `DELETE /auth/me` (requires password + TOTP if enabled).
 - **MCP server** ✅ — Model Context Protocol server mounted at `/mcp`.
   Exposes tools (`list_collections`, `search_items`, `get_item`,
@@ -394,7 +394,7 @@ Long-term work that makes Covet a foundation other things build on.
   "when is my car's next oil change?".
 - **Plugin / adapter system for metadata scrapers** ✅ — community can
   contribute scrapers for new sources without modifying core. Declare adapters
-  via `covet.scraper_adapter` / `covet.barcode_adapter` entry-point groups;
+  via `tangible.scraper_adapter` / `tangible.barcode_adapter` entry-point groups;
   auto-discovered at startup. `GET /metadata/adapters` lists active adapters
   (admin). Full entry-points discovery with broken-plugin resilience.
 - **Item comment threads** ✅ — threaded, time-stamped annotations on

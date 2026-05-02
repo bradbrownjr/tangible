@@ -9,7 +9,7 @@ import { writable, type Writable } from 'svelte/store';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'covet:theme';
+const STORAGE_KEY = 'tangible:theme';
 const META_COLOR: Record<ResolvedTheme, string> = {
     dark: '#0f172a',
     light: '#f8fafc',

@@ -1,4 +1,4 @@
-# Covet server
+# Tangible server
 
 FastAPI backend. See `../docs/development.md` for setup, `../docs/configuration.md`
 for environment variables.
@@ -6,9 +6,9 @@ for environment variables.
 ## Layout
 
 ```
-src/covet/
+src/tangible/
   main.py            # FastAPI app factory
-  cli.py             # `covet` console script
+  cli.py             # `tangible` console script
   config.py          # pydantic-settings
   logging.py         # structlog setup
   db.py              # SQLAlchemy engine/session

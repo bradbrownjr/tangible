@@ -1,33 +1,33 @@
-# Standard Docker Compose for Covet (SQLite, single host).
+# Standard Docker Compose for Tangible (SQLite, single host).
 #
 # Usage:
 #   docker compose -f docker/docker-compose.standard.yml up -d
 #
-# Override the image with `IMAGE=ghcr.io/bradbrownjr/covet:edge` if you want to
+# Override the image with `IMAGE=ghcr.io/bradbrownjr/tangible:edge` if you want to
 # track main, or pin to a tag like `:0.1.0`.
 
 services:
-  covet:
-    image: ${COVET_IMAGE:-ghcr.io/bradbrownjr/covet:edge}
-    container_name: covet
+  tangible:
+    image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:edge}
+    container_name: tangible
     restart: unless-stopped
     ports:
-      - "${COVET_HTTP_PORT:-8000}:8000"
+      - "${TANGIBLE_HTTP_PORT:-8000}:8000"
     environment:
       TZ: ${TZ:-UTC}
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
-      COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-http://localhost:8000}
-      COVET_REGISTRATION_ENABLED: ${COVET_REGISTRATION_ENABLED:-true}
+      TANGIBLE_PUBLIC_URL: ${TANGIBLE_PUBLIC_URL:-http://localhost:8000}
+      TANGIBLE_REGISTRATION_ENABLED: ${TANGIBLE_REGISTRATION_ENABLED:-true}
       # Optional: bootstrap an admin from env on first launch. If left empty,
       # the very first user to register through the web UI is automatically
-      # promoted to admin (regardless of COVET_REGISTRATION_ENABLED).
-      COVET_ADMIN_USERNAME: ${COVET_ADMIN_USERNAME:-}
-      COVET_ADMIN_PASSWORD: ${COVET_ADMIN_PASSWORD:-}
-      COVET_ADMIN_EMAIL: ${COVET_ADMIN_EMAIL:-}
+      # promoted to admin (regardless of TANGIBLE_REGISTRATION_ENABLED).
+      TANGIBLE_ADMIN_USERNAME: ${TANGIBLE_ADMIN_USERNAME:-}
+      TANGIBLE_ADMIN_PASSWORD: ${TANGIBLE_ADMIN_PASSWORD:-}
+      TANGIBLE_ADMIN_EMAIL: ${TANGIBLE_ADMIN_EMAIL:-}
     volumes:
-      - covet-data:/data
-      - covet-config:/config
+      - tangible-data:/data
+      - tangible-config:/config
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
       interval: 30s
@@ -36,5 +36,5 @@ services:
       start_period: 20s
 
 volumes:
-  covet-data:
-  covet-config:
+  tangible-data:
+  tangible-config:

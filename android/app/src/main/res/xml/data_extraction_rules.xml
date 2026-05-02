@@ -2,10 +2,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="auth.xml" />
-        <exclude domain="database"   path="covet.db" />
+        <exclude domain="database"   path="tangible.db" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="auth.xml" />
-        <exclude domain="database"   path="covet.db" />
+        <exclude domain="database"   path="tangible.db" />
     </device-transfer>
 </data-extraction-rules>

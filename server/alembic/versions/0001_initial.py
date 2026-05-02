@@ -30,12 +30,12 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Import inside the function so Alembic can introspect this module
     # without dragging the application import graph in at module-load time.
-    from covet.db import Base
-    from covet.models import (  # noqa: F401  (registers all tables on Base.metadata)
+    from tangible.db import Base
+    from tangible.models import (  # noqa: F401  (registers all tables on Base.metadata)
         Category,
     )
-    from covet.models.base import ulid_str
-    from covet.seed.catalog import iter_seed_rows
+    from tangible.models.base import ulid_str
+    from tangible.seed.catalog import iter_seed_rows
 
     bind = op.get_bind()
     Base.metadata.create_all(bind=bind)
@@ -72,7 +72,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    from covet.db import Base
+    from tangible.db import Base
 
     bind = op.get_bind()
     Base.metadata.drop_all(bind=bind)

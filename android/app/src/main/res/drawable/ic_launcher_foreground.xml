@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Adaptive-icon foreground for Covet.
+  Adaptive-icon foreground for Tangible.
   The 108dp drawable is mostly safe-zone padding; the actual artwork
   is drawn in a 1024x1024 design space (matching web/static/icon.svg)
   scaled to fit the central ~72dp of the launcher tile. Background is

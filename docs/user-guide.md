@@ -1,6 +1,6 @@
 # User guide
 
-A tour of Covet from a collector's point of view: signing in, organizing
+A tour of Tangible from a collector's point of view: signing in, organizing
 your stuff, importing existing inventories, and using the offline mobile
 app.
 
@@ -69,7 +69,7 @@ picker (Appliance, Generator, HVAC/Furnace/Air Handler, Water Heater,
 Refrigerator, Water Service Filtration, and Sump Pump).
 
 Phase 11 wave 1 also adds **Fuel & Chemicals** and **Vehicles** roots.
-When you create a collection using one of these roots, Covet now scaffolds
+When you create a collection using one of these roots, Tangible now scaffolds
 starter templates automatically so you can begin with practical fields
 instead of building every template from scratch.
 
@@ -102,19 +102,19 @@ quantity. Viewers see the collection read-only.
   automatically on the next item edit, or you can clear it directly with
   **Unflag**.
 - Parent / container items can show a computed **rollup value**. If a
-  kit or container has child items, Covet shows the summed value of its
+  kit or container has child items, Tangible shows the summed value of its
   nested contents instead of only the parent row's own `current_value`.
 
 ### Quick creation tricks
 
 - **Scrape URL** — paste a product URL (Open Library ISBN page, a
-  publisher's product page) and Covet will pre-fill `title`,
+  publisher's product page) and Tangible will pre-fill `title`,
   `description`, `image_url`, etc. via the metadata scraper.
 - **Scan a barcode** (web or Android) — type or paste an ISBN/EAN and
-  Covet looks it up via Open Library and fills in the title and category.
+  Tangible looks it up via Open Library and fills in the title and category.
 - **Scan a barcode from an image** — on the web add form, click
   **Scan image** and pick a photo or screenshot containing a barcode.
-  Covet decodes it in the browser and runs the same lookup flow as the
+  Tangible decodes it in the browser and runs the same lookup flow as the
   live scanner / typed barcode path.
 - **Apply a template** — pick a template from the collection's
   **Templates** tab to inherit a custom-field schema. Required fields are
@@ -127,7 +127,7 @@ quantity. Viewers see the collection read-only.
 
 - Drop one or more images at once on the item page; they upload as a
   multi-file batch.
-- Paste an image URL via **Add from URL**; Covet downloads it server-
+- Paste an image URL via **Add from URL**; Tangible downloads it server-
   side (with SSRF protection — private/loopback hosts are rejected).
 - HEIC/HEIF files (iPhone photos) are transcoded to JPEG. EXIF
   orientation is applied so the saved pixels are upright; you don't
@@ -142,7 +142,7 @@ Attach any file (PDF, receipt, manual, warranty) up to 50 MB. Each
 document can have a **label**, **category** (`manual`, `receipt`,
 `warranty`, ...), and **expiry date**.
 
-Document text is indexed for global search. Covet indexes text/PDF
+Document text is indexed for global search. Tangible indexes text/PDF
 content and, when OCR support is available on the server, image text
 inside attachments as well.
 
@@ -154,7 +154,7 @@ to lapse or licenses due for renewal.
 ### Maintenance schedules
 
 For tools / appliances / vehicles, add a **maintenance task** with an
-**interval (in days)**. When you click **Mark complete**, Covet stores
+**interval (in days)**. When you click **Mark complete**, Tangible stores
 `last_completed_at` and recomputes `next_due_at`. You can record optional
 notes, cost, technician, and odometer/hours readings with each completion.
 Full completion history is paginated and exportable to CSV.
@@ -199,7 +199,7 @@ as a "low stock" alert.
 
 ### Notification preferences
 
-Covet supports three delivery channels for alerts, configurable per alert kind
+Tangible supports three delivery channels for alerts, configurable per alert kind
 in **Settings → Notifications**:
 
 | Channel | How it works |
@@ -271,28 +271,28 @@ or fixes can be contributed through pull requests.
 Open **Import** from the top nav.
 
 - **CLZ products export** — drop the JSON file from the *Movie / Music
-  / Book / Game Collector* desktop apps. Covet maps fields and creates
+  / Book / Game Collector* desktop apps. Tangible maps fields and creates
   items in the chosen collection.
 - **Generic CSV** — upload any CSV; you'll get a column-mapping wizard
-  that lets you map source columns to Covet fields (with a preview).
+  that lets you map source columns to Tangible fields (with a preview).
 - **Round-trip hierarchy CSV** — from the Import page you can download a
   collection CSV export that includes stable item/parent refs, then import
   it back with `ref:item_ref`, `ref:parent_ref`, and `category_slug` mapping
   targets to preserve parent/child relationships.
-- **Covet JSON backup** — restore a `covet backup` export into a
+- **Tangible JSON backup** — restore a `tangible backup` export into a
   collection.
 
 For very large imports (10k+ rows), prefer the server-side CLI
-(`covet restore`) over the web UI.
+(`tangible restore`) over the web UI.
 
 ## Mobile app (Android)
 
 The Android app is offline-first:
 
 1. Install the APK from the project's
-   [Releases page](https://github.com/bradbrownjr/covet/releases).
+   [Releases page](https://github.com/bradbrownjr/tangible/releases).
 2. Open the app and enter your **server URL** (e.g.
-   `https://covet.example.com`) plus your username/password. The app
+   `https://tangible.example.com`) plus your username/password. The app
    exchanges them for a long-lived API token.
 3. Pick a collection. The app caches items locally in a Room database
    so you can browse without signal.
@@ -315,11 +315,11 @@ sign out from **Settings → Account** and re-enroll.
 ## Backup and export
 
 - **Per-user JSON backup**: from the server,
-  `docker exec covet covet backup <username> - > backup.json` writes
+  `docker exec tangible tangible backup <username> - > backup.json` writes
   a logical export of your collections, items, tags, contacts, and
   loans. Photos and documents are not embedded — pair this with a
   filesystem snapshot of the `/data` volume for a full backup.
-- **Restore**: `docker exec -i covet covet restore <username> - < backup.json`.
+- **Restore**: `docker exec -i tangible tangible restore <username> - < backup.json`.
 - **CSV / JSON of a single collection** is available from the
   collection's overflow menu.
 
@@ -333,11 +333,11 @@ Generate API tokens from **Settings → Tokens** for use with `curl`,
 can be revoked individually.
 
 ```bash
-TOKEN=$(cat ~/.covet-token)
-curl -H "Authorization: Bearer $TOKEN" https://covet.example.com/collections
+TOKEN=$(cat ~/.tangible-token)
+curl -H "Authorization: Bearer $TOKEN" https://tangible.example.com/collections
 ```
 
-Optional default expiry: `COVET_API_TOKEN_TTL_DAYS` (admin setting).
+Optional default expiry: `TANGIBLE_API_TOKEN_TTL_DAYS` (admin setting).
 
 ## Troubleshooting
 
@@ -345,6 +345,6 @@ Optional default expiry: `COVET_API_TOKEN_TTL_DAYS` (admin setting).
 |---|---|
 | Login button gives "rate limited" | The login endpoint allows 5 attempts per minute per IP. Wait a minute or have an admin reset your password. |
 | OIDC button missing | The provider isn't configured. Ask your admin or see the [Admin guide](admin-guide.md#sso--oidc). |
-| "Image exceeds N bytes" on upload | Photo > 25 MB or document > 50 MB. Resize, or have an admin raise `COVET_PHOTOS_MAX_BYTES` / `COVET_DOCUMENTS_MAX_BYTES`. |
+| "Image exceeds N bytes" on upload | Photo > 25 MB or document > 50 MB. Resize, or have an admin raise `TANGIBLE_PHOTOS_MAX_BYTES` / `TANGIBLE_DOCUMENTS_MAX_BYTES`. |
 | Photo from URL fails with "host is not publicly reachable" | The URL points at a private/loopback IP. SSRF protection is intentional. Download the image and upload directly. |
 | Mobile app stuck on "Syncing…" | Check that the server URL is reachable from the phone and the token hasn't been revoked. Pull-to-refresh forces a sync. |

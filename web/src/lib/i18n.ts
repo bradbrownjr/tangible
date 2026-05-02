@@ -7,7 +7,7 @@ import ja from './locales/ja.json';
 
 type LocaleDict = Parameters<typeof addMessages>[1];
 
-const STORAGE_KEY = 'covet:locale';
+const STORAGE_KEY = 'tangible:locale';
 
 export const LOCALES: { code: string; label: string }[] = [
     { code: 'en', label: 'English' },

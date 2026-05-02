@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Covet</string>
+    <string name="app_name">Tangible</string>
     <string name="server_url">Server URL</string>
     <string name="username">Username</string>
     <string name="password">Password</string>

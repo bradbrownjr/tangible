@@ -374,7 +374,7 @@
 
 <div class="card" style="margin-bottom: 1rem">
     <h3 style="margin-top:0">Appearance</h3>
-    <p class="muted">Choose how Covet looks. "System" follows your OS setting.</p>
+    <p class="muted">Choose how Tangible looks. "System" follows your OS setting.</p>
     <div role="radiogroup" aria-label="Theme" class="theme-toggle">
         {#each ['light', 'dark', 'system'] as const as opt (opt)}
             <button

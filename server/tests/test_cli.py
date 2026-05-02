@@ -1,4 +1,4 @@
-"""End-to-end test of the `covet` CLI (backup/restore round trip)."""
+"""End-to-end test of the `tangible` CLI (backup/restore round trip)."""
 
 from __future__ import annotations
 
@@ -9,19 +9,19 @@ from pathlib import Path
 
 import pytest
 
-from covet.auth.service import create_user
-from covet.bootstrap import run_migrations
-from covet.db import init_engine
+from tangible.auth.service import create_user
+from tangible.bootstrap import run_migrations
+from tangible.db import init_engine
 
 
 @pytest.fixture()
 def cli_env(monkeypatch: pytest.MonkeyPatch, settings):
     """Ensure subprocess sees the same data dir as the in-process tests."""
-    monkeypatch.setenv("COVET_DATA_DIR", str(settings.data_dir))
-    monkeypatch.setenv("COVET_CONFIG_DIR", str(settings.config_dir))
-    monkeypatch.setenv("COVET_DB_TYPE", "sqlite")
-    monkeypatch.setenv("COVET_DB_AUTO_MIGRATE", "false")
-    monkeypatch.setenv("COVET_PUBLIC_URL", "http://testserver")
+    monkeypatch.setenv("TANGIBLE_DATA_DIR", str(settings.data_dir))
+    monkeypatch.setenv("TANGIBLE_CONFIG_DIR", str(settings.config_dir))
+    monkeypatch.setenv("TANGIBLE_DB_TYPE", "sqlite")
+    monkeypatch.setenv("TANGIBLE_DB_AUTO_MIGRATE", "false")
+    monkeypatch.setenv("TANGIBLE_PUBLIC_URL", "http://testserver")
     run_migrations(settings)
     # Create the test user directly — we don't go through /auth/register
     # because that would require a running server.
@@ -42,7 +42,7 @@ def cli_env(monkeypatch: pytest.MonkeyPatch, settings):
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, "-m", "covet.cli", *args],
+        [sys.executable, "-m", "tangible.cli", *args],
         capture_output=True,
         text=True,
         check=False,
@@ -52,7 +52,7 @@ def _run(*args: str) -> subprocess.CompletedProcess[str]:
 def test_cli_version(cli_env) -> None:
     r = _run("version")
     assert r.returncode == 0, r.stderr
-    from covet import __version__
+    from tangible import __version__
 
     assert r.stdout.strip() == __version__
 

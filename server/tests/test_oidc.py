@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session as DBSession
 
-from covet.auth import oidc as oidc_service
-from covet.config import OIDCProvider, Settings, reset_settings_cache
-from covet.models import OIDCIdentity, User
+from tangible.auth import oidc as oidc_service
+from tangible.config import OIDCProvider, Settings, reset_settings_cache
+from tangible.models import OIDCIdentity, User
 
 
 def _enable_oidc(monkeypatch, settings: Settings) -> None:
@@ -130,7 +130,7 @@ def test_upsert_respects_auto_create_off(db: DBSession, settings, monkeypatch) -
 def test_upsert_admin_group_promotes(db: DBSession, settings, monkeypatch) -> None:
     _enable_oidc(monkeypatch, settings)
     provider = settings.oidc_providers[0]
-    object.__setattr__(provider, "admin_groups", ["covet-admins"])
+    object.__setattr__(provider, "admin_groups", ["tangible-admins"])
     user = oidc_service.upsert_user_from_claims(
         db,
         settings=settings,
@@ -138,7 +138,7 @@ def test_upsert_admin_group_promotes(db: DBSession, settings, monkeypatch) -> No
         claims={
             "sub": "admin-1",
             "email": "admin@example.com",
-            "groups": ["covet-admins", "other"],
+            "groups": ["tangible-admins", "other"],
         },
     )
     assert user is not None

@@ -17,7 +17,7 @@ def _login(client, username, password="hunter22-secure"):
 
 
 def _make_admin(db, username):
-    from covet.models import User
+    from tangible.models import User
 
     user = db.query(User).filter_by(username=username).one()
     user.is_admin = True

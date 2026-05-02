@@ -1,6 +1,6 @@
 # Development
 
-Covet is a monorepo with three primary subprojects: `server/` (Python /
+Tangible is a monorepo with three primary subprojects: `server/` (Python /
 FastAPI), `web/` (SvelteKit), and `android/` (Kotlin / Jetpack Compose).
 
 ## Prerequisites
@@ -16,7 +16,7 @@ FastAPI), `web/` (SvelteKit), and `android/` (Kotlin / Jetpack Compose).
 cd server
 uv sync
 uv run alembic upgrade head
-uv run uvicorn covet.main:app --reload
+uv run uvicorn tangible.main:app --reload
 ```
 
 Default URL: <http://localhost:8000>. OpenAPI docs at `/docs`.
@@ -35,7 +35,7 @@ pnpm install
 pnpm dev
 ```
 
-Default URL: <http://localhost:5173>. Set `VITE_COVET_API_URL=http://localhost:8000`
+Default URL: <http://localhost:5173>. Set `VITE_TANGIBLE_API_URL=http://localhost:8000`
 in `web/.env.local` if your server runs elsewhere.
 
 ## Android

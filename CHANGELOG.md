@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **Covet** are documented here. Format follows
+All notable changes to **Tangible** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -26,7 +26,7 @@ All notable changes to **Covet** are documented here. Format follows
   `Base.metadata` and seeds the curated category taxonomy. Cleaner fresh
   installs; no functional change.
 - **Fix Android build** — added missing `import retrofit2.http.PUT`
-  in `CovetApi.kt` so the notification preference endpoint compiles
+  in `TangibleApi.kt` so the notification preference endpoint compiles
   again. (Regression introduced when notification PUT route was added.)
 - Removed unused `size_px` parameter from `_make_qr_png` helper.
 - Removed two empty stray top-level files (`category`, `leaf`).
@@ -41,20 +41,20 @@ All notable changes to **Covet** are documented here. Format follows
   translated. The infrastructure is in place for community contributions via
   the `web/src/lib/locales/` message catalogs.
 - **Plugin/adapter system for metadata scrapers** — third-party packages can
-  now register custom URL and barcode adapters without modifying Covet's core.
+  now register custom URL and barcode adapters without modifying Tangible's core.
   Declare adapters in your package's `pyproject.toml` under the
-  `covet.scraper_adapter` or `covet.barcode_adapter` entry-point groups;
-  Covet auto-discovers and loads them at startup. Admins can verify loaded
+  `tangible.scraper_adapter` or `tangible.barcode_adapter` entry-point groups;
+  Tangible auto-discovers and loads them at startup. Admins can verify loaded
   adapters via `GET /metadata/adapters`.
 - **Item comment threads** — users can now post, reply to, edit, and delete
   comments on individual items. Comments are threaded (one level of replies),
   shown in a collapsible panel on each item card and table row. Any collection
   member (viewer+) can read and post; authors can edit or delete their own
   comments; editors/owners can delete any comment.
-- **MCP server** — Covet now exposes a [Model Context Protocol](https://modelcontextprotocol.io/)
+- **MCP server** — Tangible now exposes a [Model Context Protocol](https://modelcontextprotocol.io/)
   endpoint at `/mcp`. AI assistants (Claude, Copilot, ChatGPT plugins, etc.)
   can query your inventory, maintenance history, and stock levels in natural
-  language. Configure your AI client with your Covet server URL and a Bearer
+  language. Configure your AI client with your Tangible server URL and a Bearer
   API token. Tools available: `list_collections`, `search_items`, `get_item`,
   `list_maintenance`, `list_due_alerts`, `list_low_stock`.
 - **Enforce 2FA site-wide**: admins can toggle `require_2fa` in the new
@@ -62,7 +62,7 @@ All notable changes to **Covet** are documented here. Format follows
   shown an enrollment prompt automatically on every page load until 2FA
   is set up. `GET /auth/me` now returns `enrollment_required: bool`.
 - **Admin Server Settings panel** (Settings page, admin-only): all
-  meaningful `COVET_*` env-var knobs (security, sessions, integrations,
+  meaningful `TANGIBLE_*` env-var knobs (security, sessions, integrations,
   SMTP) are editable through the UI. DB overrides take precedence over
   env vars without requiring a restart; sensitive values are masked. Each
   field shows its current source (`database` / `environment` / `default`)
@@ -74,7 +74,7 @@ All notable changes to **Covet** are documented here. Format follows
 ### Added
 
 - **Two-factor authentication (TOTP).** Local accounts can now enable 2FA using any TOTP-compatible authenticator app (Google Authenticator, Authy, etc.). Setup generates a QR code and secret displayed in Settings. Activation verifies the first code and issues 8 one-time backup codes. Login detects 2FA and presents a second-step code prompt. Backup codes can be regenerated; 2FA can be disabled with password + current code. API: `POST /auth/totp/setup`, `POST /auth/totp/verify`, `DELETE /auth/totp`, `POST /auth/totp/regenerate-backup-codes`, `POST /auth/totp/confirm-login`.
-- **Account data export.** `GET /auth/me/export` downloads a ZIP containing a full JSON backup (compatible with the `covet restore` CLI and the web import wizard) plus a README.
+- **Account data export.** `GET /auth/me/export` downloads a ZIP containing a full JSON backup (compatible with the `tangible restore` CLI and the web import wizard) plus a README.
 - **Account self-deletion.** `DELETE /auth/me` permanently deletes the signed-in account and all sole-owned collections. Requires current password; also requires a TOTP code if 2FA is enabled. Web UI provides a confirmation modal in Settings.
 
 - **Tag filter chips with AND/OR mode.** The collection item list now shows clickable tag chips below the filter bar. Select one or more tags to filter items; a toggle switches between **All** (item must have every selected tag) and **Any** (item must have at least one).
@@ -88,8 +88,8 @@ All notable changes to **Covet** are documented here. Format follows
 - **Field-value hyperlink filters.** Category badges, creator, condition, and location tags in the collection grid and table views are now interactive buttons; clicking any value instantly filters the item list to that value.
 - **Insurance export web trigger.** The collection subnav now includes an **Export** tab that downloads the insurance-export PDF directly via `GET /api/collections/{id}/reports/insurance-export`.
 - **Home Assistant sensor endpoint.** `GET /api/ha/sensors` returns a per-collection JSON sensor payload (item count, low-stock count, overdue alerts, due-soon alerts) ready for HA's `rest` sensor platform. `GET /api/ha/blueprint.yaml` serves a downloadable automation blueprint. Both endpoints accept Bearer token or session auth.
-- **NFC tag write/read (Android).** The item detail screen now shows a **Write NFC Tag** button that writes `covet://item/<id>` to a blank NFC tag using foreground dispatch. Tapping a Covet NFC tag from anywhere on the device opens the app and navigates directly to the item. The camera scanner also handles `covet://` QR codes to navigate to an item.
-- **Unified physical labeling.** `GET /api/items/{id}/qr.png` returns a PNG QR code encoding `covet://item/<id>` for printing or display. The existing `POST /items/qr-labels/generate` PDF now embeds real `covet://item/` QR images instead of text placeholders, making printed labels machine-readable by any Covet-aware scanner.
+- **NFC tag write/read (Android).** The item detail screen now shows a **Write NFC Tag** button that writes `tangible://item/<id>` to a blank NFC tag using foreground dispatch. Tapping a Tangible NFC tag from anywhere on the device opens the app and navigates directly to the item. The camera scanner also handles `tangible://` QR codes to navigate to an item.
+- **Unified physical labeling.** `GET /api/items/{id}/qr.png` returns a PNG QR code encoding `tangible://item/<id>` for printing or display. The existing `POST /items/qr-labels/generate` PDF now embeds real `tangible://item/` QR images instead of text placeholders, making printed labels machine-readable by any Tangible-aware scanner.
 - **AI-assisted item creation (`POST /items/ai-prefill`).** Accepts `{ barcode }` and queries the registered barcode adapters (Open Library, MusicBrainz, Open Food Facts, Google Books); returns `{ title, subtitle, category_slug, attrs, source }` so the client can pre-fill the add-item form. Returns an empty response gracefully if no match is found.
 - **Three-channel notification preferences.** Each alert kind (maintenance, chores, expiry, etc.) now has three independent channel toggles: **Email**, **Browser**, and **App** — configurable in **Settings → Notifications**. Browser notifications fire once per day when the web app is open and permission is granted. App (Android) notifications respect per-kind on/off switches and each kind's lead time.
 - **Quick-action shortcuts for home equipment.** Items in the HVAC/Furnace, Refrigerator, Water Service Filtration, and Generator categories now show a one-tap action button — "Log filter change" or "Ran generator today" — directly on the item card. Each tap auto-creates (or reuses) a dedicated chore and records a completion, keeping maintenance history current without navigating to the Chores tab.
@@ -266,7 +266,7 @@ All notable changes to **Covet** are documented here. Format follows
 ### Fixed
 
 - **Android: Obtanium still showed two APKs in v0.16.0.** The CI workflow
-  now uploads only the signed release APK (`covet-{version}.apk`) on tagged
+  now uploads only the signed release APK (`tangible-{version}.apk`) on tagged
   releases, so Obtanium offers a single installable update. Debug APKs are
   still built for every commit but only attached to workflow artifacts, not
   to GitHub Releases.
@@ -303,14 +303,14 @@ All notable changes to **Covet** are documented here. Format follows
 
 - **Android: Obtanium shows two APKs.** Removed `applicationIdSuffix =
   ".debug"` from the debug build type. Both debug and release builds now share
-  the app ID `io.github.bradbrownjr.covet`, so Android treats them as the
+  the app ID `io.github.bradbrownjr.tangible`, so Android treats them as the
   same application and Obtanium sees only one installable APK per release.
 
 ## [0.15.1] — 2026-04-30
 
 ### Fixed
 
-- **Android: "Unable to resolve host covet.invalid" after login.** Retrofit
+- **Android: "Unable to resolve host tangible.invalid" after login.** Retrofit
   was built once at app start; if no server URL had been saved yet it used a
   placeholder host. After login the singleton was never rebuilt so every API
   call until the next app restart would fail. A new `BaseUrlInterceptor`
@@ -357,7 +357,7 @@ All notable changes to **Covet** are documented here. Format follows
 - **Test Connection button in Settings (Android).** Tap to verify the
   server URL is reachable; shows inline pass/fail feedback without
   leaving the screen.
-- **`COVET_GOOGLE_BOOKS_API_KEY` config option.** Optional environment
+- **`TANGIBLE_GOOGLE_BOOKS_API_KEY` config option.** Optional environment
   variable to use an authenticated Google Books quota (1000 req/day free
   tier) for barcode lookups. Falls back to unauthenticated if unset.
 
@@ -527,12 +527,12 @@ All notable changes to **Covet** are documented here. Format follows
   `GET /imports/csv/template?item_type=...`.
 - **Debug APK attached to GitHub Releases.** Until a signing keystore
   is configured, the Android workflow now uploads the unsigned debug
-  APK to each release as `covet-<version>-debug.apk`.
+  APK to each release as `tangible-<version>-debug.apk`.
 
 ### Fixed
 
 - **Same-origin POSTs no longer return 403.** The CSRF middleware
-  treated `*` in `COVET_ALLOWED_HOSTS` as a literal hostname and
+  treated `*` in `TANGIBLE_ALLOWED_HOSTS` as a literal hostname and
   rejected requests whose `Origin` host matched the request host.
   Both cases are now allowed.
 - **Web UI no longer renders a blank page under the default CSP.** The
@@ -547,20 +547,20 @@ All notable changes to **Covet** are documented here. Format follows
   `network proxy declared as external, but could not be found`. The
   network is now a Compose-managed bridge by default; instructions
   for switching to an external proxy network are inline in the file.
-- **Default `COVET_ALLOWED_HOSTS` for the Unraid sample is now `*`.**
+- **Default `TANGIBLE_ALLOWED_HOSTS` for the Unraid sample is now `*`.**
   The previous example assumed the user already had a public hostname
   + reverse proxy and would lock out plain LAN access at
   `http://<unraid-ip>:8000/`. The proxy hostname is now opt-in via
-  `COVET_PUBLIC_URL` / `COVET_BEHIND_PROXY` overrides.
+  `TANGIBLE_PUBLIC_URL` / `TANGIBLE_BEHIND_PROXY` overrides.
 
 ### Changed
 
 - **First registered user is auto-promoted to admin.** When the database
   contains zero users, `POST /auth/register` always succeeds and the new
   account is created with `is_admin=true`, regardless of the
-  `COVET_REGISTRATION_ENABLED` setting. After that initial signup the
+  `TANGIBLE_REGISTRATION_ENABLED` setting. After that initial signup the
   normal registration gate applies. This removes the need to set
-  `COVET_ADMIN_USERNAME` / `COVET_ADMIN_PASSWORD` for casual deployments
+  `TANGIBLE_ADMIN_USERNAME` / `TANGIBLE_ADMIN_PASSWORD` for casual deployments
   and matches the standard self-hosted-app pattern.
 
 ## [0.11.0] — 2026-04-29 — Make items richer
@@ -636,10 +636,10 @@ All notable changes to **Covet** are documented here. Format follows
 ### Added
 
 - **OIDC / OAuth2 SSO (server)** — admin can configure one or more OIDC
-  providers via `oidc_providers:` in `covet.yaml`. New endpoints
+  providers via `oidc_providers:` in `tangible.yaml`. New endpoints
   `/auth/oidc/{provider}/login` and `/auth/oidc/{provider}/callback`
   perform the full authorization-code flow via Authlib, then mint a
-  Covet session cookie. First login creates a user (or links to an
+  Tangible session cookie. First login creates a user (or links to an
   existing one by email). Optional `admin_groups` claim mapping promotes
   members of named groups to admin. `/config/public` now lists enabled
   providers so the web sign-in page renders the right buttons.
@@ -683,14 +683,14 @@ v1.0 release will follow after a beta cycle of bug fixes and docs polish.
 ### Server
 
 - FastAPI 0.115 / SQLAlchemy 2 / Alembic with SQLite, PostgreSQL and MySQL
-  drivers selectable via `COVET_DATABASE_URL`.
+  drivers selectable via `TANGIBLE_DATABASE_URL`.
 - Auth: local username + Argon2 password, session cookies, opaque API
   tokens for non-browser clients. OIDC scaffolding present (provider config
   in env, full UI flow lands in 1.0).
 - Collections, items, tags, contacts, loans, photos (multipart, dedupe by
   sha256, on-disk under `DATA_DIR/photos/<sha[0:2]>/<sha>`).
 - Importers: CLZ Movies/Music/Games/Books/Comics, generic CSV with column
-  mapping, Covet JSON backup. Exports: per-type CSV + unified, JSON backup.
+  mapping, Tangible JSON backup. Exports: per-type CSV + unified, JSON backup.
 - CRDT sync skeleton (Automerge document per item, append-only change log,
   snapshot compaction). Cross-language interop with `automerge-kt` and JS
   is verified by the test suite. Mobile push lands in 1.0.
@@ -699,8 +699,8 @@ v1.0 release will follow after a beta cycle of bug fixes and docs polish.
   `/auth/register`), `OriginCsrfMiddleware` for cookie-auth POSTs.
 - Observability: structlog access log, Prometheus `/metrics` with route
   templates, `/healthz` (liveness) + `/readyz` (DB ping).
-- CLI: `covet backup <user> <out>`, `covet restore <user> <in>`,
-  `covet version`, `covet bootstrap-admin`.
+- CLI: `tangible backup <user> <out>`, `tangible restore <user> <in>`,
+  `tangible version`, `tangible bootstrap-admin`.
 
 ### Web
 
@@ -725,7 +725,7 @@ v1.0 release will follow after a beta cycle of bug fixes and docs polish.
 ### Packaging
 
 - Multi-stage `Dockerfile`, multi-arch GHCR image
-  (`ghcr.io/bradbrownjr/covet`) with non-root runtime, configurable
+  (`ghcr.io/bradbrownjr/tangible`) with non-root runtime, configurable
   `PUID`/`PGID`/`UMASK`, tini + gosu entrypoint.
 - Compose examples for standard / Postgres / Unraid layouts.
 - GitHub Actions: lint+tests for server / web, dependency audit

@@ -1,37 +1,37 @@
-# Postgres overlay for Covet.
+# Postgres overlay for Tangible.
 #
 # Usage:
 #   docker compose \
 #     -f docker/docker-compose.standard.yml \
 #     -f docker/docker-compose.postgres.yml up -d
 #
-# This adds a Postgres service and points Covet at it. The SQLite volume is
+# This adds a Postgres service and points Tangible at it. The SQLite volume is
 # still defined by the base file but goes unused; you can remove it from the
 # base file if you want a strictly-Postgres deployment.
 
 services:
-  covet:
+  tangible:
     depends_on:
       db:
         condition: service_healthy
     environment:
-      COVET_DATABASE_URL: postgresql+psycopg://covet:${POSTGRES_PASSWORD:-covet}@db:5432/covet
+      TANGIBLE_DATABASE_URL: postgresql+psycopg://tangible:${POSTGRES_PASSWORD:-tangible}@db:5432/tangible
 
   db:
     image: postgres:16-alpine
-    container_name: covet-db
+    container_name: tangible-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: covet
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-covet}
-      POSTGRES_DB: covet
+      POSTGRES_USER: tangible
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tangible}
+      POSTGRES_DB: tangible
     volumes:
-      - covet-pg:/var/lib/postgresql/data
+      - tangible-pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U covet -d covet"]
+      test: ["CMD-SHELL", "pg_isready -U tangible -d tangible"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  covet-pg:
+  tangible-pg:

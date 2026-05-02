@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 
-from covet.importers import (
+from tangible.importers import (
     CLZBookImporter,
     CLZComicImporter,
     CLZGameImporter,

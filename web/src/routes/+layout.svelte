@@ -14,8 +14,8 @@
     // Initialise i18n synchronously so strings are ready before first render.
     initI18n();
 
-    const SEEN_KEY = 'covet:whatsnew-seen-version';
-    const BROWSER_NOTIF_KEY = 'covet:browser-notif-fired';
+    const SEEN_KEY = 'tangible:whatsnew-seen-version';
+    const BROWSER_NOTIF_KEY = 'tangible:browser-notif-fired';
 
     interface NotificationPref { kind: string; browser_enabled: boolean; lead_days: number; }
     interface DueAlert { id: string; title: string; details: string | null; due_at: string; kind: string; severity: string; }
@@ -121,7 +121,7 @@
 </script>
 
 <header>
-    <a href="/" class="brand">Covet</a>
+    <a href="/" class="brand">Tangible</a>
     {#if $publicConfig?.version}<span class="version muted">v{$publicConfig.version}</span>{/if}
     <button
         class="icon-btn whats-new"

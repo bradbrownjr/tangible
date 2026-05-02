@@ -1,5 +1,5 @@
 /**
- * Minimal typed API client for the Covet server.
+ * Minimal typed API client for the Tangible server.
  *
  * Pages call `api.get('/items?...')` or `api.post('/auth/login', {...})`.
  * Errors are normalised to `ApiError` with the original status + body.

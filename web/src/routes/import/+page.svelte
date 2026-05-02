@@ -119,7 +119,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'covet-backup.json';
+        a.download = 'tangible-backup.json';
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -132,7 +132,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `covet-${csvLeaf.replace('.', '-')}-template.csv`;
+        a.download = `tangible-${csvLeaf.replace('.', '-')}-template.csv`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -148,7 +148,7 @@
         const safe = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const a = document.createElement('a');
         a.href = url;
-        a.download = `covet-${safe || 'collection'}-roundtrip.csv`;
+        a.download = `tangible-${safe || 'collection'}-roundtrip.csv`;
         a.click();
         URL.revokeObjectURL(url);
     }

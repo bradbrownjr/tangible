@@ -36,8 +36,8 @@ def test_register_disabled(client, monkeypatch) -> None:
     assert r.status_code == 201
     assert r.json()["is_admin"] is True
 
-    # With users present, COVET_REGISTRATION_ENABLED gates additional signups.
-    from covet.config import get_settings
+    # With users present, TANGIBLE_REGISTRATION_ENABLED gates additional signups.
+    from tangible.config import get_settings
 
     settings = get_settings()
     object.__setattr__(settings, "registration_enabled", False)
@@ -52,7 +52,7 @@ def test_first_user_is_admin(client) -> None:
     assert r.json()["is_admin"] is True
 
     # Allow a second registration explicitly; that user must NOT be admin.
-    from covet.config import get_settings
+    from tangible.config import get_settings
 
     settings = get_settings()
     object.__setattr__(settings, "registration_enabled", True)

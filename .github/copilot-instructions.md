@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions for Covet
+# GitHub Copilot Instructions for Tangible
 
 The canonical agent guide for this repo lives at [AGENTS.md](../AGENTS.md).
 Read it on every session — it captures:

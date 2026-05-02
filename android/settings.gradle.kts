@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Covet"
+rootProject.name = "Tangible"
 include(":app")

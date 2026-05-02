@@ -1,6 +1,6 @@
-# Covet for Android — User Guide
+# Tangible for Android — User Guide
 
-Covet is a personal collection tracker. The Android app gives you offline
+Tangible is a personal collection tracker. The Android app gives you offline
 access to your collections and lets you add items by scanning barcodes,
 looking up ISBNs, or typing a title directly.
 
@@ -10,12 +10,12 @@ looking up ISBNs, or typing a title directly.
 
 ## First launch — connecting to your server
 
-1. Open Covet. You will see a **Login** screen.
-2. Enter your **Server URL** (e.g. `https://covet.example.com`).
+1. Open Tangible. You will see a **Login** screen.
+2. Enter your **Server URL** (e.g. `https://tangible.example.com`).
 3. Enter your **username** and **password**, then tap **Sign in**.
 
 The app validates the connection and saves the URL for future sessions. If
-you see a "covet.invalid" error, the URL field may be empty — go back and
+you see a "tangible.invalid" error, the URL field may be empty — go back and
 re-enter it.
 
 ---
@@ -111,7 +111,7 @@ the server, which searches several providers for a match and returns a list
 of candidates. Choose one to pre-fill the add-item dialog.
 
 If you already have a product photo or screenshot, tap the **image icon** in
-the same toolbar. Covet scans the saved image for a barcode and runs the same
+the same toolbar. Tangible scans the saved image for a barcode and runs the same
 candidate lookup flow.
 
 ---
@@ -138,7 +138,7 @@ The app checks for alerts within your configured lead time once per day in the b
 
 Access Settings from the hamburger menu on the Collections screen.
 
-- **Server URL** — the address of your Covet server.
+- **Server URL** — the address of your Tangible server.
 - **Test connection** — pings the server and reports the result.
 - **Notifications** — per-kind toggle for **App** push notifications. Enable or disable each alert kind (maintenance, chores, expiry, etc.) independently. The toggle here controls whether the daily background job posts a notification for that kind; web browser and email channels are managed in the web settings.
 - **Sign out** — clears your session.
@@ -150,7 +150,7 @@ Access Settings from the hamburger menu on the Collections screen.
 The About screen (hamburger menu → About) shows:
 
 - The installed app version.
-- A link to the source repository at [github.com/bradbrownjr/covet](https://github.com/bradbrownjr/covet).
+- A link to the source repository at [github.com/bradbrownjr/tangible](https://github.com/bradbrownjr/tangible).
 - A **What's new** button that loads the full changelog from your server.
 
 ---
@@ -175,4 +175,4 @@ online.
 
 If you deny camera or media access you can still use the app; scanning and
 photo upload will not be available until you grant the permission in
-**Android Settings → Apps → Covet → Permissions**.
+**Android Settings → Apps → Tangible → Permissions**.

@@ -826,7 +826,7 @@
     }
 
     onMount(() => {
-        viewMode = (localStorage.getItem('covet:viewMode') ?? 'list') as 'list' | 'grid';
+        viewMode = (localStorage.getItem('tangible:viewMode') ?? 'list') as 'list' | 'grid';
         const onGlobalKeydown = (event: KeyboardEvent) => {
             if (event.key !== '/') return;
             if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -861,7 +861,7 @@
     }
 
     $effect(() => {
-        localStorage.setItem('covet:viewMode', viewMode);
+        localStorage.setItem('tangible:viewMode', viewMode);
     });
 </script>
 

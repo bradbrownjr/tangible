@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "io.github.bradbrownjr.covet"
+    namespace = "io.github.bradbrownjr.tangible"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.bradbrownjr.covet"
+        applicationId = "io.github.bradbrownjr.tangible"
         minSdk = 26 // Android 8.0
         targetSdk = 35
         versionCode = 24

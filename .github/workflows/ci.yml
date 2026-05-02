@@ -45,7 +45,7 @@ jobs:
         continue-on-error: true # tighten once strict baseline is clean
 
       - name: Pytest
-        run: uv run pytest -q --cov=covet --cov-report=term-missing
+        run: uv run pytest -q --cov=tangible --cov-report=term-missing
 
   audit:
     name: Dependency audit
@@ -121,22 +121,22 @@ jobs:
           file: Dockerfile
           push: false
           load: true
-          tags: covet:ci
+          tags: tangible:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Run image and probe /healthz
         run: |
-          docker run -d --name covet-ci -p 8000:8000 \
-            -e COVET_ADMIN_USERNAME=admin \
-            -e COVET_ADMIN_PASSWORD=changeme-dev-only \
-            covet:ci
+          docker run -d --name tangible-ci -p 8000:8000 \
+            -e TANGIBLE_ADMIN_USERNAME=admin \
+            -e TANGIBLE_ADMIN_PASSWORD=changeme-dev-only \
+            tangible:ci
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8000/healthz; then
               echo "OK"; exit 0
             fi
             sleep 2
           done
-          echo "Container did not become healthy"; docker logs covet-ci; exit 1
+          echo "Container did not become healthy"; docker logs tangible-ci; exit 1
       - name: Stop container
         if: always()
-        run: docker rm -f covet-ci || true
+        run: docker rm -f tangible-ci || true

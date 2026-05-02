@@ -1,12 +1,12 @@
-package io.github.bradbrownjr.covet.data.local
+package io.github.bradbrownjr.tangible.data.local
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import io.github.bradbrownjr.covet.data.remote.CollectionDto
-import io.github.bradbrownjr.covet.data.remote.ItemDto
+import io.github.bradbrownjr.tangible.data.remote.CollectionDto
+import io.github.bradbrownjr.tangible.data.remote.ItemDto
 
 class MappersTest {
 

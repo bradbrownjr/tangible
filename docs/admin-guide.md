@@ -1,6 +1,6 @@
 # Admin guide
 
-Operating Covet for one or more users: first-run setup, accounts,
+Operating Tangible for one or more users: first-run setup, accounts,
 SSO, reverse proxies, backups, upgrades, observability, and routine
 maintenance.
 
@@ -25,7 +25,7 @@ maintenance.
   - [Caddy](#caddy)
   - [Traefik](#traefik)
   - [nginx](#nginx)
-  - [Required Covet env vars (all proxies)](#required-covet-env-vars-all-proxies)
+  - [Required Tangible env vars (all proxies)](#required-tangible-env-vars-all-proxies)
 - [Backups](#backups)
   - [Logical backup](#logical-per-user-backup)
   - [Volume snapshots](#volume-snapshots-recommended)
@@ -48,25 +48,25 @@ maintenance.
 The first time the container starts:
 
 1. The schema is created and Alembic migrations run automatically
-   (unless `COVET_DB_AUTO_MIGRATE=false`).
-2. If `COVET_ADMIN_USERNAME` **and** `COVET_ADMIN_PASSWORD` are set in
+   (unless `TANGIBLE_DB_AUTO_MIGRATE=false`).
+2. If `TANGIBLE_ADMIN_USERNAME` **and** `TANGIBLE_ADMIN_PASSWORD` are set in
    the environment, that admin account is created automatically. Pair
-   with `COVET_ADMIN_PASSWORD_FILE` for Docker secrets / Unraid file
+   with `TANGIBLE_ADMIN_PASSWORD_FILE` for Docker secrets / Unraid file
    mounts.
 3. Otherwise, browse to the URL and click **Register**. The very first
    user to sign up is automatically promoted to admin — even when
-   `COVET_REGISTRATION_ENABLED=false`. After that initial signup, the
-   normal `COVET_REGISTRATION_ENABLED` rule applies and further public
+   `TANGIBLE_REGISTRATION_ENABLED=false`. After that initial signup, the
+   normal `TANGIBLE_REGISTRATION_ENABLED` rule applies and further public
    registration is rejected with HTTP 403 unless you explicitly enable
    it.
 
 Once an admin exists, self-registration is **off** by default. Set
-`COVET_REGISTRATION_ENABLED=true` to allow open signup, or invite users
+`TANGIBLE_REGISTRATION_ENABLED=true` to allow open signup, or invite users
 individually (see below).
 
 ## Users and roles
 
-Covet has two layers of authorization:
+Tangible has two layers of authorization:
 
 - **Global role** — `admin` or `user`. Admins can manage users,
   invitations, and audit logs; ordinary users only see their own
@@ -93,7 +93,7 @@ page.
 There is no email-based reset flow yet. To reset a forgotten password:
 
 ```bash
-docker exec -it covet covet bootstrap-admin   # only re-creates if missing
+docker exec -it tangible tangible bootstrap-admin   # only re-creates if missing
 ```
 
 For other users, use the admin UI's **Reset password** action, which
@@ -107,100 +107,100 @@ the deleting admin and removes their sessions and tokens.
 
 ## SSO / OIDC
 
-Covet speaks OpenID Connect via Authlib. Multiple providers can be
+Tangible speaks OpenID Connect via Authlib. Multiple providers can be
 enabled simultaneously (e.g. Authentik *and* Google). Set
-`COVET_OIDC_ENABLED=true` to activate the system, then configure one
+`TANGIBLE_OIDC_ENABLED=true` to activate the system, then configure one
 or more providers as shown below.
 
 Common env vars that apply to all providers:
 
 | Variable | Default | Notes |
 |---|---|---|
-| `COVET_OIDC_ENABLED` | `false` | Master switch |
-| `COVET_OIDC_AUTO_CREATE_USERS` | `true` | Create local account on first login |
-| `COVET_OIDC_DEFAULT_ROLE` | `user` | Role for auto-created users (`user` or `admin`) |
+| `TANGIBLE_OIDC_ENABLED` | `false` | Master switch |
+| `TANGIBLE_OIDC_AUTO_CREATE_USERS` | `true` | Create local account on first login |
+| `TANGIBLE_OIDC_DEFAULT_ROLE` | `user` | Role for auto-created users (`user` or `admin`) |
 
 ### Authentik
 
 Create an OAuth2/OIDC provider in Authentik. Set the redirect URI to
-`https://covet.example.com/auth/oidc/authentik/callback`.
+`https://tangible.example.com/auth/oidc/authentik/callback`.
 
 ```env
-COVET_OIDC_AUTHENTIK_DISPLAY_NAME=Authentik
-COVET_OIDC_AUTHENTIK_ISSUER=https://auth.example.com/application/o/covet/
-COVET_OIDC_AUTHENTIK_CLIENT_ID=covet
-COVET_OIDC_AUTHENTIK_CLIENT_SECRET_FILE=/run/secrets/authentik_secret
-COVET_OIDC_AUTHENTIK_ADMIN_GROUPS=covet-admins
+TANGIBLE_OIDC_AUTHENTIK_DISPLAY_NAME=Authentik
+TANGIBLE_OIDC_AUTHENTIK_ISSUER=https://auth.example.com/application/o/tangible/
+TANGIBLE_OIDC_AUTHENTIK_CLIENT_ID=tangible
+TANGIBLE_OIDC_AUTHENTIK_CLIENT_SECRET_FILE=/run/secrets/authentik_secret
+TANGIBLE_OIDC_AUTHENTIK_ADMIN_GROUPS=tangible-admins
 ```
 
 `ADMIN_GROUPS` (comma-separated group claims) auto-promotes anyone in
 those groups to global admin. If not set, all OIDC users get
-`COVET_OIDC_DEFAULT_ROLE`.
+`TANGIBLE_OIDC_DEFAULT_ROLE`.
 
 ### Keycloak
 
 Create a client in your Keycloak realm. Set **Access Type** to
 `confidential` and add the redirect URI
-`https://covet.example.com/auth/oidc/keycloak/callback`.
+`https://tangible.example.com/auth/oidc/keycloak/callback`.
 
 ```env
-COVET_OIDC_KEYCLOAK_DISPLAY_NAME=Keycloak
-COVET_OIDC_KEYCLOAK_ISSUER=https://keycloak.example.com/realms/myrealm
-COVET_OIDC_KEYCLOAK_CLIENT_ID=covet
-COVET_OIDC_KEYCLOAK_CLIENT_SECRET_FILE=/run/secrets/keycloak_secret
-COVET_OIDC_KEYCLOAK_ADMIN_GROUPS=covet-admins
+TANGIBLE_OIDC_KEYCLOAK_DISPLAY_NAME=Keycloak
+TANGIBLE_OIDC_KEYCLOAK_ISSUER=https://keycloak.example.com/realms/myrealm
+TANGIBLE_OIDC_KEYCLOAK_CLIENT_ID=tangible
+TANGIBLE_OIDC_KEYCLOAK_CLIENT_SECRET_FILE=/run/secrets/keycloak_secret
+TANGIBLE_OIDC_KEYCLOAK_ADMIN_GROUPS=tangible-admins
 ```
 
 Keycloak issues group claims as `/group-name` paths by default. The
-admin-group check is a substring match, so `covet-admins` matches
-`/covet-admins`.
+admin-group check is a substring match, so `tangible-admins` matches
+`/tangible-admins`.
 
 ### Authelia
 
 Authelia acts as an OIDC provider from version 4.38+. Create a client
 entry in `configuration.yml` and register the redirect URI
-`https://covet.example.com/auth/oidc/authelia/callback`.
+`https://tangible.example.com/auth/oidc/authelia/callback`.
 
 ```yaml
 # authelia configuration.yml excerpt
 identity_providers:
   oidc:
     clients:
-      - id: covet
-        description: Covet
+      - id: tangible
+        description: Tangible
         secret: '$pbkdf2-sha512$...'   # bcrypt or pbkdf2 hash of the secret
         redirect_uris:
-          - https://covet.example.com/auth/oidc/authelia/callback
+          - https://tangible.example.com/auth/oidc/authelia/callback
         scopes: [openid, profile, email, groups]
         grant_types: [authorization_code]
 ```
 
 ```env
-COVET_OIDC_AUTHELIA_DISPLAY_NAME=Authelia
-COVET_OIDC_AUTHELIA_ISSUER=https://authelia.example.com
-COVET_OIDC_AUTHELIA_CLIENT_ID=covet
-COVET_OIDC_AUTHELIA_CLIENT_SECRET_FILE=/run/secrets/authelia_secret
-COVET_OIDC_AUTHELIA_ADMIN_GROUPS=covet-admins
+TANGIBLE_OIDC_AUTHELIA_DISPLAY_NAME=Authelia
+TANGIBLE_OIDC_AUTHELIA_ISSUER=https://authelia.example.com
+TANGIBLE_OIDC_AUTHELIA_CLIENT_ID=tangible
+TANGIBLE_OIDC_AUTHELIA_CLIENT_SECRET_FILE=/run/secrets/authelia_secret
+TANGIBLE_OIDC_AUTHELIA_ADMIN_GROUPS=tangible-admins
 ```
 
 ### Google / GitHub (external OAuth)
 
 For households that use Google or GitHub accounts, set the redirect URI
 in the provider's developer console to
-`https://covet.example.com/auth/oidc/<provider>/callback`.
+`https://tangible.example.com/auth/oidc/<provider>/callback`.
 
 ```env
 # Google
-COVET_OIDC_GOOGLE_DISPLAY_NAME=Google
-COVET_OIDC_GOOGLE_ISSUER=https://accounts.google.com
-COVET_OIDC_GOOGLE_CLIENT_ID=123456789.apps.googleusercontent.com
-COVET_OIDC_GOOGLE_CLIENT_SECRET_FILE=/run/secrets/google_secret
+TANGIBLE_OIDC_GOOGLE_DISPLAY_NAME=Google
+TANGIBLE_OIDC_GOOGLE_ISSUER=https://accounts.google.com
+TANGIBLE_OIDC_GOOGLE_CLIENT_ID=123456789.apps.googleusercontent.com
+TANGIBLE_OIDC_GOOGLE_CLIENT_SECRET_FILE=/run/secrets/google_secret
 
 # GitHub
-COVET_OIDC_GITHUB_DISPLAY_NAME=GitHub
-COVET_OIDC_GITHUB_ISSUER=https://token.actions.githubusercontent.com
-COVET_OIDC_GITHUB_CLIENT_ID=Ov23li...
-COVET_OIDC_GITHUB_CLIENT_SECRET_FILE=/run/secrets/github_secret
+TANGIBLE_OIDC_GITHUB_DISPLAY_NAME=GitHub
+TANGIBLE_OIDC_GITHUB_ISSUER=https://token.actions.githubusercontent.com
+TANGIBLE_OIDC_GITHUB_CLIENT_ID=Ov23li...
+TANGIBLE_OIDC_GITHUB_CLIENT_SECRET_FILE=/run/secrets/github_secret
 ```
 
 GitHub does not issue an `email` scope by default — enable it in the
@@ -214,26 +214,26 @@ for every per-provider setting.
 
 ## Reverse proxy setup
 
-Most self-hosters already run a reverse proxy. Covet sits behind it
+Most self-hosters already run a reverse proxy. Tangible sits behind it
 on port 8000. All proxies must:
 
 - Forward the real client IP via `X-Forwarded-For`.
 - Pass `Host`, `X-Forwarded-Proto`, and `X-Real-IP` headers.
-- Terminate TLS (Covet does not manage certificates).
+- Terminate TLS (Tangible does not manage certificates).
 
-### Required Covet env vars (all proxies)
+### Required Tangible env vars (all proxies)
 
 Set these regardless of which proxy you use:
 
 ```env
-COVET_PUBLIC_URL=https://covet.example.com
-COVET_BEHIND_PROXY=true
-COVET_ALLOWED_HOSTS=covet.example.com
+TANGIBLE_PUBLIC_URL=https://tangible.example.com
+TANGIBLE_BEHIND_PROXY=true
+TANGIBLE_ALLOWED_HOSTS=tangible.example.com
 ```
 
-Without `COVET_BEHIND_PROXY=true`, Covet ignores forwarded-IP headers
+Without `TANGIBLE_BEHIND_PROXY=true`, Tangible ignores forwarded-IP headers
 and will rate-limit your proxy's IP instead of the real clients'.
-Without `COVET_ALLOWED_HOSTS`, the host-header allowlist will reject
+Without `TANGIBLE_ALLOWED_HOSTS`, the host-header allowlist will reject
 requests for your domain with HTTP 400.
 
 ### Caddy
@@ -241,22 +241,22 @@ requests for your domain with HTTP 400.
 Caddy obtains and renews TLS automatically via Let's Encrypt or ZeroSSL.
 
 ```caddy
-covet.example.com {
+tangible.example.com {
     encode zstd gzip
-    reverse_proxy covet:8000
+    reverse_proxy tangible:8000
 }
 ```
 
-Place this in your `Caddyfile` (global or per-site). Covet and Caddy
+Place this in your `Caddyfile` (global or per-site). Tangible and Caddy
 must share a Docker network. A full reference snippet is also included at
 [`docker/Caddyfile.example`](../docker/Caddyfile.example).
 
 If you need the WebSocket upgrade header for future SSE support:
 
 ```caddy
-covet.example.com {
+tangible.example.com {
     encode zstd gzip
-    reverse_proxy covet:8000 {
+    reverse_proxy tangible:8000 {
         header_up Connection {>Connection}
         header_up Upgrade {>Upgrade}
     }
@@ -265,27 +265,27 @@ covet.example.com {
 
 ### Traefik
 
-Add Traefik labels to the Covet service in your Compose file. This
+Add Traefik labels to the Tangible service in your Compose file. This
 assumes a Traefik instance already running with a `proxy` external
 network and an `https` entrypoint:
 
 ```yaml
 services:
-  covet:
-    image: ghcr.io/bradbrownjr/covet:0
+  tangible:
+    image: ghcr.io/bradbrownjr/tangible:0
     networks:
       - proxy
       - default
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.covet.rule=Host(`covet.example.com`)"
-      - "traefik.http.routers.covet.entrypoints=https"
-      - "traefik.http.routers.covet.tls.certresolver=letsencrypt"
-      - "traefik.http.services.covet.loadbalancer.server.port=8000"
+      - "traefik.http.routers.tangible.rule=Host(`tangible.example.com`)"
+      - "traefik.http.routers.tangible.entrypoints=https"
+      - "traefik.http.routers.tangible.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tangible.loadbalancer.server.port=8000"
     environment:
-      COVET_PUBLIC_URL: https://covet.example.com
-      COVET_BEHIND_PROXY: "true"
-      COVET_ALLOWED_HOSTS: covet.example.com
+      TANGIBLE_PUBLIC_URL: https://tangible.example.com
+      TANGIBLE_BEHIND_PROXY: "true"
+      TANGIBLE_ALLOWED_HOSTS: tangible.example.com
 
 networks:
   proxy:
@@ -293,9 +293,9 @@ networks:
 ```
 
 If you use Traefik's `forwardAuth` middleware (e.g. pointed at
-Authentik or Authelia), Covet's own OIDC auth still applies — the two
-layers are independent. Using the Traefik forwardAuth + `COVET_OIDC_*`
-together lets Traefik enforce network-level auth while Covet manages
+Authentik or Authelia), Tangible's own OIDC auth still applies — the two
+layers are independent. Using the Traefik forwardAuth + `TANGIBLE_OIDC_*`
+together lets Traefik enforce network-level auth while Tangible manages
 collection ACL and sessions inside.
 
 ### nginx
@@ -303,15 +303,15 @@ collection ACL and sessions inside.
 ```nginx
 server {
     listen 443 ssl;
-    server_name covet.example.com;
+    server_name tangible.example.com;
 
-    ssl_certificate     /etc/letsencrypt/live/covet.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/covet.example.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/tangible.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tangible.example.com/privkey.pem;
 
-    client_max_body_size 50M;   # match COVET_DOCUMENTS_MAX_BYTES
+    client_max_body_size 50M;   # match TANGIBLE_DOCUMENTS_MAX_BYTES
 
     location / {
-        proxy_pass         http://covet:8000;
+        proxy_pass         http://tangible:8000;
         proxy_http_version 1.1;
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
@@ -323,7 +323,7 @@ server {
 
 server {
     listen 80;
-    server_name covet.example.com;
+    server_name tangible.example.com;
     return 301 https://$host$request_uri;
 }
 ```
@@ -344,13 +344,13 @@ point in time.
 Quick, portable, no photos/documents:
 
 ```bash
-docker exec covet covet backup alice - > alice-2026-04-29.json
+docker exec tangible tangible backup alice - > alice-2026-04-29.json
 ```
 
 Restore into the same or a different deployment:
 
 ```bash
-docker exec -i covet covet restore alice - < alice-2026-04-29.json
+docker exec -i tangible tangible restore alice - < alice-2026-04-29.json
 ```
 
 ### Volume snapshots (recommended)
@@ -360,13 +360,13 @@ volumes:
 
 ```bash
 # Stop the container so SQLite is consistent (skip if using Postgres).
-docker compose stop covet
+docker compose stop tangible
 
-tar czf covet-data-$(date +%F).tgz \
-    -C /var/lib/docker/volumes/covet_data/_data . \
-    -C /var/lib/docker/volumes/covet_config/_data .
+tar czf tangible-data-$(date +%F).tgz \
+    -C /var/lib/docker/volumes/tangible_data/_data . \
+    -C /var/lib/docker/volumes/tangible_config/_data .
 
-docker compose start covet
+docker compose start tangible
 ```
 
 Or use [`restic`](https://restic.net/) with hooks. With Postgres,
@@ -377,11 +377,11 @@ still holds photos and documents).
 
 | Path | Why |
 |---|---|
-| `/data/covet.db` (+ `-wal`, `-shm`) | SQLite database |
+| `/data/tangible.db` (+ `-wal`, `-shm`) | SQLite database |
 | `/data/photos/` | Item photos (content-addressed) |
 | `/data/documents/` | Item attachments (content-addressed) |
 | `/config/secret.key` | Session & cookie signing key. Lose it → all sessions invalid; logged-in users sign back in. |
-| `/config/covet.yaml` / `covet.env` | Optional declarative config |
+| `/config/tangible.yaml` / `tangible.env` | Optional declarative config |
 
 ## Upgrading
 
@@ -391,7 +391,7 @@ docker compose up -d
 ```
 
 The container runs `alembic upgrade head` on start unless
-`COVET_DB_AUTO_MIGRATE=false`. Always:
+`TANGIBLE_DB_AUTO_MIGRATE=false`. Always:
 
 1. Take a backup first (see above).
 2. Read the relevant section of [`CHANGELOG.md`](../CHANGELOG.md).
@@ -442,8 +442,8 @@ To pin a specific version:
 
 ```yaml
 services:
-  covet:
-    image: ghcr.io/bradbrownjr/covet:0.11.0
+  tangible:
+    image: ghcr.io/bradbrownjr/tangible:0.11.0
 ```
 
 ### Rollback
@@ -452,7 +452,7 @@ If a migration goes badly:
 
 1. Restore the volume snapshot taken before upgrade.
 2. Re-deploy the previous image tag.
-3. File a bug with the offending version + `docker logs covet` output.
+3. File a bug with the offending version + `docker logs tangible` output.
 
 ## Observability
 
@@ -461,14 +461,14 @@ If a migration goes badly:
 | `GET /healthz` | Liveness/readiness probe. Used by the container HEALTHCHECK. |
 | `GET /readyz` | Same, with a database round-trip. |
 | `GET /version` | `{"version": "X.Y.Z", "git_sha": "..."}`. |
-| `GET /metrics` | Prometheus metrics: `covet_http_requests_total`, latency histograms, sync queue depth. |
+| `GET /metrics` | Prometheus metrics: `tangible_http_requests_total`, latency histograms, sync queue depth. |
 
 Logs use [structlog](https://www.structlog.org). For machine-parseable
 output:
 
 ```env
-COVET_LOG_FORMAT=json
-COVET_LOG_LEVEL=INFO
+TANGIBLE_LOG_FORMAT=json
+TANGIBLE_LOG_LEVEL=INFO
 ```
 
 The access-log middleware emits one structured line per request with
@@ -487,8 +487,8 @@ created_at < ...` if you need to.
 
 | Variable | Default | Notes |
 |---|---|---|
-| `COVET_RATE_LIMIT_LOGIN` | `5/minute` | Per-IP, login + register |
-| `COVET_RATE_LIMIT_API` | `120/minute` | Per-token (or per-IP for unauth) |
+| `TANGIBLE_RATE_LIMIT_LOGIN` | `5/minute` | Per-IP, login + register |
+| `TANGIBLE_RATE_LIMIT_API` | `120/minute` | Per-token (or per-IP for unauth) |
 
 Rate-limit hits return `429 Too Many Requests` with a
 `Retry-After` header.
@@ -499,10 +499,10 @@ Reject huge uploads early to protect the disk:
 
 | Variable | Default |
 |---|---|
-| `COVET_PHOTOS_MAX_BYTES` | `26214400` (25 MiB) |
-| `COVET_DOCUMENTS_MAX_BYTES` | `52428800` (50 MiB) |
-| `COVET_PHOTOS_DIR` | `${COVET_DATA_DIR}/photos` |
-| `COVET_DOCUMENTS_DIR` | `${COVET_DATA_DIR}/documents` |
+| `TANGIBLE_PHOTOS_MAX_BYTES` | `26214400` (25 MiB) |
+| `TANGIBLE_DOCUMENTS_MAX_BYTES` | `52428800` (50 MiB) |
+| `TANGIBLE_PHOTOS_DIR` | `${TANGIBLE_DATA_DIR}/photos` |
+| `TANGIBLE_DOCUMENTS_DIR` | `${TANGIBLE_DATA_DIR}/documents` |
 
 Both stores are *content-addressed*: identical bytes uploaded twice
 take one slot on disk. Deleting the last reference garbage-collects
@@ -519,7 +519,7 @@ installed in the runtime environment.
 After bulk imports / large deletes:
 
 ```bash
-docker exec covet sqlite3 /data/covet.db "VACUUM;"
+docker exec tangible sqlite3 /data/tangible.db "VACUUM;"
 ```
 
 ### Rotate the session key
@@ -530,23 +530,23 @@ API tokens continue to work.
 ### Force re-migration
 
 ```bash
-docker exec covet covet migrate
+docker exec tangible tangible migrate
 ```
 
 ## Troubleshooting
 
 | Symptom | Likely cause / fix |
 |---|---|
-| Container restarts in a loop | `docker logs covet` — usually a bad `COVET_*` value or migration failure. |
-| 400 Bad Request on every request | `COVET_ALLOWED_HOSTS` doesn't include the host you're hitting. Loopback (`localhost`, `127.0.0.1`, `::1`) is always allowed. |
-| OIDC callback returns "invalid state" | Cookies blocked by reverse-proxy stripping `Set-Cookie`, or `COVET_FORCE_HTTPS` mismatch. |
+| Container restarts in a loop | `docker logs tangible` — usually a bad `TANGIBLE_*` value or migration failure. |
+| 400 Bad Request on every request | `TANGIBLE_ALLOWED_HOSTS` doesn't include the host you're hitting. Loopback (`localhost`, `127.0.0.1`, `::1`) is always allowed. |
+| OIDC callback returns "invalid state" | Cookies blocked by reverse-proxy stripping `Set-Cookie`, or `TANGIBLE_FORCE_HTTPS` mismatch. |
 | `Permission denied` writing `/data` | `PUID`/`PGID` don't match the host owner of the volume. Adjust env vars or `chown` the volume. |
-| `429` storms during import | Bulk operations should use the CLI, not the API. Or raise `COVET_RATE_LIMIT_API`. |
-| OIDC button missing | Provider env vars not set or `COVET_OIDC_ENABLED=false`. Check `docker exec covet env | grep OIDC`. |
-| Sync conflicts on mobile | Open the item; Covet shows both versions and lets you pick. CRDT keeps history forever in `automerge_changes`. |
+| `429` storms during import | Bulk operations should use the CLI, not the API. Or raise `TANGIBLE_RATE_LIMIT_API`. |
+| OIDC button missing | Provider env vars not set or `TANGIBLE_OIDC_ENABLED=false`. Check `docker exec tangible env | grep OIDC`. |
+| Sync conflicts on mobile | Open the item; Tangible shows both versions and lets you pick. CRDT keeps history forever in `automerge_changes`. |
 
 ## Getting help
 
-- File issues at <https://github.com/bradbrownjr/covet/issues>.
-- Include `docker exec covet covet version`, the relevant section of
-  `docker logs covet`, and your sanitized `covet.env`.
+- File issues at <https://github.com/bradbrownjr/tangible/issues>.
+- Include `docker exec tangible tangible version`, the relevant section of
+  `docker logs tangible`, and your sanitized `tangible.env`.

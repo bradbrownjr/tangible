@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Covet brand mark — flat / Material style.
+  Tangible brand mark — flat / Material style.
   Open treasure chest in two solid slate tones with a single brass
   band, plus a round-brilliant gem (favicon construction, scaled 13×)
   floating above. No gradients, no specular highlights, no double
@@ -12,8 +12,8 @@
     Chest lid  y 460 → 620
     Chest body y 620 → 920
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Covet">
-    <title>Covet</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Tangible">
+    <title>Tangible</title>
 
     <!-- Tile background -->
     <rect width="1024" height="1024" rx="192" fill="#0f172a"/>

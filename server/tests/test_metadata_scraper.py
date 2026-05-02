@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from covet.services import metadata as md
+from tangible.services import metadata as md
 
 
 def _make_client(handler):
@@ -281,9 +281,9 @@ def test_discover_plugins_registers_via_entry_points(monkeypatch) -> None:
             return self._cls
 
     def _mock_eps(*, group):
-        if group == "covet.scraper_adapter":
+        if group == "tangible.scraper_adapter":
             return [_FakeEP("fake-url", _FakeUrlAdapter)]
-        if group == "covet.barcode_adapter":
+        if group == "tangible.barcode_adapter":
             return [_FakeEP("fake-barcode", _FakeBarcodeAdapter)]
         return []
 
@@ -312,7 +312,7 @@ def test_discover_plugins_skips_broken_entry_point(monkeypatch) -> None:
 
     monkeypatch.setattr(
         importlib.metadata, "entry_points",
-        lambda *, group: [_BrokenEP()] if group == "covet.scraper_adapter" else [],
+        lambda *, group: [_BrokenEP()] if group == "tangible.scraper_adapter" else [],
     )
 
     orig = md._ADAPTERS[:]
