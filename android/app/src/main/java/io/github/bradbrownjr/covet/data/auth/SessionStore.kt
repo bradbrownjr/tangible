@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -51,6 +52,9 @@ class SessionStore @Inject constructor(@ApplicationContext private val ctx: Cont
     suspend fun saveTheme(mode: String) {
         ctx.authStore.edit { p -> p[KEY_THEME] = mode }
     }
+
+    /** Returns true when the user has a saved bearer token (i.e. is logged in). */
+    suspend fun isLoggedIn(): Boolean = token.first() != null
 }
 
 internal fun String.normalizedBaseUrl(): String {

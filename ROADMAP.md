@@ -333,7 +333,9 @@ history, and proactive notifications across every asset.
   History is paginated; exportable to CSV.
 - **Push & email notifications** — ✅ opt-in email digests at configurable lead
   times per kind. Settings UI in web and managed via `/notifications` API.
-  Android push (FCM) remains planned.
+  Android daily alert poll: WorkManager fires once a day, fetches overdue and
+  due-within-7-days alerts, and posts a grouped local notification. No Firebase
+  or APK recompilation required — works with any self-hosted server.
 - **Low-stock alerts** — ✅ when a consumable item's quantity drops below
   its minimum, surface it in the alerts feed. `minimum_quantity` field
   added to Item model.

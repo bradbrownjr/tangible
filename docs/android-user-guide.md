@@ -125,6 +125,13 @@ Access **Maintenance** from the hamburger menu on the Collections screen. It sho
 - **Overdue** alerts are highlighted in red with the number of days past due.
 - Tap **Refresh** to re-fetch alerts from the server.
 
+### Daily alert notifications
+
+The app checks for overdue and due-within-7-days alerts once per day in the background (when the device has network). If any alerts are found, a notification appears in the system tray summarising how many are overdue and how many are due soon. Tapping the notification opens the Maintenance screen.
+
+- **Android 13+:** The app asks for notification permission on first launch. Without it, daily notifications are silently suppressed but the Maintenance screen still works.
+- **No setup required by the server admin** — this uses Android's built-in alarm system, not Firebase.
+
 ---
 
 ## Settings

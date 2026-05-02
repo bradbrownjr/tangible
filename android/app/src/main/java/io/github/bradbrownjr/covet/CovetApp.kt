@@ -6,6 +6,7 @@ import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import dagger.hilt.android.HiltAndroidApp
+import io.github.bradbrownjr.covet.data.sync.MaintenanceAlertWorker
 import io.github.bradbrownjr.covet.data.sync.SyncWorker
 import javax.inject.Inject
 
@@ -25,5 +26,6 @@ class CovetApp : Application(), Configuration.Provider, ImageLoaderFactory {
         super.onCreate()
         // Idempotent: ExistingPeriodicWorkPolicy.KEEP keeps any in-flight schedule.
         SyncWorker.schedule(this)
+        MaintenanceAlertWorker.schedule(this)
     }
 }
