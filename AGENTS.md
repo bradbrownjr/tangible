@@ -381,6 +381,7 @@ the affected file column is preserved.**
 | CI: Android build + APK artifact | `.github/workflows/android.yml` | `:app:lintDebug`, `:app:testDebugUnitTest`, `:app:assembleDebug` |
 | CI: auto-publish Release on tag | `.github/workflows/release.yml` | extracts `## [X.Y.Z]` from `CHANGELOG.md`; `prerelease` for `0.x` |
 | MCP server | `server/src/covet/api/mcp_server.py` | `FastMCP`, `mcp_app()`, mounted at `/mcp`, tools: `list_collections`, `search_items`, `get_item`, `list_maintenance`, `list_due_alerts`, `list_low_stock` |
+| Item comment threads | `server/src/covet/api/comments.py`, `models/item_comment.py`, `alembic/versions/0035_item_comments.py`, `web/src/lib/ItemComments.svelte` | `GET/POST /items/{id}/comments`, `GET /items/{id}/comments/{parent_id}/replies`, `PATCH/DELETE /comments/{id}`, `ItemComment`, `CommentAuthor`, `ItemComments` component |
 
 Update this table whenever a new feature lands or an existing feature moves.
 

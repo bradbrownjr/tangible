@@ -6,6 +6,11 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+- **Item comment threads** — users can now post, reply to, edit, and delete
+  comments on individual items. Comments are threaded (one level of replies),
+  shown in a collapsible panel on each item card and table row. Any collection
+  member (viewer+) can read and post; authors can edit or delete their own
+  comments; editors/owners can delete any comment.
 - **MCP server** — Covet now exposes a [Model Context Protocol](https://modelcontextprotocol.io/)
   endpoint at `/mcp`. AI assistants (Claude, Copilot, ChatGPT plugins, etc.)
   can query your inventory, maintenance history, and stock levels in natural

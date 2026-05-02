@@ -12,16 +12,15 @@ from covet.db import Base
 from covet.models.base import TimestampMixin, ULIDPrimaryKey
 
 if TYPE_CHECKING:
-    from covet.models.category import Category
-    from covet.models.collection import Collection
-    from covet.models.contact import Contact
-    from covet.models.item_lot import ItemLot
-    from covet.models.loan import Loan
-    from covet.models.location import Location
-    from covet.models.photo import Photo
-    from covet.models.tag import ItemTag
-
-
+        from covet.models.category import Category
+        from covet.models.collection import Collection
+        from covet.models.contact import Contact
+        from covet.models.item_comment import ItemComment
+        from covet.models.item_lot import ItemLot
+        from covet.models.loan import Loan
+        from covet.models.location import Location
+        from covet.models.photo import Photo
+        from covet.models.tag import ItemTag
 class Item(ULIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "items"
 
@@ -118,4 +117,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     )
     lots: Mapped[list[ItemLot]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
+    )
+    comments: Mapped[list[ItemComment]] = relationship(
+        "ItemComment", back_populates="item", cascade="all, delete-orphan", lazy="select"
     )

@@ -395,11 +395,11 @@ Long-term work that makes Covet a foundation other things build on.
 - **Plugin / adapter system for metadata scrapers** — community can
   contribute scrapers for new sources (Home Depot, Amazon, AutoZone,
   manufacturer portals) without modifying core.
-- **Item comment threads** — threaded, time-stamped annotations on
+- **Item comment threads** ✅ — threaded, time-stamped annotations on
   items beyond the single `notes` field. Multi-user: household members
-  can ask questions, record observations ("I noticed the generator
-  sounded rough — ran it 10 min"), or flag issues. Useful for shared
-  maintenance logs. Notifications on replies.
+  can ask questions, record observations, or flag issues. One level of
+  replies; any collection member can read/post; authors edit/delete own;
+  editors/owners delete any comment. Full web UI with toggle panel per item.
 - **i18n & localization** ✅ scaffold exists — finish string extraction,
   wire Crowdin or Weblate, ship initial translations (French, German,
   Spanish, Japanese).

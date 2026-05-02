@@ -4,7 +4,9 @@
     import { page } from '$app/state';
     import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type LocationNode, type Tag } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
+    import ItemComments from '$lib/ItemComments.svelte';
     import PhotoGallery from '$lib/PhotoGallery.svelte';
+    import { me } from '$lib/session';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
@@ -1141,6 +1143,7 @@
                                 <p class="item-subtitle">{i.subtitle}</p>
                             {/if}
                             <PhotoGallery itemId={i.id} canEdit={canEdit} compact />
+                            <ItemComments itemId={i.id} currentUserId={$me?.id} canManage={canEdit} />
                             {#if relationEntries(i).length}
                                 <div class="relation-list">
                                     {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
@@ -1289,6 +1292,7 @@
                                     </div>
                                 {/if}
                                 <PhotoGallery itemId={i.id} canEdit={canEdit} compact />
+                                <ItemComments itemId={i.id} currentUserId={$me?.id} canManage={canEdit} />
                             </td>
                             {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                             <td>{i.quantity}</td>

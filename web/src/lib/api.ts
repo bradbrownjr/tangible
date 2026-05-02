@@ -395,3 +395,20 @@ export interface DueAlert {
     due_at: string | null;
     details: string | null;
 }
+
+export interface CommentAuthor {
+    id: string;
+    username: string;
+    display_name: string | null;
+}
+
+export interface ItemComment {
+    id: string;
+    item_id: string;
+    parent_id: string | null;
+    body: string;
+    created_at: string;
+    updated_at: string;
+    author: CommentAuthor;
+    reply_count: number;
+}

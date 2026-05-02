@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from covet.models.user import User
 
 
-class WebhookEventType(str, Enum):
+class WebhookEventType(StrEnum):
     """Types of events that trigger webhooks."""
 
     ITEM_CREATED = "item.created"
