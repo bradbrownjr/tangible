@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "collections": "Colecciones",
+    "maintenance": "Mantenimiento",
+    "grocery_list": "Lista de la compra",
+    "import": "Importar",
+    "settings": "Configuraci\u00f3n",
+    "log_out": "Cerrar sesi\u00f3n"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "close": "Cerrar",
+    "loading": "Cargando\u2026",
+    "error": "Error",
+    "confirm": "\u00bfEst\u00e1 seguro/a?"
+  },
+  "auth": {
+    "sign_in": "Iniciar sesi\u00f3n",
+    "signing_in": "Iniciando sesi\u00f3n\u2026",
+    "username": "Nombre de usuario",
+    "password": "Contrase\u00f1a",
+    "register": "Crear cuenta",
+    "registering": "Creando\u2026",
+    "display_name": "Nombre completo",
+    "email": "Correo electr\u00f3nico",
+    "optional": "opcional",
+    "first_run_setup": "Configuraci\u00f3n inicial",
+    "create_admin_account": "A\u00fan no existen usuarios \u2014 cree la cuenta de administrador.",
+    "already_have_account": "\u00bfYa tiene una cuenta?",
+    "no_account": "\u00bfNo tiene cuenta?",
+    "sign_in_link": "Iniciar sesi\u00f3n",
+    "register_link": "Registrarse",
+    "totp_enter_code": "Ingrese el c\u00f3digo de 6 d\u00edgitos de su aplicaci\u00f3n de autenticaci\u00f3n, o un c\u00f3digo de respaldo.",
+    "authenticator_code": "C\u00f3digo de autenticaci\u00f3n",
+    "verifying": "Verificando\u2026",
+    "verify": "Verificar",
+    "back": "Volver"
+  },
+  "lang": {
+    "label": "Idioma",
+    "en": "English",
+    "fr": "Fran\u00e7ais",
+    "de": "Deutsch",
+    "es": "Espa\u00f1ol",
+    "ja": "\u65e5\u672c\u8a9e"
+  }
+}

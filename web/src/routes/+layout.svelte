@@ -7,7 +7,12 @@
     import { userLabel, api } from '$lib/api';
     import { get } from 'svelte/store';
     import { initTheme } from '$lib/theme';
+    import { _, locale } from 'svelte-i18n';
+    import { initI18n, setLocale, LOCALES } from '$lib/i18n';
     import WhatsNew from '$lib/WhatsNew.svelte';
+
+    // Initialise i18n synchronously so strings are ready before first render.
+    initI18n();
 
     const SEEN_KEY = 'covet:whatsnew-seen-version';
     const BROWSER_NOTIF_KEY = 'covet:browser-notif-fired';
@@ -96,6 +101,10 @@
         await logout();
         await goto('/login');
     }
+
+    $effect(() => {
+        document.documentElement.lang = $locale ?? 'en';
+    });
 </script>
 
 <header>
@@ -117,14 +126,24 @@
     </button>
     <nav>
         {#if $me}
-            <a href="/">Collections</a>
-            <a href="/maintenance">Maintenance</a>
-            <a href="/grocery-list">Grocery List</a>
-            <a href="/import">Import</a>
-            <a href="/settings">Settings</a>
+            <a href="/">{$_('nav.collections')}</a>
+            <a href="/maintenance">{$_('nav.maintenance')}</a>
+            <a href="/grocery-list">{$_('nav.grocery_list')}</a>
+            <a href="/import">{$_('nav.import')}</a>
+            <a href="/settings">{$_('nav.settings')}</a>
             <a href="/profile" class="user" title="Edit your profile">{userLabel($me)}</a>
-            <button class="secondary" onclick={doLogout}>Log out</button>
+            <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
         {/if}
+        <select
+            class="locale-picker"
+            value={$locale}
+            onchange={(e) => setLocale((e.target as HTMLSelectElement).value)}
+            aria-label={$_('lang.label')}
+        >
+            {#each LOCALES as loc}
+                <option value={loc.code}>{loc.label}</option>
+            {/each}
+        </select>
     </nav>
 </header>
 
@@ -199,5 +218,14 @@
         padding: 1.5rem;
         max-width: 1100px;
         margin: 0 auto;
+    }
+    .locale-picker {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.4rem;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
     }
 </style>

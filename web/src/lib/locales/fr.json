@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "collections": "Collections",
+    "maintenance": "Maintenance",
+    "grocery_list": "Liste de courses",
+    "import": "Importer",
+    "settings": "Param\u00e8tres",
+    "log_out": "D\u00e9connexion"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "close": "Fermer",
+    "loading": "Chargement\u2026",
+    "error": "Erreur",
+    "confirm": "\u00cates-vous s\u00fbr\u00b7e ?"
+  },
+  "auth": {
+    "sign_in": "Se connecter",
+    "signing_in": "Connexion\u2026",
+    "username": "Nom d\u2019utilisateur",
+    "password": "Mot de passe",
+    "register": "Cr\u00e9er un compte",
+    "registering": "Cr\u00e9ation\u2026",
+    "display_name": "Nom complet",
+    "email": "E-mail",
+    "optional": "optionnel",
+    "first_run_setup": "Configuration initiale",
+    "create_admin_account": "Aucun utilisateur n\u2019existe encore \u2014 cr\u00e9ez le compte administrateur.",
+    "already_have_account": "D\u00e9j\u00e0 un compte ?",
+    "no_account": "Pas de compte ?",
+    "sign_in_link": "Connectez-vous",
+    "register_link": "Cr\u00e9ez-en un",
+    "totp_enter_code": "Saisissez le code \u00e0 6 chiffres de votre application d\u2019authentification, ou un code de sauvegarde.",
+    "authenticator_code": "Code d\u2019authentification",
+    "verifying": "V\u00e9rification\u2026",
+    "verify": "V\u00e9rifier",
+    "back": "Retour"
+  },
+  "lang": {
+    "label": "Langue",
+    "en": "English",
+    "fr": "Fran\u00e7ais",
+    "de": "Deutsch",
+    "es": "Espa\u00f1ol",
+    "ja": "\u65e5\u672c\u8a9e"
+  }
+}

@@ -6,6 +6,13 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+- **i18n & localization** — the web UI now supports multiple languages.
+  A language picker in the navigation bar lets users switch between English,
+  French, German, Spanish, and Japanese; the preference is saved to
+  `localStorage`. The `<html lang>` attribute updates automatically.
+  Navigation, auth pages (login, register), and common action labels are fully
+  translated. The infrastructure is in place for community contributions via
+  the `web/src/lib/locales/` message catalogs.
 - **Plugin/adapter system for metadata scrapers** — third-party packages can
   now register custom URL and barcode adapters without modifying Covet's core.
   Declare adapters in your package's `pyproject.toml` under the

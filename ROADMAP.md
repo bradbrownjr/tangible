@@ -402,9 +402,11 @@ Long-term work that makes Covet a foundation other things build on.
   can ask questions, record observations, or flag issues. One level of
   replies; any collection member can read/post; authors edit/delete own;
   editors/owners delete any comment. Full web UI with toggle panel per item.
-- **i18n & localization** ✅ scaffold exists — finish string extraction,
-  wire Crowdin or Weblate, ship initial translations (French, German,
-  Spanish, Japanese).
+- **i18n & localization** ✅ — svelte-i18n installed; message catalogs for EN,
+  FR, DE, ES, JA in `web/src/lib/locales/`. Language picker in nav bar; locale
+  persisted in localStorage; `<html lang>` updated reactively. Navigation and
+  auth pages fully translated. Remaining pages use English strings pending
+  community contribution.
 - **Drag-and-drop photo reorder** ✅ — reorder the photo gallery by
   dragging thumbnails; server persists sort_order per photo.
 - **Server-side thumbnail generation** ✅ — generate resized thumbnails on

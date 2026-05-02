@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "collections": "Sammlungen",
+    "maintenance": "Wartung",
+    "grocery_list": "Einkaufsliste",
+    "import": "Importieren",
+    "settings": "Einstellungen",
+    "log_out": "Abmelden"
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "L\u00f6schen",
+    "edit": "Bearbeiten",
+    "add": "Hinzuf\u00fcgen",
+    "close": "Schlie\u00dfen",
+    "loading": "L\u00e4dt\u2026",
+    "error": "Fehler",
+    "confirm": "Sind Sie sicher?"
+  },
+  "auth": {
+    "sign_in": "Anmelden",
+    "signing_in": "Anmeldung\u2026",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "register": "Konto erstellen",
+    "registering": "Erstelle\u2026",
+    "display_name": "Vollst\u00e4ndiger Name",
+    "email": "E-Mail",
+    "optional": "optional",
+    "first_run_setup": "Ersteinrichtung",
+    "create_admin_account": "Noch kein Benutzer vorhanden \u2014 erstellen Sie das Administratorkonto.",
+    "already_have_account": "Haben Sie bereits ein Konto?",
+    "no_account": "Noch kein Konto?",
+    "sign_in_link": "Anmelden",
+    "register_link": "Registrieren",
+    "totp_enter_code": "Geben Sie den 6-stelligen Code aus Ihrer Authentifizierungs-App oder einen Backup-Code ein.",
+    "authenticator_code": "Authentifizierungscode",
+    "verifying": "\u00dcberpr\u00fcfung\u2026",
+    "verify": "Best\u00e4tigen",
+    "back": "Zur\u00fcck"
+  },
+  "lang": {
+    "label": "Sprache",
+    "en": "English",
+    "fr": "Fran\u00e7ais",
+    "de": "Deutsch",
+    "es": "Espa\u00f1ol",
+    "ja": "\u65e5\u672c\u8a9e"
+  }
+}

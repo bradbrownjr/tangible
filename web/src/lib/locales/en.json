@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "collections": "Collections",
+    "maintenance": "Maintenance",
+    "grocery_list": "Grocery List",
+    "import": "Import",
+    "settings": "Settings",
+    "log_out": "Log out"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "loading": "Loading\u2026",
+    "error": "Error",
+    "confirm": "Are you sure?"
+  },
+  "auth": {
+    "sign_in": "Sign in",
+    "signing_in": "Signing in\u2026",
+    "username": "Username",
+    "password": "Password",
+    "register": "Create account",
+    "registering": "Creating\u2026",
+    "display_name": "Full name",
+    "email": "Email",
+    "optional": "optional",
+    "first_run_setup": "First-run setup",
+    "create_admin_account": "No users exist yet \u2014 create the admin account.",
+    "already_have_account": "Already have an account?",
+    "no_account": "No account?",
+    "sign_in_link": "Sign in",
+    "register_link": "Register",
+    "totp_enter_code": "Enter the 6-digit code from your authenticator app, or a backup code.",
+    "authenticator_code": "Authenticator code",
+    "verifying": "Verifying\u2026",
+    "verify": "Verify",
+    "back": "Back"
+  },
+  "lang": {
+    "label": "Language",
+    "en": "English",
+    "fr": "Fran\u00e7ais",
+    "de": "Deutsch",
+    "es": "Espa\u00f1ol",
+    "ja": "\u65e5\u672c\u8a9e"
+  }
+}

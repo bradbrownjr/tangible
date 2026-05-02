@@ -2,6 +2,7 @@
     import { goto } from '$app/navigation';
     import { api } from '$lib/api';
     import { publicConfig, refreshMe } from '$lib/session';
+    import { _ } from 'svelte-i18n';
 
     let username = $state('');
     let password = $state('');
@@ -52,13 +53,13 @@
 </script>
 
 <div class="auth">
-    <h1>Sign in</h1>
+    <h1>{$_('auth.sign_in')}</h1>
 
     {#if totpTicket}
         <form onsubmit={submitTotp} class="card">
-            <p class="muted">Enter the 6-digit code from your authenticator app, or a backup code.</p>
+            <p class="muted">{$_('auth.totp_enter_code')}</p>
             <div class="field">
-                <label for="totp">Authenticator code</label>
+                <label for="totp">{$_('auth.authenticator_code')}</label>
                 <input
                     id="totp"
                     bind:value={totpCode}
@@ -69,18 +70,18 @@
                     maxlength={10}
                 />
             </div>
-            <button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Verify'}</button>
-            <button type="button" class="secondary" onclick={backToLogin}>Back</button>
+            <button type="submit" disabled={busy}>{busy ? $_('auth.verifying') : $_('auth.verify')}</button>
+            <button type="button" class="secondary" onclick={backToLogin}>{$_('auth.back')}</button>
             {#if error}<p class="error">{error}</p>{/if}
         </form>
     {:else}
         <form onsubmit={submit} class="card">
             <div class="field">
-                <label for="u">Username</label>
+                <label for="u">{$_('auth.username')}</label>
                 <input id="u" bind:value={username} required autocomplete="username" />
             </div>
             <div class="field">
-                <label for="p">Password</label>
+                <label for="p">{$_('auth.password')}</label>
                 <input
                     id="p"
                     type="password"
@@ -89,19 +90,19 @@
                     autocomplete="current-password"
                 />
             </div>
-            <button type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+            <button type="submit" disabled={busy}>{busy ? $_('auth.signing_in') : $_('auth.sign_in')}</button>
             {#if error}<p class="error">{error}</p>{/if}
         </form>
 
         {#if $publicConfig?.setup_required}
             <div class="setup">
                 <p>
-                    <strong>First-run setup.</strong> No users exist yet —
-                    <a href="/register">create the admin account</a>.
+                    <strong>{$_('auth.first_run_setup')}.</strong> {$_('auth.create_admin_account')}
+                    <a href="/register">{$_('auth.register_link')}</a>.
                 </p>
             </div>
         {:else if $publicConfig?.registration_enabled}
-            <p class="muted">No account? <a href="/register">Register</a></p>
+            <p class="muted">{$_('auth.no_account')} <a href="/register">{$_('auth.register_link')}</a></p>
         {/if}
 
         {#if $publicConfig?.version}
