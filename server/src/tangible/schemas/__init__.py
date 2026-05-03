@@ -24,6 +24,9 @@ from tangible.schemas.collection import (
 from tangible.schemas.contact import ContactCreate, ContactRead, ContactUpdate
 from tangible.schemas.document import DocumentRead, DocumentUpdate
 from tangible.schemas.grocery import (
+    GroceryAisleCreate,
+    GroceryAisleRead,
+    GroceryAisleUpdate,
     GroceryCount,
     GroceryFeedEntry,
     GroceryItemCreate,
@@ -31,6 +34,9 @@ from tangible.schemas.grocery import (
     GroceryItemUpdate,
     GroceryPurchaseRequest,
     GrocerySource,
+    GroceryStoreCreate,
+    GroceryStoreRead,
+    GroceryStoreUpdate,
 )
 from tangible.schemas.inventory import (
     DueAlertRead,
@@ -125,6 +131,9 @@ __all__ = [
     "DocumentRead",
     "DocumentUpdate",
     "DueAlertRead",
+    "GroceryAisleCreate",
+    "GroceryAisleRead",
+    "GroceryAisleUpdate",
     "GroceryCount",
     "GroceryFeedEntry",
     "GroceryItemCreate",
@@ -132,6 +141,9 @@ __all__ = [
     "GroceryItemUpdate",
     "GroceryPurchaseRequest",
     "GrocerySource",
+    "GroceryStoreCreate",
+    "GroceryStoreRead",
+    "GroceryStoreUpdate",
     "InvitationCreate",
     "InvitationCreated",
     "InvitationPreview",

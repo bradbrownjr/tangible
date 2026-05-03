@@ -107,6 +107,54 @@ interface TangibleApi {
     @GET("items/grocery-list")
     suspend fun getGroceryList(): List<ItemDto>
 
+    @GET("grocery")
+    suspend fun getGroceryFeed(): List<GroceryFeedEntryDto>
+
+    @POST("grocery")
+    suspend fun createGroceryItem(@Body body: GroceryItemCreateRequest): GroceryFeedEntryDto
+
+    @DELETE("grocery/{id}")
+    suspend fun deleteGroceryItem(@Path("id") id: String)
+
+    @POST("grocery/{id}/purchase")
+    suspend fun purchaseGroceryItem(@Path("id") id: String)
+
+    // Grocery stores
+    @GET("grocery/stores")
+    suspend fun listGroceryStores(): List<GroceryStoreDto>
+
+    @POST("grocery/stores")
+    suspend fun createGroceryStore(@Body body: GroceryStoreCreate): GroceryStoreDto
+
+    @PATCH("grocery/stores/{id}")
+    suspend fun updateGroceryStore(@Path("id") id: String, @Body body: GroceryStorePatch): GroceryStoreDto
+
+    @DELETE("grocery/stores/{id}")
+    suspend fun deleteGroceryStore(@Path("id") id: String)
+
+    // Grocery aisles
+    @GET("grocery/stores/{storeId}/aisles")
+    suspend fun listGroceryAisles(@Path("storeId") storeId: String): List<GroceryAisleDto>
+
+    @POST("grocery/stores/{storeId}/aisles")
+    suspend fun createGroceryAisle(@Path("storeId") storeId: String, @Body body: GroceryAisleCreate): GroceryAisleDto
+
+    @PATCH("grocery/stores/{storeId}/aisles/{aisleId}")
+    suspend fun updateGroceryAisle(
+        @Path("storeId") storeId: String,
+        @Path("aisleId") aisleId: String,
+        @Body body: GroceryAislePatch,
+    ): GroceryAisleDto
+
+    @DELETE("grocery/stores/{storeId}/aisles/{aisleId}")
+    suspend fun deleteGroceryAisle(
+        @Path("storeId") storeId: String,
+        @Path("aisleId") aisleId: String,
+    )
+
+    @PUT("grocery/stores/{storeId}/aisles/reorder")
+    suspend fun reorderGroceryAisles(@Path("storeId") storeId: String, @Body order: List<String>)
+
     @POST("items/{id}/restock")
     suspend fun restockItem(@Path("id") id: String, @Body body: RestockRequest): ItemLotDto
 

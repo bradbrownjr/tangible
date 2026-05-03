@@ -342,3 +342,84 @@ data class NotificationPrefUpdate(
     val browser_enabled: Boolean,
     val lead_days: Int,
 )
+
+// ---------------------------------------------------------------------------
+// Grocery list
+// ---------------------------------------------------------------------------
+
+@JsonClass(generateAdapter = true)
+data class GrocerySourceDto(
+    val kind: String, // "ad_hoc" | "depleted_item"
+    val item_id: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class GroceryFeedEntryDto(
+    val id: String,
+    val source: GrocerySourceDto,
+    val collection_id: String,
+    val name: String,
+    val subtitle: String? = null,
+    val quantity: Int = 1,
+    val unit: String? = null,
+    val notes: String? = null,
+    val category_slug: String? = null,
+    val linked_item_id: String? = null,
+    val purchased_at: String? = null,
+    val created_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class GroceryItemCreateRequest(
+    val collection_id: String,
+    val name: String,
+    val quantity: Int = 1,
+    val unit: String? = null,
+    val notes: String? = null,
+    val category_slug: String? = null,
+)
+
+// ---------------------------------------------------------------------------
+// Grocery stores + aisles
+// ---------------------------------------------------------------------------
+
+@JsonClass(generateAdapter = true)
+data class GroceryAisleDto(
+    val id: String,
+    val store_id: String,
+    val name: String,
+    val position: Int = 0,
+    val category_slugs: List<String> = emptyList(),
+    val created_at: String,
+    val updated_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class GroceryStoreDto(
+    val id: String,
+    val owner_user_id: String,
+    val name: String,
+    val aisles: List<GroceryAisleDto> = emptyList(),
+    val created_at: String,
+    val updated_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class GroceryStoreCreate(val name: String)
+
+@JsonClass(generateAdapter = true)
+data class GroceryStorePatch(val name: String? = null)
+
+@JsonClass(generateAdapter = true)
+data class GroceryAisleCreate(
+    val name: String,
+    val position: Int = 0,
+    val category_slugs: List<String> = emptyList(),
+)
+
+@JsonClass(generateAdapter = true)
+data class GroceryAislePatch(
+    val name: String? = null,
+    val position: Int? = null,
+    val category_slugs: List<String>? = null,
+)

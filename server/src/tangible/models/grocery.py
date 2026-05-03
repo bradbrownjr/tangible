@@ -1,12 +1,16 @@
-"""Grocery list entry model.
+"""Grocery list models.
 
 Shared, ad-hoc shopping items per collection. When linked to an existing
 ``Item`` (typically a pantry/consumable item), marking it purchased
 calls the restock flow on that item.
+
+``GroceryStore`` and ``GroceryStoreAisle`` let users map category slugs to
+physical store aisles so the shopping feed can be sorted aisle-by-aisle.
 """
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -41,6 +45,7 @@ class GroceryItem(ULIDPrimaryKey, TimestampMixin, Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category_slug: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     # When set, marking this entry purchased restocks the linked item.
     linked_item_id: Mapped[str | None] = mapped_column(
@@ -67,3 +72,54 @@ class GroceryItem(ULIDPrimaryKey, TimestampMixin, Base):
         foreign_keys=[purchased_by_user_id], lazy="joined"
     )
     linked_item: Mapped[Item | None] = relationship(lazy="joined")
+
+
+class GroceryStore(ULIDPrimaryKey, TimestampMixin, Base):
+    """A named store whose aisles define grocery-list sort order."""
+
+    __tablename__ = "grocery_stores"
+
+    owner_user_id: Mapped[str] = mapped_column(
+        String(26),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    aisles: Mapped[list[GroceryStoreAisle]] = relationship(
+        back_populates="store",
+        cascade="all, delete-orphan",
+        order_by="GroceryStoreAisle.position",
+        lazy="select",
+    )
+
+
+class GroceryStoreAisle(ULIDPrimaryKey, TimestampMixin, Base):
+    """One aisle within a store with its associated category slugs."""
+
+    __tablename__ = "grocery_store_aisles"
+
+    store_id: Mapped[str] = mapped_column(
+        String(26),
+        ForeignKey("grocery_stores.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # JSON array of category slugs, e.g. '["food.dairy", "food.eggs"]'
+    _category_slugs_json: Mapped[str] = mapped_column(
+        "category_slugs", Text, nullable=False, default="[]"
+    )
+
+    store: Mapped[GroceryStore] = relationship(back_populates="aisles")
+
+    @property
+    def category_slugs(self) -> list[str]:
+        return json.loads(self._category_slugs_json or "[]")
+
+    @category_slugs.setter
+    def category_slugs(self, value: list[str]) -> None:
+        self._category_slugs_json = json.dumps(value)
+

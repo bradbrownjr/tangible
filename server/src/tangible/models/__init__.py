@@ -10,7 +10,7 @@ from tangible.models.category import Category
 from tangible.models.collection import Collection
 from tangible.models.contact import Contact
 from tangible.models.document import Document
-from tangible.models.grocery import GroceryItem
+from tangible.models.grocery import GroceryItem, GroceryStore, GroceryStoreAisle
 from tangible.models.invitation import Invitation
 from tangible.models.item import Item
 from tangible.models.item_comment import ItemComment
@@ -58,6 +58,8 @@ __all__ = [
     "Contact",
     "Document",
     "GroceryItem",
+    "GroceryStore",
+    "GroceryStoreAisle",
     "Invitation",
     "Item",
     "ItemComment",

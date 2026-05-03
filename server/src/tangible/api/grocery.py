@@ -7,6 +7,9 @@ Combines two sources into a unified shopping feed per collection:
 
 Marking an entry purchased optionally restocks the linked pantry item
 via the existing inventory flow.
+
+Store/aisle endpoints let users map category slugs to physical store aisles
+so the shopping feed can be sorted aisle-by-aisle on the client.
 """
 
 from __future__ import annotations
@@ -22,11 +25,16 @@ from tangible.db import get_session
 from tangible.models import (
     Collection,
     GroceryItem,
+    GroceryStore,
+    GroceryStoreAisle,
     Item,
     ItemLot,
 )
 from tangible.models.user import CollectionMembership
 from tangible.schemas import (
+    GroceryAisleCreate,
+    GroceryAisleRead,
+    GroceryAisleUpdate,
     GroceryCount,
     GroceryFeedEntry,
     GroceryItemCreate,
@@ -34,6 +42,9 @@ from tangible.schemas import (
     GroceryItemUpdate,
     GroceryPurchaseRequest,
     GrocerySource,
+    GroceryStoreCreate,
+    GroceryStoreRead,
+    GroceryStoreUpdate,
 )
 from tangible.services import audit
 
@@ -75,6 +86,7 @@ def _ad_hoc_to_feed(g: GroceryItem) -> GroceryFeedEntry:
         quantity=g.quantity,
         unit=g.unit,
         notes=g.notes,
+        category_slug=g.category_slug,
         linked_item_id=g.linked_item_id,
         purchased_at=g.purchased_at,
         created_at=g.created_at,
@@ -91,6 +103,7 @@ def _depleted_to_feed(item: Item) -> GroceryFeedEntry:
         quantity=1,
         unit=None,
         notes=None,
+        category_slug=item.category.slug if item.category else None,
         linked_item_id=item.id,
         purchased_at=None,
         created_at=item.updated_at,
@@ -351,3 +364,155 @@ def purchase_grocery_item(
     db.commit()
     db.refresh(g)
     return GroceryItemRead.model_validate(g)
+
+
+# ---------------------------------------------------------------------------
+# Store + aisle management
+# ---------------------------------------------------------------------------
+
+
+def _own_store(db: DBSession, store_id: str, user_id: str) -> GroceryStore:
+    store = db.get(GroceryStore, store_id)
+    if store is None or store.owner_user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Store not found")
+    return store
+
+
+@router.get("/stores", response_model=list[GroceryStoreRead])
+def list_stores(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[GroceryStore]:
+    """List all stores belonging to the current user."""
+    return list(
+        db.scalars(
+            select(GroceryStore).where(GroceryStore.owner_user_id == auth.user.id)
+        ).all()
+    )
+
+
+@router.post("/stores", response_model=GroceryStoreRead, status_code=status.HTTP_201_CREATED)
+def create_store(
+    payload: GroceryStoreCreate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> GroceryStore:
+    store = GroceryStore(owner_user_id=auth.user.id, name=payload.name)
+    db.add(store)
+    db.commit()
+    db.refresh(store)
+    return store
+
+
+@router.patch("/stores/{store_id}", response_model=GroceryStoreRead)
+def update_store(
+    store_id: str,
+    payload: GroceryStoreUpdate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> GroceryStore:
+    store = _own_store(db, store_id, auth.user.id)
+    if payload.name is not None:
+        store.name = payload.name
+    db.commit()
+    db.refresh(store)
+    return store
+
+
+@router.delete("/stores/{store_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_store(
+    store_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> None:
+    store = _own_store(db, store_id, auth.user.id)
+    db.delete(store)
+    db.commit()
+
+
+@router.get("/stores/{store_id}/aisles", response_model=list[GroceryAisleRead])
+def list_aisles(
+    store_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[GroceryStoreAisle]:
+    store = _own_store(db, store_id, auth.user.id)
+    return list(store.aisles)
+
+
+@router.post(
+    "/stores/{store_id}/aisles",
+    response_model=GroceryAisleRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_aisle(
+    store_id: str,
+    payload: GroceryAisleCreate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> GroceryStoreAisle:
+    store = _own_store(db, store_id, auth.user.id)
+    aisle = GroceryStoreAisle(store_id=store.id, name=payload.name, position=payload.position)
+    aisle.category_slugs = payload.category_slugs
+    db.add(aisle)
+    db.commit()
+    db.refresh(aisle)
+    return aisle
+
+
+@router.patch("/stores/{store_id}/aisles/{aisle_id}", response_model=GroceryAisleRead)
+def update_aisle(
+    store_id: str,
+    aisle_id: str,
+    payload: GroceryAisleUpdate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> GroceryStoreAisle:
+    _own_store(db, store_id, auth.user.id)
+    aisle = db.get(GroceryStoreAisle, aisle_id)
+    if aisle is None or aisle.store_id != store_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aisle not found")
+    if payload.name is not None:
+        aisle.name = payload.name
+    if payload.position is not None:
+        aisle.position = payload.position
+    if payload.category_slugs is not None:
+        aisle.category_slugs = payload.category_slugs
+    db.commit()
+    db.refresh(aisle)
+    return aisle
+
+
+@router.delete(
+    "/stores/{store_id}/aisles/{aisle_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_aisle(
+    store_id: str,
+    aisle_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> None:
+    _own_store(db, store_id, auth.user.id)
+    aisle = db.get(GroceryStoreAisle, aisle_id)
+    if aisle is None or aisle.store_id != store_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aisle not found")
+    db.delete(aisle)
+    db.commit()
+
+
+@router.put("/stores/{store_id}/aisles/reorder", status_code=status.HTTP_204_NO_CONTENT)
+def reorder_aisles(
+    store_id: str,
+    order: list[str],
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> None:
+    """Set position of every aisle in one call. ``order`` is a list of aisle IDs
+    in the desired sequence (0-indexed)."""
+    store = _own_store(db, store_id, auth.user.id)
+    aisle_map = {a.id: a for a in store.aisles}
+    for pos, aisle_id in enumerate(order):
+        if aisle_id in aisle_map:
+            aisle_map[aisle_id].position = pos
+    db.commit()
+

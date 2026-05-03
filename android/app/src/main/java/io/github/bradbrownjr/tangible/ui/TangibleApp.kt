@@ -15,7 +15,9 @@ import io.github.bradbrownjr.tangible.nfc.NfcManager
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.tangible.ui.screen.collection.CollectionDetailScreen
 import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionListScreen
+import io.github.bradbrownjr.tangible.ui.screen.grocery.GroceryAisleEditorScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.GroceryListScreen
+import io.github.bradbrownjr.tangible.ui.screen.grocery.GroceryStoreListScreen
 import io.github.bradbrownjr.tangible.ui.screen.item.ItemDetailScreen
 import io.github.bradbrownjr.tangible.ui.screen.login.LoginScreen
 import io.github.bradbrownjr.tangible.ui.screen.maintenance.MaintenanceScreen
@@ -26,6 +28,9 @@ object Routes {
     const val LOGIN = "login"
     const val COLLECTIONS = "collections"
     const val GROCERY_LIST = "grocery-list"
+    const val GROCERY_STORES = "grocery-stores"
+    const val GROCERY_STORE_AISLES = "grocery-stores/{storeId}"
+    fun groceryStoreAisles(storeId: String) = "grocery-stores/$storeId"
     const val MAINTENANCE = "maintenance"
     const val COLLECTION_DETAIL = "collection/{id}"
     fun collectionDetail(id: String) = "collection/$id"
@@ -79,8 +84,19 @@ fun TangibleApp() {
             }
             composable(Routes.GROCERY_LIST) {
                 GroceryListScreen(
+                    onBack = { nav.popBackStack() },
                     onNavigateToCollection = { collectionId -> nav.navigate(Routes.collectionDetail(collectionId)) },
+                    onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
                 )
+            }
+            composable(Routes.GROCERY_STORES) {
+                GroceryStoreListScreen(
+                    onBack = { nav.popBackStack() },
+                    onOpenStore = { storeId -> nav.navigate(Routes.groceryStoreAisles(storeId)) },
+                )
+            }
+            composable(Routes.GROCERY_STORE_AISLES) {
+                GroceryAisleEditorScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.MAINTENANCE) {
                 MaintenanceScreen(onBack = { nav.popBackStack() })

@@ -6,6 +6,15 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+- **Grocery list: back button and add item** — the Android grocery list screen
+  now has a back button in the top bar and a floating action button to add
+  ad-hoc items directly from the list.
+- **Store aisle sorting** — create grocery stores with ordered aisles, assign
+  category slugs to each aisle, then select a store when shopping to have your
+  grocery list automatically sorted in aisle order. Manage stores via the
+  store icon in the grocery list top bar. Available on Android and via the API
+  (`/grocery/stores`).
+
 ## [0.17.1] — 2026-05-03
 
 - **Fix grocery list nav link** — the Grocery List link was hidden when
