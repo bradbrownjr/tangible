@@ -441,13 +441,46 @@ and exposes four list types: **Groceries**, **Hardware**, **Home Goods**, and
 field drives category presets, auto-created backing collections, and per-list
 UI copy.
 
+### Step 0 — Rename grocery internals to shopping
+
+The current internals are named after groceries even though they will now
+carry hardware and home-goods items. Rename throughout before adding new
+behaviour so the codebase stays coherent:
+
+- **Server models** — `GroceryItem` → `ShoppingItem`, `GroceryStore` →
+  `ShoppingStore`, `GroceryStoreAisle` → `ShoppingStoreAisle`. Table names
+  stay as-is (no Alembic migration needed for a Python rename only).
+- **Server schemas** — `GroceryItemCreate/Read/Update` →
+  `ShoppingItemCreate/Read/Update`; likewise `GroceryStore*` →
+  `ShoppingStore*`; `GroceryAisle*` → `ShoppingAisle*`; `GroceryCount` →
+  `ShoppingCount`; `GroceryFeedEntry` → `ShoppingFeedEntry`;
+  `GroceryPurchaseRequest` → `ShoppingPurchaseRequest`;
+  `GrocerySource` → `ShoppingSource`.
+- **Server API** — rename `api/grocery.py` → `api/shopping.py`; change the
+  router prefix from `/grocery` to `/lists`. Mount the old prefix at
+  `/grocery` as a redirect shim so existing Android clients and any external
+  scripts continue to work during the transition.
+- **MCP tool** — `list_grocery` → `list_shopping_items` (also covered in
+  Step 7).
+- **Web** — rename `groceryCategories.ts` → `shoppingCategories.ts`;
+  rename the `GroceryStoreManager` Svelte component to `ShoppingStoreManager`.
+  Web routes stay at `/grocery-list` for now (the URL migration is Step 5).
+- **Android** — rename `GroceryListScreen`, `GroceryListViewModel`,
+  `GroceryRepository`, `GroceryItem` data class, and `GroceryDao` to
+  their `Shopping*` equivalents. Room database table name is kept via
+  `@Entity(tableName = "grocery_items")` so no schema migration is required.
+- **Tests** — update all test files that reference `GroceryItem`,
+  `grocery.py`, or `/grocery` routes to use the new names; the `/grocery`
+  redirect shim ensures existing HTTP-level tests still pass without
+  path changes.
+
 ### Step 1 — Data model
 
-- Add a `list_type` enum column to `GroceryItem`:
+- Add a `list_type` enum column to `ShoppingItem`:
   `groceries` (default, preserves all existing rows) | `hardware` |
   `home_goods` | `wish_list`.
 - Write an Alembic migration; backfill existing rows to `groceries`.
-- Extend all `GroceryItem` API routes (`GET`, `POST`, `PATCH`, `DELETE`,
+- Extend all `ShoppingItem` API routes (`GET`, `POST`, `PATCH`, `DELETE`,
   `POST /purchase`, `GET /count`) to accept and filter on `list_type`.
   Unversioned callers default to `groceries` for backward compatibility.
 - Wish List items add two optional fields: `url` (link to product page) and
@@ -476,14 +509,14 @@ UI copy.
   "Home Goods" (home_goods). Wish List items do not require a backing
   collection (they are intent records, not owned inventory).
 - `createBackingCollection(listType)` replaces the current `createPantry()`
-  helper in the web grocery page.
+  helper in the web shopping page.
 
 ### Step 4 — Web navigation
 
 - Replace the single "Grocery List" nav link with a **Lists** dropdown button.
 - The dropdown shows four entries: Groceries, Hardware, Home Goods, Wish Lists.
 - Each entry navigates to `/lists/[type]` (e.g. `/lists/groceries`).
-- The bell-icon unread count (`GET /grocery/count`) is summed across all
+- The bell-icon unread count (`GET /lists/count`) is summed across all
   four types and shown on the Lists dropdown trigger.
 
 ### Step 5 — Web list routes
@@ -496,13 +529,18 @@ UI copy.
   the "Bought" purchase action with a "Mark as gifted / received" action.
 - The existing `/grocery-list` route redirects to `/lists/groceries` for
   backward compatibility (bookmarks and Android deep links still work).
+- The `ShoppingStoreManager` component (renamed from `GroceryStoreManager`)
+  is scoped to the groceries list type only; hardware and home-goods lists
+  do not use store/aisle sorting.
 
 ### Step 6 — Android navigation
 
 - Add a **Lists** bottom-nav entry (or drawer section) that expands into
   tabs: Groceries, Hardware, Home Goods, Wish Lists.
-- The shared `GroceryListScreen` is parameterized by `listType`; tabs
-  switch the active type and reload the list.
+- The shared `ShoppingListScreen` (renamed from `GroceryListScreen`) is
+  parameterized by `listType`; tabs switch the active type and reload the
+  list. Deep links for `tangible://grocery` continue to resolve to the
+  Groceries tab.
 - Category picker in the add-item sheet updates its chip set based on the
   active list type.
 - Wish List add sheet gains URL and Priority fields.
