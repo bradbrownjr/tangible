@@ -3,12 +3,12 @@
 # Usage:
 #   docker compose -f docker/docker-compose.standard.yml up -d
 #
-# Override the image with `IMAGE=ghcr.io/bradbrownjr/tangible:edge` if you want to
+# Override the image with `TANGIBLE_IMAGE=ghcr.io/bradbrownjr/tangible:0.17.1` to pin to a
 # track main, or pin to a tag like `:0.1.0`.
 
 services:
   tangible:
-    image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:edge}
+    image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:latest}
     container_name: tangible
     restart: unless-stopped
     ports:

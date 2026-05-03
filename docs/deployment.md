@@ -11,9 +11,10 @@ SvelteKit web SPA — the API and UI share one port.
 
 Tags:
 
-- `:edge` — built from `main` on every push
+- `:latest` — most recent stable release (default in compose examples)
 - `:0.x.y` / `:0.x` / `:0` — published from `vX.Y.Z` git tags
-- `:sha-<short>` — every commit on `main`
+- `:edge` — built from `main` on direct branch pushes (not from tag releases)
+- `:sha-<short>` — every commit
 
 ## Quick start (SQLite, single host)
 

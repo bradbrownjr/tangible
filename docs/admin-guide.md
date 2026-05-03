@@ -396,7 +396,7 @@ The container runs `alembic upgrade head` on start unless
 1. Take a backup first (see above).
 2. Read the relevant section of [`CHANGELOG.md`](../CHANGELOG.md).
 3. Pin to a major or minor tag (`:0.11`, `:0`) in production rather
-   than `:edge`, so you don't pull breaking changes inadvertently.
+   than `:latest`, so you don't pull breaking changes inadvertently.
 4. After upgrades, review the shipped documentation set:
    `CHANGELOG.md` for release notes,
    `docs/user-guide.md` for web/server user workflows, and

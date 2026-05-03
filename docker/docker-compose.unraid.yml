@@ -11,7 +11,7 @@
 
 services:
   tangible:
-    image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:edge}
+    image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:latest}
     container_name: tangible
     restart: unless-stopped
     # Unraid Docker tab labels. [IP] resolves to the host's LAN IP and
