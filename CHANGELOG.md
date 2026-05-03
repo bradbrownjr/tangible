@@ -6,6 +6,15 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.4] — 2026-05-03
+
+- **Grocery categories** — 17 preset categories (Produce, Bread, Bakery, Meat & Seafood, Deli, Dairy & Eggs, Frozen, Canned & Pantry, Pasta & Grains, Snacks, Beverages, Breakfast & Cereal, Condiments & Spices, Cleaning & Household, Health & Beauty, Pet Supplies, Alcohol) plus a Custom option. Bread and Bakery are intentionally distinct.
+- **Grocery store manager** — create stores and assign aisles with category chip pickers so your shopping list can be sorted by aisle order. Accessible via the Stores button on the Grocery List page.
+- **Android aisle category chips** — the Android aisle editor now shows FilterChip presets for all 17 categories instead of a free-text slug field.
+- **Import moved to collection tab** — the Import link is removed from the top nav and is now a tab inside each collection's subnav. Opening it pre-selects the correct collection.
+- **French and all-language i18n fix** — the Collections page was rendering hardcoded English strings regardless of language setting; all text now uses the locale system.
+- **Japanese translations completed** — ja.json was missing all sections after the auth/profile block; full Japanese translations added for all UI sections.
+
 ## [0.17.3] — 2026-05-03
 
 - **Chinese and Italian translations** — the web UI now supports Simplified
