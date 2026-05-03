@@ -876,6 +876,7 @@
         <a class="tab" href="/collections/{cid}/bundles">Bundles</a>
         <a class="tab" href="/collections/{cid}/chores">Chores</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
+        <a class="tab" href="/import?collection={cid}">Import</a>
         <a class="tab" href="/api/collections/{cid}/reports/insurance-export" download title="Download insurance-ready ZIP (CSV + photos)">Export</a>
         {#if collection.my_role === 'owner'}
             <button type="button" class="tab tab-danger" onclick={requestDeleteCollection}>Delete</button>

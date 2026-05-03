@@ -161,7 +161,6 @@
             <a href="/" onclick={closeMenu}>{$_('nav.collections')}</a>
             <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
             <a href="/grocery-list" onclick={closeMenu}>{$_('nav.grocery_list')}{#if groceryCount > 0} <span class="badge">{groceryCount}</span>{/if}</a>
-            <a href="/import" onclick={closeMenu}>{$_('nav.import')}</a>
             <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
             <a href="/profile" class="user" onclick={closeMenu} title="Edit your profile">{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>

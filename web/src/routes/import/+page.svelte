@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { page } from '$app/stores';
     import { api, ApiError, type Category, type Collection } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
 
@@ -58,7 +59,12 @@
     onMount(async () => {
         categories = await loadCategories();
         collections = await api.get<Collection[]>('/collections');
-        if (collections.length) collectionId = collections[0].id;
+        const preselect = $page.url.searchParams.get('collection');
+        if (preselect && collections.some((c) => c.id === preselect)) {
+            collectionId = preselect;
+        } else if (collections.length) {
+            collectionId = collections[0].id;
+        }
     });
 
     async function submit(e: Event) {
