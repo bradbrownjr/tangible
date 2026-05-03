@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.8] — 2026-05-03
+
+- **Internal refactor** — the shopping list module has been renamed from "Grocery" to "Shopping" throughout the codebase in preparation for expanding the list beyond grocery items. No user-visible behavior changes; the `/grocery/*` API paths continue to work via redirect for older Android clients.
+
 ## [0.17.7] — 2026-05-03
 
 - **Test Connection buttons** — the Admin Settings page now has a "Test" button next to each integration API key (Discogs, TMDb, IGDB, Google Books, UPCitemdb) and a "Send test email" button in the Email / SMTP section so operators can verify credentials without leaving the settings panel.
