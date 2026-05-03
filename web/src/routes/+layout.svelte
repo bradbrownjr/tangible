@@ -141,9 +141,7 @@
         {#if $me}
             <a href="/">{$_('nav.collections')}</a>
             <a href="/maintenance">{$_('nav.maintenance')}</a>
-            {#if groceryCount > 0}
-                <a href="/grocery-list">{$_('nav.grocery_list')} <span class="badge">{groceryCount}</span></a>
-            {/if}
+            <a href="/grocery-list">{$_('nav.grocery_list')}{#if groceryCount > 0} <span class="badge">{groceryCount}</span>{/if}</a>
             <a href="/import">{$_('nav.import')}</a>
             <a href="/settings">{$_('nav.settings')}</a>
             <a href="/profile" class="user" title="Edit your profile">{userLabel($me)}</a>

@@ -19,9 +19,9 @@ All notable changes to **Tangible** are documented here. Format follows
   marked depleted. New `/api/grocery` endpoints (list, create, update,
   delete, mark-purchased). Marking a linked entry purchased restocks the
   pantry item automatically (creates an `ItemLot`, clears `depleted`).
-- **Conditional Grocery List nav** — the menu link now only shows when
-  there is something on the list (depleted items + ad-hoc entries).
-  A small badge displays the open count.
+- **Grocery list nav badge** — the Grocery List link is always visible in the
+  nav bar. A small badge displays the open count when there is something on
+  the list (depleted items + ad-hoc entries).
 - **Wider audit-log coverage** — every grocery action plus item create,
   update, delete, flag/unflag and restock now write an `AuditLogEntry`.
   Closes long-standing gaps in the per-collection audit view.
