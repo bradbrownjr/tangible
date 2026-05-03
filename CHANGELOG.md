@@ -6,6 +6,11 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.7] — 2026-05-03
+
+- **Test Connection buttons** — the Admin Settings page now has a "Test" button next to each integration API key (Discogs, TMDb, IGDB, Google Books, UPCitemdb) and a "Send test email" button in the Email / SMTP section so operators can verify credentials without leaving the settings panel.
+- **Grocery list fixes** — the "No Pantry collection yet." banner is removed; Pantry is auto-created silently the first time you add a grocery item. Fixed a CSS bug where the banner used dark-mode colors in light mode.
+
 ## [0.17.6] — 2026-05-03
 
 - **Full web i18n** — every visible English string across all pages and components is now translated through the locale system. French, German, Spanish, Italian, Japanese, and Chinese users see their language throughout the entire web app — collections, items, bundles, chores, locations, members, grocery list, import, share links, invitations, comments, and maintenance pages.
