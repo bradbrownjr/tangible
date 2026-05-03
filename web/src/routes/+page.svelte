@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { _ } from 'svelte-i18n';
     import { api, type Category, type Collection } from '$lib/api';
     import { loadCategories, rootCategories } from '$lib/categories';
 
@@ -75,17 +76,17 @@
     onMount(refresh);
 </script>
 
-<h1>Collections</h1>
+<h1>{$_('collections.title')}</h1>
 
 {#if !pickerOpen}
     <div style="margin-bottom: 1.5rem">
-        <button type="button" onclick={openPicker}>+ New collection</button>
+        <button type="button" onclick={openPicker}>{$_('collections.add_button')}</button>
     </div>
 {:else if !chosen}
     <div class="card" style="margin-bottom: 1.5rem">
-        <h3 style="margin-top:0">What are you collecting?</h3>
+        <h3 style="margin-top:0">{$_('collections.wizard_heading')}</h3>
         <p class="muted" style="margin-top:0">
-            Pick a starting point — you can rename, mix, and add other categories later.
+            {$_('collections.wizard_subtitle')}
         </p>
         <div class="presets">
             {#each roots as r (r.id)}
@@ -95,45 +96,44 @@
                 </button>
             {/each}
             <button type="button" class="preset preset-custom" onclick={pickCustom}>
-                <strong>Custom</strong>
-                <span class="muted">Name it whatever you want and pick categories per item.</span>
+                <strong>{$_('collections.custom_preset_title')}</strong>
+                <span class="muted">{$_('collections.custom_preset_subtitle')}</span>
             </button>
         </div>
         <p style="margin-top:1rem">
-            <button type="button" class="link" onclick={cancel}>Cancel</button>
+            <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
         </p>
     </div>
 {:else}
     <form onsubmit={create} class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">
-            {chosen.slug ? `New ${chosen.name} collection` : 'New custom collection'}
+            {chosen.slug ? $_('collections.new_form_heading_preset', { values: { name: chosen.name } }) : $_('collections.new_form_heading_custom')}
         </h3>
         <div class="field">
-            <label for="cname">Name</label>
-            <input id="cname" bind:value={formName} placeholder="e.g. My LPs" required />
+            <label for="cname">{$_('collections.form_name_label')}</label>
+            <input id="cname" bind:value={formName} placeholder={$_('collections.form_name_placeholder')} required />
         </div>
         <div class="field">
-            <label for="cdesc">Description (optional)</label>
+            <label for="cdesc">{$_('collections.form_description_label')}</label>
             <input id="cdesc" bind:value={formDescription} />
         </div>
         {#if chosen.slug}
             <p class="muted" style="margin: .25rem 0 1rem">
-                New items in this collection default to <code>{chosen.slug}</code>; you can pick a
-                different category per item.
+                {$_('collections.form_category_hint', { values: { slug: chosen.slug } })}
             </p>
         {/if}
         {#if error}<p class="error">{error}</p>{/if}
         <div style="display:flex; gap:.5rem">
-            <button type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create'}</button>
-            <button type="button" class="link" onclick={cancel}>Cancel</button>
+            <button type="submit" disabled={creating}>{creating ? $_('collections.form_creating') : $_('collections.form_create')}</button>
+            <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
         </div>
     </form>
 {/if}
 
 {#if loading}
-    <p class="muted">Loading…</p>
+    <p class="muted">{$_('common.loading')}</p>
 {:else if collections.length === 0}
-    <p class="muted">No collections yet. Click <strong>New collection</strong> to get started.</p>
+    <p class="muted">{$_('collections.empty')}</p>
 {:else}
     <div class="grid">
         {#each collections as c (c.id)}
