@@ -6,6 +6,14 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.6] — 2026-05-03
+
+- **Full web i18n** — every visible English string across all pages and components is now translated through the locale system. French, German, Spanish, Italian, Japanese, and Chinese users see their language throughout the entire web app — collections, items, bundles, chores, locations, members, grocery list, import, share links, invitations, comments, and maintenance pages.
+- **Alerts moved to bell icon** — upcoming maintenance alerts and low-stock notifications are now in a compact bell icon in the nav bar instead of a banner, keeping the page header clean.
+- **Language preference in Settings** — the language picker has moved from the nav bar into the Settings page under a new User tab, alongside theme and account controls.
+- **Grocery categories alphabetically sorted** — the preset category dropdown is now sorted A–Z for easier scanning regardless of language.
+- **CI storage optimized** — Docker build cache switched to minimal mode and debug APK retention reduced to 3 days to stay within free storage limits.
+
 ## [0.17.5] — 2026-05-03
 
 - **Android language picker** — choose from English, Français, Deutsch, Español, 日本語, 中文, or Italiano in Android Settings. The preference is stored locally, applied immediately, and synced to the server so the web picks up the same locale.
