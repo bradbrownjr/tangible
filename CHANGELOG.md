@@ -6,6 +6,14 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.0] — 2026-05-03
+
+- **Rebranded to Tangible** — the app, server, Docker image, Android package,
+  and all configuration are now named Tangible. The Docker image is published
+  at `ghcr.io/bradbrownjr/tangible`. Environment variables are now prefixed
+  `TANGIBLE_*`; the CLI command is `tangible`; the Android package ID is
+  `io.github.bradbrownjr.tangible`. Existing deployments must rename env vars
+  and re-pull the image under the new name.
 - **Shared grocery list** — household members can now add ad-hoc items
   to a shared shopping list per collection, alongside any pantry items
   marked depleted. New `/api/grocery` endpoints (list, create, update,
