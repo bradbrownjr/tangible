@@ -4,8 +4,8 @@
     "maintenance": "Maintenance",
     "grocery_list": "Liste de courses",
     "import": "Importer",
-    "settings": "Param\u00e8tres",
-    "log_out": "D\u00e9connexion"
+    "settings": "Paramètres",
+    "log_out": "Déconnexion"
   },
   "common": {
     "save": "Enregistrer",
@@ -14,38 +14,52 @@
     "edit": "Modifier",
     "add": "Ajouter",
     "close": "Fermer",
-    "loading": "Chargement\u2026",
+    "loading": "Chargement…",
     "error": "Erreur",
-    "confirm": "\u00cates-vous s\u00fbr\u00b7e ?"
+    "confirm": "Êtes-vous sûr·e ?"
   },
   "auth": {
     "sign_in": "Se connecter",
-    "signing_in": "Connexion\u2026",
-    "username": "Nom d\u2019utilisateur",
+    "signing_in": "Connexion…",
+    "username": "Nom d’utilisateur",
     "password": "Mot de passe",
-    "register": "Cr\u00e9er un compte",
-    "registering": "Cr\u00e9ation\u2026",
+    "register": "Créer un compte",
+    "registering": "Création…",
     "display_name": "Nom complet",
     "email": "E-mail",
     "optional": "optionnel",
     "first_run_setup": "Configuration initiale",
-    "create_admin_account": "Aucun utilisateur n\u2019existe encore \u2014 cr\u00e9ez le compte administrateur.",
-    "already_have_account": "D\u00e9j\u00e0 un compte ?",
+    "create_admin_account": "Aucun utilisateur n’existe encore — créez le compte administrateur.",
+    "already_have_account": "Déjà un compte ?",
     "no_account": "Pas de compte ?",
     "sign_in_link": "Connectez-vous",
-    "register_link": "Cr\u00e9ez-en un",
-    "totp_enter_code": "Saisissez le code \u00e0 6 chiffres de votre application d\u2019authentification, ou un code de sauvegarde.",
-    "authenticator_code": "Code d\u2019authentification",
-    "verifying": "V\u00e9rification\u2026",
-    "verify": "V\u00e9rifier",
+    "register_link": "Créez-en un",
+    "totp_enter_code": "Saisissez le code à 6 chiffres de votre application d’authentification, ou un code de sauvegarde.",
+    "authenticator_code": "Code d’authentification",
+    "verifying": "Vérification…",
+    "verify": "Vérifier",
     "back": "Retour"
   },
   "lang": {
     "label": "Langue",
     "en": "English",
-    "fr": "Fran\u00e7ais",
+    "fr": "Français",
     "de": "Deutsch",
-    "es": "Espa\u00f1ol",
-    "ja": "\u65e5\u672c\u8a9e"
+    "es": "Español",
+    "ja": "日本語"
+  },
+  "profile": {
+    "title": "Votre profil",
+    "username_label": "Nom d'utilisateur",
+    "username_hint": "Le nom d'utilisateur ne peut pas être modifié.",
+    "full_name_label": "Nom complet",
+    "full_name_hint": "Affiché aux autres membres des collections partagées à la place de votre nom d'utilisateur.",
+    "email_label": "E-mail",
+    "new_password_label": "Nouveau mot de passe",
+    "new_password_hint": "laisser vide pour conserver",
+    "language_label": "Langue",
+    "save": "Enregistrer les modifications",
+    "saving": "Enregistrement…",
+    "saved": "Enregistré."
   }
 }

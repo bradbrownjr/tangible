@@ -374,92 +374,6 @@ wheels = [
 ]
 
 [[package]]
-name = "tangible"
-version = "0.17.0rc2"
-source = { editable = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "apscheduler" },
-    { name = "argon2-cffi" },
-    { name = "authlib" },
-    { name = "defusedxml" },
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "itsdangerous" },
-    { name = "mcp" },
-    { name = "pillow" },
-    { name = "pillow-heif" },
-    { name = "prometheus-client" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic", extra = ["email"] },
-    { name = "pydantic-settings" },
-    { name = "pymysql" },
-    { name = "pyotp" },
-    { name = "pypdf" },
-    { name = "pytesseract" },
-    { name = "python-multipart" },
-    { name = "pyyaml" },
-    { name = "qrcode", extra = ["pil"] },
-    { name = "reportlab" },
-    { name = "slowapi" },
-    { name = "sqlalchemy" },
-    { name = "structlog" },
-    { name = "unidecode" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "types-pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.14" },
-    { name = "apscheduler", specifier = ">=3.10.4" },
-    { name = "argon2-cffi", specifier = ">=23.1" },
-    { name = "authlib", specifier = ">=1.3.2" },
-    { name = "defusedxml", specifier = ">=0.7" },
-    { name = "fastapi", specifier = ">=0.115" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
-    { name = "itsdangerous", specifier = ">=2.2" },
-    { name = "mcp", specifier = ">=1.27.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
-    { name = "pillow", specifier = ">=11.0" },
-    { name = "pillow-heif", specifier = ">=0.18" },
-    { name = "prometheus-client", specifier = ">=0.21" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
-    { name = "pydantic", extras = ["email"], specifier = ">=2.9" },
-    { name = "pydantic-settings", specifier = ">=2.6" },
-    { name = "pymysql", specifier = ">=1.1" },
-    { name = "pyotp", specifier = ">=2.9" },
-    { name = "pypdf", specifier = ">=5.1" },
-    { name = "pytesseract", specifier = ">=0.3.13" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0" },
-    { name = "python-multipart", specifier = ">=0.0.17" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "qrcode", extras = ["pil"], specifier = ">=8.0" },
-    { name = "reportlab", specifier = ">=4.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "slowapi", specifier = ">=0.1.9" },
-    { name = "sqlalchemy", specifier = ">=2.0.36" },
-    { name = "structlog", specifier = ">=24.4" },
-    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0" },
-    { name = "unidecode", specifier = ">=1.3" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
-]
-provides-extras = ["dev"]
-
-[[package]]
 name = "cryptography"
 version = "47.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1725,6 +1639,92 @@ sdist = { url = "https://files.pythonhosted.org/packages/ef/52/9ba0f43b686e7f3dd
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a8/45/a132b9074aa18e799b891b91ad72133c98d8042c70f6240e4c5f9dabee2f/structlog-25.5.0-py3-none-any.whl", hash = "sha256:a8453e9b9e636ec59bd9e79bbd4a72f025981b3ba0f5837aebf48f02f37a7f9f", size = 72510, upload-time = "2025-10-27T08:28:21.535Z" },
 ]
+
+[[package]]
+name = "tangible"
+version = "0.17.1"
+source = { editable = "." }
+dependencies = [
+    { name = "alembic" },
+    { name = "apscheduler" },
+    { name = "argon2-cffi" },
+    { name = "authlib" },
+    { name = "defusedxml" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "itsdangerous" },
+    { name = "mcp" },
+    { name = "pillow" },
+    { name = "pillow-heif" },
+    { name = "prometheus-client" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-settings" },
+    { name = "pymysql" },
+    { name = "pyotp" },
+    { name = "pypdf" },
+    { name = "pytesseract" },
+    { name = "python-multipart" },
+    { name = "pyyaml" },
+    { name = "qrcode", extra = ["pil"] },
+    { name = "reportlab" },
+    { name = "slowapi" },
+    { name = "sqlalchemy" },
+    { name = "structlog" },
+    { name = "unidecode" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "types-pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.14" },
+    { name = "apscheduler", specifier = ">=3.10.4" },
+    { name = "argon2-cffi", specifier = ">=23.1" },
+    { name = "authlib", specifier = ">=1.3.2" },
+    { name = "defusedxml", specifier = ">=0.7" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
+    { name = "itsdangerous", specifier = ">=2.2" },
+    { name = "mcp", specifier = ">=1.27.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
+    { name = "pillow", specifier = ">=11.0" },
+    { name = "pillow-heif", specifier = ">=0.18" },
+    { name = "prometheus-client", specifier = ">=0.21" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.9" },
+    { name = "pydantic-settings", specifier = ">=2.6" },
+    { name = "pymysql", specifier = ">=1.1" },
+    { name = "pyotp", specifier = ">=2.9" },
+    { name = "pypdf", specifier = ">=5.1" },
+    { name = "pytesseract", specifier = ">=0.3.13" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0" },
+    { name = "python-multipart", specifier = ">=0.0.17" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "qrcode", extras = ["pil"], specifier = ">=8.0" },
+    { name = "reportlab", specifier = ">=4.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7" },
+    { name = "slowapi", specifier = ">=0.1.9" },
+    { name = "sqlalchemy", specifier = ">=2.0.36" },
+    { name = "structlog", specifier = ">=24.4" },
+    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0" },
+    { name = "unidecode", specifier = ">=1.3" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "types-pyyaml"

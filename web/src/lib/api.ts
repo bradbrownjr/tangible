@@ -81,6 +81,7 @@ export interface User {
     username: string;
     email: string | null;
     display_name: string | null;
+    locale?: string | null;
     is_admin: boolean;
     enrollment_required?: boolean;
 }

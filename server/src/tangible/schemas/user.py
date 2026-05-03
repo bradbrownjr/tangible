@@ -32,6 +32,7 @@ class UserRead(UserBase):
     id: str
     is_admin: bool
     is_active: bool
+    locale: str | None = None
     last_login_at: datetime | None
     created_at: datetime
     enrollment_required: bool = False

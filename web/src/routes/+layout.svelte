@@ -8,7 +8,7 @@
     import { get } from 'svelte/store';
     import { initTheme } from '$lib/theme';
     import { _, locale } from 'svelte-i18n';
-    import { initI18n, setLocale, LOCALES } from '$lib/i18n';
+    import { initI18n } from '$lib/i18n';
     import WhatsNew from '$lib/WhatsNew.svelte';
 
     // Initialise i18n synchronously so strings are ready before first render.
@@ -26,6 +26,7 @@
     let whatsNewOpen = $state(false);
     let lastSeen = $state<string | null>(null);
     let groceryCount = $state(0);
+    let menuOpen = $state(false);
 
     async function refreshGroceryCount() {
         if (!$me) { groceryCount = 0; return; }
@@ -115,6 +116,8 @@
         await goto('/login');
     }
 
+    function closeMenu() { menuOpen = false; }
+
     $effect(() => {
         document.documentElement.lang = $locale ?? 'en';
     });
@@ -137,26 +140,32 @@
         </svg>
         {#if hasUnseen}<span class="dot" aria-hidden="true"></span>{/if}
     </button>
-    <nav>
+    {#if $me}
+        <button
+            class="icon-btn hamburger"
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            onclick={() => (menuOpen = !menuOpen)}
+        >
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                {#if menuOpen}
+                    <path fill="currentColor" d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                {:else}
+                    <path fill="currentColor" d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                {/if}
+            </svg>
+        </button>
+    {/if}
+    <nav class:open={menuOpen}>
         {#if $me}
-            <a href="/">{$_('nav.collections')}</a>
-            <a href="/maintenance">{$_('nav.maintenance')}</a>
-            <a href="/grocery-list">{$_('nav.grocery_list')}{#if groceryCount > 0} <span class="badge">{groceryCount}</span>{/if}</a>
-            <a href="/import">{$_('nav.import')}</a>
-            <a href="/settings">{$_('nav.settings')}</a>
-            <a href="/profile" class="user" title="Edit your profile">{userLabel($me)}</a>
+            <a href="/" onclick={closeMenu}>{$_('nav.collections')}</a>
+            <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
+            <a href="/grocery-list" onclick={closeMenu}>{$_('nav.grocery_list')}{#if groceryCount > 0} <span class="badge">{groceryCount}</span>{/if}</a>
+            <a href="/import" onclick={closeMenu}>{$_('nav.import')}</a>
+            <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
+            <a href="/profile" class="user" onclick={closeMenu} title="Edit your profile">{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
         {/if}
-        <select
-            class="locale-picker"
-            value={$locale}
-            onchange={(e) => setLocale((e.target as HTMLSelectElement).value)}
-            aria-label={$_('lang.label')}
-        >
-            {#each LOCALES as loc}
-                <option value={loc.code}>{loc.label}</option>
-            {/each}
-        </select>
     </nav>
 </header>
 
@@ -176,10 +185,12 @@
     header {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
         padding: 0.75rem 1.5rem;
         background: var(--surface);
         border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+        position: relative;
     }
     .brand {
         font-weight: 700;
@@ -213,6 +224,11 @@
         background: var(--accent);
         border: 2px solid var(--surface);
     }
+    /* hamburger: hidden on desktop, shown on mobile */
+    .hamburger {
+        display: none;
+        margin-left: auto;
+    }
     nav {
         display: flex;
         gap: 1rem;
@@ -232,15 +248,6 @@
         max-width: 1100px;
         margin: 0 auto;
     }
-    .locale-picker {
-        font-size: 0.8rem;
-        padding: 0.2rem 0.4rem;
-        border: 1px solid var(--border, #e5e7eb);
-        border-radius: 4px;
-        background: var(--surface);
-        color: var(--text);
-        cursor: pointer;
-    }
     .badge {
         display: inline-block;
         min-width: 1.2em;
@@ -252,5 +259,36 @@
         border-radius: 999px;
         background: var(--accent, #2563eb);
         color: #fff;
+    }
+    /* --- responsive nav --- */
+    @media (max-width: 768px) {
+        .hamburger {
+            display: inline-flex;
+        }
+        /* hide the whats-new button text label on very small screens */
+        nav {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0;
+            margin-left: 0;
+            padding: 0.5rem 0;
+            border-top: 1px solid var(--border);
+        }
+        nav.open {
+            display: flex;
+        }
+        nav a,
+        nav :global(button) {
+            width: 100%;
+            padding: 0.65rem 0.5rem;
+            border-radius: 0;
+            font-size: 1rem;
+            text-align: left;
+        }
+        nav a:hover {
+            background: color-mix(in srgb, var(--text) 6%, transparent);
+        }
     }
 </style>

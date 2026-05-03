@@ -245,6 +245,8 @@ def update_me(
         from tangible.security import hash_password
 
         user.password_hash = hash_password(payload.password)
+    if payload.locale is not None:
+        user.locale = payload.locale or None
     db.flush()
     db.commit()
     return UserRead.model_validate(user)

@@ -27,6 +27,7 @@ class MeUpdate(BaseModel):
     display_name: str | None = Field(default=None, max_length=128)
     email: EmailStr | None = None
     password: str | None = Field(default=None, min_length=12, max_length=255)
+    locale: str | None = Field(default=None, max_length=10)
 
 
 class SessionInfo(BaseModel):

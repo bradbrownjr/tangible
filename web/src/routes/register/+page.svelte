@@ -3,11 +3,13 @@
     import { api } from '$lib/api';
     import { refreshMe } from '$lib/session';
     import { _ } from 'svelte-i18n';
+    import { locale, LOCALES, setLocale } from '$lib/i18n';
 
     let username = $state('');
     let displayName = $state('');
     let email = $state('');
     let password = $state('');
+    let selectedLocale = $state($locale ?? 'en');
     let error = $state('');
     let busy = $state(false);
 
@@ -23,6 +25,11 @@
                 display_name: displayName || null
             });
             await api.post('/auth/login', { username, password });
+            // Save locale preference to profile immediately after registration.
+            if (selectedLocale && selectedLocale !== 'en') {
+                try { await api.patch('/auth/me', { locale: selectedLocale }); } catch { /* non-fatal */ }
+            }
+            setLocale(selectedLocale);
             await refreshMe();
             await goto('/');
         } catch (e) {
@@ -58,6 +65,14 @@
                 minlength="12"
                 autocomplete="new-password"
             />
+        </div>
+        <div class="field">
+            <label for="lang">{$_('lang.label')}</label>
+            <select id="lang" bind:value={selectedLocale} onchange={() => setLocale(selectedLocale)}>
+                {#each LOCALES as loc}
+                    <option value={loc.code}>{loc.label}</option>
+                {/each}
+            </select>
         </div>
         <button type="submit" disabled={busy}>{busy ? $_('auth.registering') : $_('auth.register')}</button>
         {#if error}<p class="error">{error}</p>{/if}
