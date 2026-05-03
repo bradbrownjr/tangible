@@ -1,8 +1,6 @@
 # Changelog
 
-All notable changes to **Tangible** are documented here. Format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
