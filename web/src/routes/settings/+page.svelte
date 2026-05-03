@@ -73,6 +73,8 @@
     let siteSettingsSaved = $state(false);
     let siteSettingsError = $state('');
     let siteSettingsLoaded = $state(false);
+    let testResults = $state<Record<string, { status: 'idle' | 'testing' | 'ok' | 'error'; message: string }>>({});
+    const TESTABLE_INTEGRATION_KEYS = new Set(['discogs_token', 'tmdb_api_key', 'igdb_client_id', 'google_books_api_key', 'upcitemdb_key']);
 
     // Enrollment enforcement
     const enrollRequired = $derived(!!$me?.enrollment_required);
@@ -321,6 +323,26 @@
             await loadSiteSettings();
         } catch (e) {
             siteSettingsError = (e as Error).message;
+        }
+    }
+
+    async function testEmail() {
+        testResults['__email__'] = { status: 'testing', message: '' };
+        try {
+            const res = await api.post<{ ok: boolean; message: string }>('/admin/system/test-email', {});
+            testResults['__email__'] = { status: res.ok ? 'ok' : 'error', message: res.message };
+        } catch (e) {
+            testResults['__email__'] = { status: 'error', message: (e as Error).message };
+        }
+    }
+
+    async function testIntegration(key: string) {
+        testResults[key] = { status: 'testing', message: '' };
+        try {
+            const res = await api.post<{ ok: boolean; message: string }>(`/admin/system/test-integration/${encodeURIComponent(key)}`, {});
+            testResults[key] = { status: res.ok ? 'ok' : 'error', message: res.message };
+        } catch (e) {
+            testResults[key] = { status: 'error', message: (e as Error).message };
         }
     }
 
@@ -599,10 +621,26 @@
                                     {#if s.source === 'database'}
                                         <button class="secondary small" title={$_('settings.setting_revert_title')} onclick={() => clearSiteSetting(s.key)}>{$_('settings.setting_revert_button')}</button>
                                     {/if}
+                                    {#if TESTABLE_INTEGRATION_KEYS.has(s.key)}
+                                        <button class="secondary small" disabled={testResults[s.key]?.status === 'testing'} onclick={() => testIntegration(s.key)}>
+                                            {testResults[s.key]?.status === 'testing' ? $_('settings.testing_button') : $_('settings.test_connection_button')}
+                                        </button>
+                                        {#if testResults[s.key]?.status === 'ok'}<span class="ok" style="font-size:0.8rem">&#10003; {testResults[s.key].message}</span>{/if}
+                                        {#if testResults[s.key]?.status === 'error'}<span class="error" style="font-size:0.8rem">&#10007; {testResults[s.key].message}</span>{/if}
+                                    {/if}
                                 </div>
                             </div>
                         {/each}
                     </div>
+                    {#if section === 'email'}
+                        <div style="margin-top:0.75rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+                            <button class="secondary small" disabled={testResults['__email__']?.status === 'testing'} onclick={testEmail}>
+                                {testResults['__email__']?.status === 'testing' ? $_('settings.testing_button') : $_('settings.test_email_button')}
+                            </button>
+                            {#if testResults['__email__']?.status === 'ok'}<span class="ok" style="font-size:0.85rem">&#10003; {testResults['__email__'].message}</span>{/if}
+                            {#if testResults['__email__']?.status === 'error'}<span class="error" style="font-size:0.85rem">&#10007; {testResults['__email__'].message}</span>{/if}
+                        </div>
+                    {/if}
                 {/if}
             {/each}
             {#if siteSettingsError}<p class="error">{siteSettingsError}</p>{/if}

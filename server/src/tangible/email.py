@@ -70,6 +70,41 @@ def send_alert_digest(
         log.warning("alert_email_failed", to=to_email, error=str(exc))
 
 
+def test_smtp_connection(settings: Settings, to_email: str) -> tuple[bool, str]:
+    """Open an SMTP connection, authenticate, and send a test email.
+
+    Returns (True, "OK") on success or (False, error_message) on failure.
+    """
+    from email.mime.text import MIMEText as _MIMEText
+
+    msg = _MIMEText("This is a test email from Tangible to verify your SMTP configuration.", "plain", "utf-8")
+    msg["Subject"] = "Tangible — SMTP test"
+    msg["From"] = settings.smtp_from  # type: ignore[assignment]
+    msg["To"] = to_email
+
+    try:
+        if settings.smtp_starttls:
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:  # type: ignore[arg-type]
+                smtp.ehlo()
+                smtp.starttls(context=ctx)
+                smtp.ehlo()
+                if settings.smtp_user:
+                    smtp.login(settings.smtp_user, settings.smtp_password or "")
+                smtp.sendmail(settings.smtp_from, to_email, msg.as_string())
+        else:
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, context=ctx) as smtp:  # type: ignore[arg-type]
+                if settings.smtp_user:
+                    smtp.login(settings.smtp_user, settings.smtp_password or "")
+                smtp.sendmail(settings.smtp_from, to_email, msg.as_string())
+        log.info("smtp_test_sent", to=to_email)
+        return True, f"Test email sent to {to_email}"
+    except Exception as exc:
+        log.warning("smtp_test_failed", error=str(exc))
+        return False, str(exc)
+
+
 _KIND_LABELS = {
     "maintenance_due": "Maintenance due",
     "chore_due": "Chore due",
