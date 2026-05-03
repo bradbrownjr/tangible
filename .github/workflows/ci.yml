@@ -99,13 +99,6 @@ jobs:
         run: npm run check
       - name: Build
         run: npm run build
-      - name: Upload web build
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: web/build
-          if-no-files-found: error
-          retention-days: 7
 
   docker:
     name: Docker build (smoke)
@@ -123,7 +116,7 @@ jobs:
           load: true
           tags: tangible:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
       - name: Run image and probe /healthz
         run: |
           docker run -d --name tangible-ci -p 8000:8000 \

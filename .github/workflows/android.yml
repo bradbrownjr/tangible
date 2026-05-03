@@ -110,7 +110,7 @@ jobs:
           name: tangible-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
 
       - name: Assemble release APK (if tag)
         if: startsWith(github.ref, 'refs/tags/v')
