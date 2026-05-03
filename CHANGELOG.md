@@ -6,6 +6,13 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.1] — 2026-05-03
+
+- **Fix grocery list nav link** — the Grocery List link was hidden when
+  the list was empty, making it impossible to add the first item. The
+  link is now always visible; the count badge only appears when there
+  are open entries.
+
 ## [0.17.0] — 2026-05-03
 
 - **Rebranded to Tangible** — the app, server, Docker image, Android package,
