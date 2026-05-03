@@ -470,6 +470,9 @@
   },
   "settings": {
     "title": "设置",
+    "tab_user": "用户",
+    "tab_admin": "管理员",
+    "language_label": "语言",
     "enrollment_required_banner": "需要双因素认证。",
     "enrollment_banner_message": "您的管理员要求所有账户启用 2FA。请在下方设置后才能继续。",
     "upcoming_alerts_heading": "即将到来的提醒",

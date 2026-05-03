@@ -5,7 +5,8 @@
     import { api, type SiteSetting } from '$lib/api';
     import { me, refreshMe } from '$lib/session';
     import { theme, type ThemeMode } from '$lib/theme';
-    import { _ } from 'svelte-i18n';
+    import { _, locale } from 'svelte-i18n';
+    import { LOCALES, setLocale } from '$lib/i18n';
 
     interface Token {
         id: string;
@@ -76,6 +77,20 @@
     // Enrollment enforcement
     const enrollRequired = $derived(!!$me?.enrollment_required);
     const enrollParam = $derived(page.url.searchParams.has('enroll'));
+
+    // Tab + locale
+    let activeTab = $state<'user' | 'admin'>('user');
+    let selectedLocale = $state($me?.locale ?? $locale ?? 'en');
+    $effect(() => { if ($me?.locale) selectedLocale = $me.locale; });
+
+    async function changeLocale(code: string) {
+        selectedLocale = code;
+        setLocale(code);
+        try {
+            await api.patch('/auth/me', { locale: code });
+            await refreshMe();
+        } catch { /* non-fatal */ }
+    }
 
     async function load() {
         try {
@@ -341,6 +356,14 @@
 {#if error}<p class="error">{error}</p>{/if}
 {#if scrubResult}<p class="ok">{scrubResult}</p>{/if}
 
+{#if $me?.is_admin}
+    <div class="tab-bar" role="tablist">
+        <button role="tab" class={activeTab === 'user' ? 'tab active' : 'tab'} aria-selected={activeTab === 'user'} onclick={() => (activeTab = 'user')}>{$_('settings.tab_user')}</button>
+        <button role="tab" class={activeTab === 'admin' ? 'tab active' : 'tab'} aria-selected={activeTab === 'admin'} onclick={() => (activeTab = 'admin')}>{$_('settings.tab_admin')}</button>
+    </div>
+{/if}
+
+{#if !$me?.is_admin || activeTab === 'user'}
 <div class="card" style="margin-bottom: 1rem">
     <h3 style="margin-top:0">{$_('settings.appearance_heading')}</h3>
     <p class="muted">{$_('settings.appearance_description')}</p>
@@ -355,6 +378,19 @@
                 {opt === 'light' ? $_('settings.theme_light') : opt === 'dark' ? $_('settings.theme_dark') : $_('settings.theme_system')}
             </button>
         {/each}
+    </div>
+    <div style="margin-top:0.75rem">
+        <label for="lang-select" style="display:block;margin-bottom:0.35rem;font-size:0.875rem">{$_('settings.language_label')}</label>
+        <select
+            id="lang-select"
+            value={selectedLocale}
+            onchange={(e) => changeLocale((e.target as HTMLSelectElement).value)}
+            style="width:auto"
+        >
+            {#each LOCALES as loc (loc.code)}
+                <option value={loc.code}>{loc.label}</option>
+            {/each}
+        </select>
     </div>
 </div>
 
@@ -511,7 +547,9 @@
     </div>
 </div>
 
-{#if $me?.is_admin}
+{/if}
+
+{#if $me?.is_admin && activeTab === 'admin'}
     {#if siteSettingsLoaded}
         <div class="card" style="margin-top: 1rem">
             <h3 style="margin-top:0">{$_('settings.server_settings_heading')}</h3>
@@ -667,6 +705,33 @@
 {/if}
 
 <style>
+    .tab-bar {
+        display: flex;
+        gap: 0;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 1.25rem;
+    }
+    .tab {
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        padding: 0.5rem 1.25rem;
+        font-size: 0.95rem;
+        cursor: pointer;
+        color: var(--muted);
+        border-radius: 0;
+    }
+    .tab.active {
+        color: var(--text);
+        border-bottom-color: var(--accent);
+        font-weight: 600;
+    }
+    .tab:hover:not(.active) {
+        color: var(--text);
+        background: color-mix(in srgb, var(--text) 5%, transparent);
+    }
+
     .theme-toggle {
         display: flex;
         gap: 0.5rem;

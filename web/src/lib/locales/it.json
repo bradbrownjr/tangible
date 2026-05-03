@@ -470,6 +470,9 @@
   },
   "settings": {
     "title": "Impostazioni",
+    "tab_user": "Utente",
+    "tab_admin": "Admin",
+    "language_label": "Lingua",
     "enrollment_required_banner": "Autenticazione a due fattori richiesta.",
     "enrollment_banner_message": "Il tuo amministratore richiede la 2FA per tutti gli account. Configurala di seguito prima di continuare.",
     "upcoming_alerts_heading": "Avvisi imminenti",

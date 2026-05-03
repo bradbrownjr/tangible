@@ -470,6 +470,9 @@
   },
   "settings": {
     "title": "Settings",
+    "tab_user": "User",
+    "tab_admin": "Admin",
+    "language_label": "Language",
     "enrollment_required_banner": "Two-factor authentication required.",
     "enrollment_banner_message": "Your administrator requires 2FA for all accounts. Please set it up below before you can continue.",
     "upcoming_alerts_heading": "Upcoming alerts",

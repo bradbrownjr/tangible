@@ -2,11 +2,9 @@
     import { api, type User } from '$lib/api';
     import { me, refreshMe } from '$lib/session';
     import { _ } from 'svelte-i18n';
-    import { locale, LOCALES, setLocale } from '$lib/i18n';
 
     let displayName = $state($me ? ($me.display_name ?? '') : '');
     let email = $state($me ? ($me.email ?? '') : '');
-    let selectedLocale = $state($me?.locale ?? $locale ?? 'en');
     let password = $state('');
     let busy = $state(false);
     let error = $state('');
@@ -17,7 +15,6 @@
         if ($me) {
             displayName = $me.display_name ?? '';
             email = $me.email ?? '';
-            selectedLocale = $me.locale ?? $locale ?? 'en';
         }
     });
 
@@ -30,11 +27,9 @@
             const body: Record<string, unknown> = {
                 display_name: displayName,
                 email: email || null,
-                locale: selectedLocale,
             };
             if (password) body.password = password;
             await api.patch<User>('/auth/me', body);
-            setLocale(selectedLocale);
             await refreshMe();
             password = '';
             saved = true;
@@ -75,14 +70,6 @@
                     minlength="12"
                     autocomplete="new-password"
                 />
-            </div>
-            <div class="field">
-                <label for="lang">{$_('profile.language_label')}</label>
-                <select id="lang" bind:value={selectedLocale}>
-                    {#each LOCALES as loc}
-                        <option value={loc.code}>{loc.label}</option>
-                    {/each}
-                </select>
             </div>
             <button type="submit" disabled={busy}>{busy ? $_('profile.saving') : $_('profile.save')}</button>
             {#if saved}<p class="ok">{$_('profile.saved')}</p>{/if}

@@ -470,6 +470,9 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "tab_user": "Benutzer",
+    "tab_admin": "Admin",
+    "language_label": "Sprache",
     "enrollment_required_banner": "Zwei-Faktor-Authentifizierung erforderlich.",
     "enrollment_banner_message": "Ihr Administrator erfordert 2FA. Bitte richten Sie sie unten ein.",
     "upcoming_alerts_heading": "Bevorstehende Warnungen",

@@ -470,6 +470,9 @@
   },
   "settings": {
     "title": "設定",
+    "tab_user": "ユーザー",
+    "tab_admin": "管理",
+    "language_label": "言語",
     "enrollment_required_banner": "2段階認証が必須です。",
     "enrollment_banner_message": "管理者がすべてのアカウントで2FAを必須としています。続行する前に下で設定してください。",
     "upcoming_alerts_heading": "予定されたアラート",

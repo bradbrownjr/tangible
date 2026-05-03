@@ -470,6 +470,9 @@
   },
   "settings": {
     "title": "Configuración",
+    "tab_user": "Usuario",
+    "tab_admin": "Admin",
+    "language_label": "Idioma",
     "enrollment_required_banner": "Se requiere autenticación de dos factores.",
     "enrollment_banner_message": "Su administrador requiere 2FA. Confíbgurela abajo.",
     "upcoming_alerts_heading": "Alertas próximas",
