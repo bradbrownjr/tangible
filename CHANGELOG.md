@@ -6,6 +6,8 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.2] — 2026-05-03
+
 - **Grocery list: back button and add item** — the Android grocery list screen
   now has a back button in the top bar and a floating action button to add
   ad-hoc items directly from the list.
