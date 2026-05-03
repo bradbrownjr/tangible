@@ -74,6 +74,7 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "Tangible $VERSION" \
               --notes-file notes.md \
+              --draft=false \
               $PRERELEASE
           else
             gh release create "$TAG" \
