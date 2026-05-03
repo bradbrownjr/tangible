@@ -35,6 +35,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -45,6 +46,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.data.repo.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +55,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import android.content.Context
 import javax.inject.Inject
 
 data class LoginUi(
@@ -70,6 +74,7 @@ data class LoginUi(
 class LoginViewModel @Inject constructor(
     private val auth: AuthRepository,
     session: SessionStore,
+    @ApplicationContext private val context: Context,
     @Suppress("UNUSED_PARAMETER") savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LoginUi())
@@ -96,9 +101,9 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             val (msg, ok) = try {
                 auth.testConnection(s.baseUrl)
-                Pair("Connected successfully", true)
+                Pair(context.getString(R.string.msg_connected_successfully), true)
             } catch (t: Throwable) {
-                Pair(t.message ?: "Connection failed", false)
+                Pair(t.message ?: context.getString(R.string.msg_connection_failed), false)
             }
             _state.value = _state.value.copy(testBusy = false, testResult = msg, testOk = ok)
         }
@@ -113,7 +118,7 @@ class LoginViewModel @Inject constructor(
                 auth.login(serverUrl = s.baseUrl, username = s.username, password = s.password)
                 _state.value = _state.value.copy(busy = false, done = true)
             } catch (t: Throwable) {
-                _state.value = _state.value.copy(busy = false, error = t.message ?: "Login failed")
+                _state.value = _state.value.copy(busy = false, error = t.message ?: context.getString(R.string.msg_login_failed))
             }
         }
     }
@@ -174,7 +179,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, vm: LoginViewModel = hiltViewModel()) {
         OutlinedTextField(
             value = s.baseUrl,
             onValueChange = { v -> vm.update { copy(baseUrl = v) } },
-            label = { Text("Server URL (e.g. https://tangible.example.com)") },
+            label = { Text(stringResource(R.string.server_url_hint)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
@@ -196,7 +201,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, vm: LoginViewModel = hiltViewModel()) {
                 if (s.testBusy) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Test connection")
+                    Text(stringResource(R.string.test_connection))
                 }
             }
             if (s.testResult != null) {
@@ -213,7 +218,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, vm: LoginViewModel = hiltViewModel()) {
             value = s.username,
             onValueChange = { v -> vm.update { copy(username = v) } },
             autofillTypes = listOf(AutofillType.Username),
-            label = { Text("Username") },
+            label = { Text(stringResource(R.string.username)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(userFocus),
@@ -228,7 +233,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, vm: LoginViewModel = hiltViewModel()) {
             value = s.password,
             onValueChange = { v -> vm.update { copy(password = v) } },
             autofillTypes = listOf(AutofillType.Password),
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.password)) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier
                 .fillMaxWidth()
@@ -249,7 +254,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, vm: LoginViewModel = hiltViewModel()) {
                 enabled = s.baseUrl.isNotBlank() && s.username.isNotBlank() && s.password.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Sign in")
+                Text(stringResource(R.string.sign_in))
             }
         }
         if (s.error != null) {

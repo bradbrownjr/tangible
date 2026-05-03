@@ -16,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -29,31 +31,8 @@ import kotlinx.coroutines.launch
 import io.github.bradbrownjr.tangible.data.remote.GroceryAisleDto
 import io.github.bradbrownjr.tangible.data.remote.GroceryStoreDto
 import io.github.bradbrownjr.tangible.data.repo.GroceryRepository
+import io.github.bradbrownjr.tangible.R
 import javax.inject.Inject
-
-private data class GroceryCategoryPreset(val slug: String, val label: String)
-
-private val GROCERY_CATEGORY_PRESETS = listOf(
-    GroceryCategoryPreset("produce",             "Produce"),
-    GroceryCategoryPreset("bread",               "Bread"),
-    GroceryCategoryPreset("bakery",              "Bakery"),
-    GroceryCategoryPreset("meat-seafood",        "Meat & Seafood"),
-    GroceryCategoryPreset("deli",                "Deli"),
-    GroceryCategoryPreset("dairy-eggs",          "Dairy & Eggs"),
-    GroceryCategoryPreset("frozen",              "Frozen"),
-    GroceryCategoryPreset("canned-pantry",       "Canned & Pantry"),
-    GroceryCategoryPreset("pasta-grains",        "Pasta & Grains"),
-    GroceryCategoryPreset("snacks",              "Snacks"),
-    GroceryCategoryPreset("beverages",           "Beverages"),
-    GroceryCategoryPreset("breakfast-cereal",    "Breakfast & Cereal"),
-    GroceryCategoryPreset("condiments-spices",   "Condiments & Spices"),
-    GroceryCategoryPreset("cleaning-household",  "Cleaning & Household"),
-    GroceryCategoryPreset("health-beauty",       "Health & Beauty"),
-    GroceryCategoryPreset("pet-supplies",        "Pet Supplies"),
-    GroceryCategoryPreset("alcohol",             "Alcohol"),
-)
-
-private val PRESET_SLUGS = GROCERY_CATEGORY_PRESETS.map { it.slug }.toSet()
 
 data class GroceryStoreListUi(
     val stores: List<GroceryStoreDto> = emptyList(),
@@ -119,17 +98,17 @@ fun GroceryStoreListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Stores") },
+                title = { Text(stringResource(R.string.my_stores)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreateDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add store")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_store))
             }
         },
     ) { innerPadding ->
@@ -144,9 +123,9 @@ fun GroceryStoreListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text("No stores yet.", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.no_stores), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "Add a store to sort your shopping list by aisle.",
+                            stringResource(R.string.no_stores_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -158,17 +137,17 @@ fun GroceryStoreListScreen(
                             ListItem(
                                 headlineContent = { Text(store.name) },
                                 supportingContent = {
-                                    Text("${store.aisles.size} aisle${if (store.aisles.size == 1) "" else "s"}")
+                                    Text(pluralStringResource(R.plurals.aisle_count, store.aisles.size, store.aisles.size))
                                 },
                                 trailingContent = {
                                     Row {
                                         IconButton(onClick = { onOpenStore(store.id) }) {
-                                            Icon(Icons.Default.Edit, contentDescription = "Edit aisles")
+                                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_edit_aisles))
                                         }
                                         IconButton(onClick = { confirmDeleteStore = store }) {
                                             Icon(
                                                 Icons.Default.Delete,
-                                                contentDescription = "Delete store",
+                                                contentDescription = stringResource(R.string.cd_delete_store),
                                                 tint = MaterialTheme.colorScheme.error,
                                             )
                                         }
@@ -191,8 +170,8 @@ fun GroceryStoreListScreen(
 
     if (showCreateDialog) {
         NameInputDialog(
-            title = "New store",
-            label = "Store name",
+            title = stringResource(R.string.new_store),
+            label = stringResource(R.string.store_name),
             onDismiss = { showCreateDialog = false },
             onConfirm = { name -> viewModel.createStore(name); showCreateDialog = false },
         )
@@ -201,15 +180,15 @@ fun GroceryStoreListScreen(
     confirmDeleteStore?.let { store ->
         AlertDialog(
             onDismissRequest = { confirmDeleteStore = null },
-            title = { Text("Delete store?") },
-            text = { Text("\"${store.name}\" and all its aisles will be deleted. Your grocery list is not affected.") },
+            title = { Text(stringResource(R.string.delete_store_title)) },
+            text = { Text(stringResource(R.string.delete_store_body, store.name)) },
             confirmButton = {
                 Button(
                     onClick = { viewModel.deleteStore(store.id); confirmDeleteStore = null },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDeleteStore = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDeleteStore = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -335,17 +314,17 @@ fun GroceryAisleEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(ui.store?.name ?: "Aisles") },
+                title = { Text(ui.store?.name ?: stringResource(R.string.aisles_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreateDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add aisle")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_aisle))
             }
         },
     ) { innerPadding ->
@@ -360,10 +339,9 @@ fun GroceryAisleEditorScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("No aisles yet.", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.no_aisles), style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                "Add aisles and assign category slugs to each one.\n" +
-                                    "Your grocery list will then be sorted by aisle order.",
+                                stringResource(R.string.no_aisles_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -378,16 +356,16 @@ fun GroceryAisleEditorScreen(
                                             Text(aisle.category_slugs.joinToString(", "))
                                         }
                                     },
-                                    overlineContent = { Text("Position ${idx + 1}") },
+                                    overlineContent = { Text(stringResource(R.string.position, idx + 1)) },
                                     trailingContent = {
                                         Row {
                                             IconButton(onClick = { editAisle = aisle }) {
-                                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                                             }
                                             IconButton(onClick = { confirmDeleteAisle = aisle }) {
                                                 Icon(
                                                     Icons.Default.Delete,
-                                                    contentDescription = "Delete",
+                                                    contentDescription = stringResource(R.string.delete),
                                                     tint = MaterialTheme.colorScheme.error,
                                                 )
                                             }
@@ -411,7 +389,7 @@ fun GroceryAisleEditorScreen(
 
     if (showCreateDialog) {
         AisleInputDialog(
-            title = "New aisle",
+            title = stringResource(R.string.new_aisle),
             initialName = "",
             initialSlugs = emptyList(),
             onDismiss = { showCreateDialog = false },
@@ -424,7 +402,7 @@ fun GroceryAisleEditorScreen(
 
     editAisle?.let { aisle ->
         AisleInputDialog(
-            title = "Edit aisle",
+            title = stringResource(R.string.edit_aisle),
             initialName = aisle.name,
             initialSlugs = aisle.category_slugs,
             onDismiss = { editAisle = null },
@@ -438,15 +416,15 @@ fun GroceryAisleEditorScreen(
     confirmDeleteAisle?.let { aisle ->
         AlertDialog(
             onDismissRequest = { confirmDeleteAisle = null },
-            title = { Text("Delete aisle?") },
-            text = { Text("\"${aisle.name}\" will be removed from this store.") },
+            title = { Text(stringResource(R.string.delete_aisle_title)) },
+            text = { Text(stringResource(R.string.delete_aisle_body, aisle.name)) },
             confirmButton = {
                 Button(
                     onClick = { viewModel.deleteAisle(aisle.id); confirmDeleteAisle = null },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDeleteAisle = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDeleteAisle = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -481,10 +459,10 @@ private fun NameInputDialog(
         },
         confirmButton = {
             Button(onClick = { if (value.isNotBlank()) onConfirm(value.trim()) }, enabled = value.isNotBlank()) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -526,17 +504,13 @@ private fun AisleInputDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Aisle name *") },
-                    placeholder = { Text("e.g. Dairy, Produce, Aisle 3") },
+                label = { Text(stringResource(R.string.aisle_name_required)) },
+                    placeholder = { Text(stringResource(R.string.aisle_name_placeholder)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Text("Categories", style = MaterialTheme.typography.labelMedium)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                Text(stringResource(R.string.categories), style = MaterialTheme.typography.labelMedium)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     GROCERY_CATEGORY_PRESETS.forEach { cat ->
                         FilterChip(
                             selected = cat.slug in selectedSlugs.value,
@@ -546,16 +520,17 @@ private fun AisleInputDialog(
                                 else
                                     selectedSlugs.value + cat.slug
                             },
-                            label = { Text(cat.label) },
+                            label = { Text(stringResource(cat.labelRes)) },
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
                 OutlinedTextField(
                     value = customText,
                     onValueChange = { customText = it },
-                    label = { Text("Custom categories (optional)") },
-                    placeholder = { Text("e.g. organic, gluten-free") },
-                    supportingText = { Text("Comma-separated. Items with matching categories appear in this aisle.") },
+                    label = { Text(stringResource(R.string.custom_categories_optional)) },
+                    placeholder = { Text(stringResource(R.string.custom_categories_placeholder)) },
+                    supportingText = { Text(stringResource(R.string.custom_categories_hint)) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -565,8 +540,8 @@ private fun AisleInputDialog(
             Button(
                 onClick = { if (name.isNotBlank()) onConfirm(name.trim(), buildSlugs()) },
                 enabled = name.isNotBlank(),
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

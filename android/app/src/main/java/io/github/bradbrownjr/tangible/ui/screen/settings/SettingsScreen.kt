@@ -15,31 +15,35 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
 import io.github.bradbrownjr.tangible.data.remote.NotificationPrefDto
 import io.github.bradbrownjr.tangible.data.remote.NotificationPrefUpdate
 import io.github.bradbrownjr.tangible.data.repo.AuthRepository
+import android.content.Context
 import javax.inject.Inject
 
-private val KIND_LABELS = mapOf(
-    "maintenance_due" to "Maintenance due",
-    "chore_due" to "Chore due",
-    "item_use_by" to "Item use-by",
-    "item_expires" to "Item expires",
-    "lot_use_by" to "Package use-by",
-    "low_stock" to "Low stock",
+private val KIND_LABEL_RES = mapOf(
+    "maintenance_due" to R.string.notif_maintenance_due,
+    "chore_due" to R.string.notif_chore_due,
+    "item_use_by" to R.string.notif_item_use_by,
+    "item_expires" to R.string.notif_item_expires,
+    "lot_use_by" to R.string.notif_lot_use_by,
+    "low_stock" to R.string.notif_low_stock,
 )
 
 data class SettingsUi(
@@ -61,6 +65,7 @@ class SettingsViewModel @Inject constructor(
     private val session: SessionStore,
     private val auth: AuthRepository,
     private val api: TangibleApi,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUi())
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
@@ -128,9 +133,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val (msg, ok) = try {
                 auth.testConnection(url)
-                Pair("Connected successfully", true)
+                Pair(context.getString(R.string.msg_connected_successfully), true)
             } catch (t: Throwable) {
-                Pair(t.message ?: "Connection failed", false)
+                Pair(t.message ?: context.getString(R.string.msg_connection_failed), false)
             }
             _state.value = _state.value.copy(testBusy = false, testResult = msg, testOk = ok)
         }
@@ -161,10 +166,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
             )
@@ -174,8 +179,8 @@ fun SettingsScreen(
             Modifier.fillMaxSize().padding(padding).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { Text("Server: ${s.baseUrl ?: "—"}") }
-            item { Text("Signed in as: ${s.username ?: "—"}") }
+            item { Text(stringResource(R.string.server_prefix, s.baseUrl ?: "—")) }
+            item { Text(stringResource(R.string.signed_in_as, s.username ?: "—")) }
             item {
                 Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -188,7 +193,7 @@ fun SettingsScreen(
                         if (s.testBusy) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("Test connection")
+                            Text(stringResource(R.string.test_connection))
                         }
                     }
                     if (s.testResult != null) {
@@ -202,13 +207,17 @@ fun SettingsScreen(
             }
             item { HorizontalDivider() }
             item {
-                Text("Appearance", style = MaterialTheme.typography.labelMedium,
+                Text(stringResource(R.string.appearance), style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
                 @OptIn(ExperimentalMaterial3Api::class)
                 SingleChoiceSegmentedButtonRow {
-                    val options = listOf("system" to "System", "light" to "Light", "dark" to "Dark")
+                    val options = listOf(
+                        "system" to stringResource(R.string.theme_system),
+                        "light" to stringResource(R.string.theme_light),
+                        "dark" to stringResource(R.string.theme_dark),
+                    )
                     options.forEachIndexed { index, (value, label) ->
                         SegmentedButton(
                             selected = (s.themeMode ?: "system") == value,
@@ -221,15 +230,16 @@ fun SettingsScreen(
             }
             item { HorizontalDivider() }
             item {
-                Text("Notifications", style = MaterialTheme.typography.labelMedium,
+                Text(stringResource(R.string.notifications), style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (s.notifPrefs.isEmpty() && !s.notifBusy) {
-                item { Text("No notification preferences.", style = MaterialTheme.typography.bodySmall) }
+                item { Text(stringResource(R.string.no_notification_prefs), style = MaterialTheme.typography.bodySmall) }
             } else {
                 items(s.notifPrefs, key = { "notif-${it.kind}" }) { pref ->
+                    val kindLabel = KIND_LABEL_RES[pref.kind]?.let { stringResource(it) } ?: pref.kind
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(KIND_LABELS[pref.kind] ?: pref.kind, style = MaterialTheme.typography.bodyMedium)
+                        Text(kindLabel, style = MaterialTheme.typography.bodyMedium)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -241,7 +251,7 @@ fun SettingsScreen(
                                         vm.saveNotifPref(pref.kind, checked, pref.email_enabled, pref.browser_enabled, pref.lead_days)
                                     },
                                 )
-                                Text("App", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.app_label), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -253,19 +263,19 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text("Due soon", style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.due_soon), style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedButton(onClick = vm::refreshAlerts, enabled = !s.alertsBusy) {
                         if (s.alertsBusy) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("Refresh")
+                            Text(stringResource(R.string.refresh))
                         }
                     }
                 }
             }
             if (s.alerts.isEmpty()) {
-                item { Text("No upcoming alerts in the next 14 days.", style = MaterialTheme.typography.bodySmall) }
+                item { Text(stringResource(R.string.no_upcoming_alerts), style = MaterialTheme.typography.bodySmall) }
             } else {
                 items(s.alerts, key = { it.id }) { alert ->
                     ElevatedCard {
@@ -282,7 +292,7 @@ fun SettingsScreen(
                 }
             }
             item { HorizontalDivider() }
-            item { Button(onClick = { vm.signOut(onSignOut) }) { Text("Sign out") } }
+            item { Button(onClick = { vm.signOut(onSignOut) }) { Text(stringResource(R.string.sign_out)) } }
         }
     }
 }

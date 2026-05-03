@@ -396,7 +396,15 @@
     "source_manual": "手动",
     "source_linked": "已关联",
     "mark_purchased_button": "标记已购",
-    "remove_button": "移除"
+    "remove_button": "移除",
+    "no_pantry": "还没有食品储藏室集合。",
+    "create_pantry_button": "创建食品储藏室集合",
+    "creating_button": "创建中…",
+    "manage_stores_title": "管理商店",
+    "no_category": "无类别",
+    "custom_option": "自定义…",
+    "custom_placeholder": "类别名称",
+    "col_category": "类别"
   },
   "import_page": {
     "title": "导入",

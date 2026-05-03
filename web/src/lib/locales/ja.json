@@ -396,7 +396,15 @@
     "source_manual": "手動",
     "source_linked": "リンク済み",
     "mark_purchased_button": "購入済みにマーク",
-    "remove_button": "削除"
+    "remove_button": "削除",
+    "no_pantry": "パントリーのコレクションがまだありません。",
+    "create_pantry_button": "パントリーのコレクションを作成",
+    "creating_button": "作成中…",
+    "manage_stores_title": "店舗を管理",
+    "no_category": "カテゴリーなし",
+    "custom_option": "カスタム…",
+    "custom_placeholder": "カテゴリー名",
+    "col_category": "カテゴリー"
   },
   "import_page": {
     "title": "インポート",

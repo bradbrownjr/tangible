@@ -4,9 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
@@ -15,6 +12,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -24,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.repo.CategoryRepository
@@ -129,30 +128,30 @@ fun CollectionListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Collections") },
+                title = { Text(stringResource(R.string.collections)) },
                 actions = {
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.cd_menu))
                         }
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Grocery List") },
+                                text = { Text(stringResource(R.string.grocery_list)) },
                                 onClick = { menuExpanded = false; onGroceryList() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Maintenance") },
+                                text = { Text(stringResource(R.string.maintenance)) },
                                 onClick = { menuExpanded = false; onMaintenance() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Settings") },
+                                text = { Text(stringResource(R.string.settings)) },
                                 onClick = { menuExpanded = false; onSettings() },
                             )
                             DropdownMenuItem(
-                                text = { Text("About") },
+                                text = { Text(stringResource(R.string.about)) },
                                 onClick = { menuExpanded = false; onAbout() },
                             )
                         }
@@ -162,7 +161,7 @@ fun CollectionListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = vm::openWizard) {
-                Icon(Icons.Default.Add, contentDescription = "New collection")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
             }
         },
     ) { padding ->
@@ -179,10 +178,10 @@ fun CollectionListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(s.error!!, color = MaterialTheme.colorScheme.error)
-                    OutlinedButton(onClick = vm::refresh) { Text("Retry") }
+                    OutlinedButton(onClick = vm::refresh) { Text(stringResource(R.string.retry)) }
                 }
                 s.items.isEmpty() -> Text(
-                    "No collections yet. Tap + to create one.",
+                    stringResource(R.string.no_collections),
                     Modifier.align(Alignment.Center).padding(16.dp),
                 )
                 else -> LazyColumn(Modifier.fillMaxSize()) {
@@ -202,15 +201,14 @@ fun CollectionListScreen(
         if (s.wizardStep == WizardStep.PICK_PRESET) {
             AlertDialog(
                 onDismissRequest = vm::closeWizard,
-                title = { Text("What are you collecting?") },
+                title = { Text(stringResource(R.string.what_are_you_collecting)) },
                 text = {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    val sorted = s.presets.sortedBy { it.name }
+                    LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.heightIn(max = 320.dp),
                     ) {
-                        items(s.presets, key = { it.id }) { cat ->
+                        items(sorted, key = { it.id }) { cat ->
                             OutlinedButton(
                                 onClick = { vm.pickPreset(cat) },
                                 modifier = Modifier.fillMaxWidth(),
@@ -220,12 +218,12 @@ fun CollectionListScreen(
                             OutlinedButton(
                                 onClick = { vm.pickPreset(null) },
                                 modifier = Modifier.fillMaxWidth(),
-                            ) { Text("Custom") }
+                            ) { Text(stringResource(R.string.custom)) }
                         }
                     }
                 },
                 confirmButton = {},
-                dismissButton = { TextButton(onClick = vm::closeWizard) { Text("Cancel") } },
+                dismissButton = { TextButton(onClick = vm::closeWizard) { Text(stringResource(R.string.cancel)) } },
             )
         }
 
@@ -233,20 +231,20 @@ fun CollectionListScreen(
         if (s.wizardStep == WizardStep.CONFIRM) {
             AlertDialog(
                 onDismissRequest = vm::closeWizard,
-                title = { Text("New collection") },
+                title = { Text(stringResource(R.string.new_collection)) },
                 text = {
                     Column {
                         OutlinedTextField(
                             value = s.newName,
                             onValueChange = vm::setNewName,
-                            label = { Text("Name") },
+                            label = { Text(stringResource(R.string.collection_name)) },
                             singleLine = true,
                         )
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = s.newDescription,
                             onValueChange = vm::setNewDescription,
-                            label = { Text("Description (optional)") },
+                            label = { Text(stringResource(R.string.collection_description_optional)) },
                             singleLine = true,
                         )
                     }
@@ -255,9 +253,9 @@ fun CollectionListScreen(
                     TextButton(
                         onClick = vm::create,
                         enabled = s.newName.isNotBlank(),
-                    ) { Text("Create") }
+                    ) { Text(stringResource(R.string.create)) }
                 },
-                dismissButton = { TextButton(onClick = vm::closeWizard) { Text("Cancel") } },
+                dismissButton = { TextButton(onClick = vm::closeWizard) { Text(stringResource(R.string.cancel)) } },
             )
         }
     }

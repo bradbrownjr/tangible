@@ -64,8 +64,8 @@ class MaintenanceAlertWorker @AssistedInject constructor(
 
             // Build a concise summary line.
             val parts = buildList {
-                if (overdue.isNotEmpty()) add("${overdue.size} overdue")
-                if (upcoming.isNotEmpty()) add("${upcoming.size} due soon")
+                if (overdue.isNotEmpty()) add(appContext.getString(R.string.notif_overdue_count, overdue.size))
+                if (upcoming.isNotEmpty()) add(appContext.getString(R.string.notif_due_soon_count, upcoming.size))
             }
             if (parts.isEmpty()) return Result.success()
 
@@ -95,10 +95,10 @@ class MaintenanceAlertWorker @AssistedInject constructor(
             if (mgr.getNotificationChannel(CHANNEL_ID) != null) return
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Maintenance & alerts",
+                context.getString(R.string.notif_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
-                description = "Daily summary of overdue and upcoming maintenance tasks, chores, and expiry alerts."
+                description = context.getString(R.string.notif_channel_description)
             }
             mgr.createNotificationChannel(channel)
         }
@@ -137,7 +137,7 @@ class MaintenanceAlertWorker @AssistedInject constructor(
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("Tangible — maintenance alert")
+                .setContentTitle(context.getString(R.string.notif_alert_title))
                 .setContentText(summary)
                 .setStyle(style)
                 .setContentIntent(tapIntent)

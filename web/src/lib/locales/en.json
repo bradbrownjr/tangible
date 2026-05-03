@@ -396,7 +396,15 @@
     "source_manual": "manual",
     "source_linked": "linked",
     "mark_purchased_button": "Mark purchased",
-    "remove_button": "Remove"
+    "remove_button": "Remove",
+    "no_pantry": "No Pantry collection yet.",
+    "create_pantry_button": "Create Pantry collection",
+    "creating_button": "Creating…",
+    "manage_stores_title": "Manage stores",
+    "no_category": "No category",
+    "custom_option": "Custom…",
+    "custom_placeholder": "Category name",
+    "col_category": "Category"
   },
   "import_page": {
     "title": "Import",

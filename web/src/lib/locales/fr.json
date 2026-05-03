@@ -396,7 +396,15 @@
     "source_manual": "manuel",
     "source_linked": "lié",
     "mark_purchased_button": "Marquer comme acheté",
-    "remove_button": "Retirer"
+    "remove_button": "Retirer",
+    "no_pantry": "Pas encore de collection Garde-manger.",
+    "create_pantry_button": "Créer la collection Garde-manger",
+    "creating_button": "Création…",
+    "manage_stores_title": "Gérer les magasins",
+    "no_category": "Aucune catégorie",
+    "custom_option": "Personnalisé…",
+    "custom_placeholder": "Nom de la catégorie",
+    "col_category": "Catégorie"
   },
   "import_page": {
     "title": "Importer",

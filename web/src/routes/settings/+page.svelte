@@ -5,6 +5,7 @@
     import { api, type SiteSetting } from '$lib/api';
     import { me, refreshMe } from '$lib/session';
     import { theme, type ThemeMode } from '$lib/theme';
+    import { _ } from 'svelte-i18n';
 
     interface Token {
         id: string;
@@ -35,14 +36,14 @@
         lead_days: number;
     }
 
-    const KIND_LABELS: Record<string, string> = {
-        maintenance_due: 'Maintenance due',
-        chore_due: 'Chore due',
-        item_use_by: 'Item use-by',
-        item_expires: 'Item expires',
-        lot_use_by: 'Package use-by',
-        low_stock: 'Low stock'
-    };
+    const KIND_LABELS = $derived<Record<string, string>>({
+        maintenance_due: $_('settings.kind_maintenance_due'),
+        chore_due: $_('settings.kind_chore_due'),
+        item_use_by: $_('settings.kind_item_use_by'),
+        item_expires: $_('settings.kind_item_expires'),
+        lot_use_by: $_('settings.kind_lot_use_by'),
+        low_stock: $_('settings.kind_low_stock'),
+    });
 
     let tokens = $state<Token[]>([]);
     let alerts = $state<DueAlert[]>([]);
@@ -323,12 +324,12 @@
     }
 
     // Group settings by section for display
-    const SECTION_LABELS: Record<string, string> = {
-        security: 'Security',
-        sessions: 'Sessions',
-        integrations: 'Integrations',
-        email: 'Email / SMTP',
-    };
+    const SECTION_LABELS = $derived<Record<string, string>>({
+        security: $_('settings.section_security'),
+        sessions: $_('settings.section_sessions'),
+        integrations: $_('settings.section_integrations'),
+        email: $_('settings.section_email'),
+    });
 
     onMount(async () => {
         await refreshMe();
@@ -342,12 +343,12 @@
     });
 </script>
 
-<h1>Settings</h1>
+<h1>{$_('settings.title')}</h1>
 
 {#if enrollRequired || enrollParam}
     <div class="banner-warn" role="alert">
-        <strong>Two-factor authentication required.</strong>
-        Your administrator requires 2FA for all accounts. Please set it up below before you can continue.
+        <strong>{$_('settings.enrollment_required_banner')}</strong>
+        {$_('settings.enrollment_banner_message')}
     </div>
 {/if}
 
@@ -355,10 +356,10 @@
 {#if scrubResult}<p class="ok">{scrubResult}</p>{/if}
 
 <div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">Upcoming alerts</h3>
-    <p class="muted">Use-by dates, expirations, and maintenance due in the next 14 days.</p>
+    <h3 style="margin-top:0">{$_('settings.upcoming_alerts_heading')}</h3>
+    <p class="muted">{$_('settings.upcoming_alerts_description')}</p>
     {#if alerts.length === 0}
-        <p class="muted">No upcoming alerts.</p>
+        <p class="muted">{$_('settings.no_alerts')}</p>
     {:else}
         <ul class="alerts">
             {#each alerts as a (a.id)}
@@ -373,8 +374,8 @@
 </div>
 
 <div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">Appearance</h3>
-    <p class="muted">Choose how Tangible looks. "System" follows your OS setting.</p>
+    <h3 style="margin-top:0">{$_('settings.appearance_heading')}</h3>
+    <p class="muted">{$_('settings.appearance_description')}</p>
     <div role="radiogroup" aria-label="Theme" class="theme-toggle">
         {#each ['light', 'dark', 'system'] as const as opt (opt)}
             <button
@@ -383,24 +384,24 @@
                 aria-pressed={$theme === opt}
                 onclick={() => theme.set(opt as ThemeMode)}
             >
-                {opt[0].toUpperCase() + opt.slice(1)}
+                {opt === 'light' ? $_('settings.theme_light') : opt === 'dark' ? $_('settings.theme_dark') : $_('settings.theme_system')}
             </button>
         {/each}
     </div>
 </div>
 
 <div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">Notifications</h3>
-    <p class="muted">Choose how you're notified per alert type. Email requires SMTP configured on the server. Browser notifications require permission (prompted below). App notifications appear daily on your Android device.</p>
+    <h3 style="margin-top:0">{$_('settings.notifications_heading')}</h3>
+    <p class="muted">{$_('settings.notifications_description')}</p>
     {#if notifPrefs.length > 0}
         <table class="notif-table">
             <thead>
                 <tr>
-                    <th>Alert type</th>
-                    <th title="Send email digest">Email</th>
-                    <th title="Browser notification when the app is open">Browser</th>
-                    <th title="Daily notification on the Android app">App</th>
-                    <th>Lead time (days)</th>
+                    <th>{$_('settings.notif_col_type')}</th>
+                    <th title={$_('settings.notif_col_email')}>{$_('settings.notif_col_email')}</th>
+                    <th title="Browser notification when the app is open">{$_('settings.notif_col_browser')}</th>
+                    <th title="Daily notification on the Android app">{$_('settings.notif_col_app')}</th>
+                    <th>{$_('settings.notif_col_lead')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -444,8 +445,8 @@
         </table>
     {/if}
     <div style="margin-top:0.75rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
-        <button onclick={sendDigest}>Send email digest now</button>
-        <button class="secondary" onclick={requestBrowserPermission}>Enable browser notifications</button>
+        <button onclick={sendDigest}>{$_('settings.send_digest_button')}</button>
+        <button class="secondary" onclick={requestBrowserPermission}>{$_('settings.browser_permission_button')}</button>
         {#if digestMessage}
             <span class={digestQueued ? 'ok' : 'muted'}>{digestMessage}</span>
         {/if}
@@ -453,33 +454,33 @@
 </div>
 
 <div class="card">
-    <h3 style="margin-top:0">API tokens</h3>
-    <p class="muted">For mobile apps and CLI integrations.</p>
+    <h3 style="margin-top:0">{$_('settings.api_tokens_heading')}</h3>
+    <p class="muted">{$_('settings.api_tokens_description')}</p>
 
     <form onsubmit={create} style="display:flex; gap:.5rem; margin-bottom:1rem">
-        <input bind:value={newName} placeholder="Token name (e.g. Pixel 9)" />
-        <button type="submit">Create</button>
+        <input bind:value={newName} placeholder={$_('settings.token_name_placeholder')} />
+        <button type="submit">{$_('settings.create_token_button')}</button>
     </form>
 
     {#if issuedRaw}
         <div class="card" style="background: var(--surface-2); margin-bottom: 1rem">
             <p>
-                <strong>Save this token now — it won't be shown again:</strong>
+                <strong>{$_('settings.token_save_message')}</strong>
             </p>
             <pre style="word-break: break-all; white-space: pre-wrap">{issuedRaw}</pre>
-            <button class="secondary" onclick={() => (issuedRaw = '')}>Dismiss</button>
+            <button class="secondary" onclick={() => (issuedRaw = '')}>{$_('settings.token_dismiss_button')}</button>
         </div>
     {/if}
 
     {#if tokens.length === 0}
-        <p class="muted">No tokens yet.</p>
+        <p class="muted">{$_('settings.no_tokens')}</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Last used</th>
-                    <th>Expires</th>
+                    <th>{$_('settings.token_col_name')}</th>
+                    <th>{$_('settings.token_col_last_used')}</th>
+                    <th>{$_('settings.token_col_expires')}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -490,7 +491,7 @@
                         <td>{t.last_used_at ?? '—'}</td>
                         <td>{t.expires_at ?? 'never'}</td>
                         <td>
-                            <button class="danger" onclick={() => (revokeModalTokenId = t.id)}>Revoke</button>
+                            <button class="danger" onclick={() => (revokeModalTokenId = t.id)}>{$_('settings.token_revoke_button')}</button>
                         </td>
                     </tr>
                 {/each}
@@ -500,56 +501,55 @@
 </div>
 
 <div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">Two-factor authentication</h3>
+    <h3 style="margin-top:0">{$_('settings.totp_heading')}</h3>
     {#if totpStatus?.enabled}
-        <p class="muted">2FA is <strong>enabled</strong>. Backup codes remaining: {totpStatus.backup_codes_remaining}.</p>
+        <p class="muted">{$_('settings.totp_enabled_message', { values: { count: totpStatus.backup_codes_remaining } })}</p>
         {#if totpBackupCodes.length}
             <div class="card" style="background: var(--surface-2); margin-bottom: 0.75rem">
-                <p><strong>Save these backup codes — they won't be shown again:</strong></p>
+                <p><strong>{$_('settings.backup_codes_heading')}</strong></p>
                 <ul class="backup-codes">
                     {#each totpBackupCodes as c (c)}<li><code>{c}</code></li>{/each}
                 </ul>
-                <button class="secondary" onclick={() => (totpBackupCodes = [])}>Dismiss</button>
+                <button class="secondary" onclick={() => (totpBackupCodes = [])}>{$_('settings.backup_codes_dismiss')}</button>
             </div>
         {/if}
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
-            <button class="secondary" onclick={() => (totpRegenOpen = true)}>Regenerate backup codes</button>
-            <button class="danger" onclick={() => (totpDisableOpen = true)}>Disable 2FA</button>
+            <button class="secondary" onclick={() => (totpRegenOpen = true)}>{$_('settings.totp_regen_button')}</button>
+            <button class="danger" onclick={() => (totpDisableOpen = true)}>{$_('settings.totp_disable_button')}</button>
         </div>
     {:else if totpSetup}
-        <p class="muted">Scan the QR code with your authenticator app, then enter the 6-digit code to activate.</p>
+        <p class="muted">{$_('settings.totp_setup_message')}</p>
         <img src="data:image/png;base64,{totpSetup.qr_png_b64}" alt="TOTP QR code" style="display:block; margin: 0.75rem 0; max-width:200px; image-rendering:pixelated" />
-        <p class="muted">Or enter the secret manually: <code>{totpSetup.secret}</code></p>
+        <p class="muted">{$_('settings.totp_secret_label')} <code>{totpSetup.secret}</code></p>
         <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap">
-            <input bind:value={totpSetupCode} placeholder="6-digit code" maxlength={6} inputmode="numeric" autocomplete="one-time-code" style="width:9rem" />
-            <button onclick={verifyTotpSetup}>Activate 2FA</button>
-            <button class="secondary" onclick={() => { totpSetup = null; totpSetupCode = ''; }}>Cancel</button>
+            <input bind:value={totpSetupCode} placeholder={$_('settings.totp_code_placeholder')} maxlength={6} inputmode="numeric" autocomplete="one-time-code" style="width:9rem" />
+            <button onclick={verifyTotpSetup}>{$_('settings.totp_activate_button')}</button>
+            <button class="secondary" onclick={() => { totpSetup = null; totpSetupCode = ''; }}>{$_('common.cancel')}</button>
         </div>
         {#if totpSetupMessage}<p class="error">{totpSetupMessage}</p>{/if}
     {:else}
-        <p class="muted">Add a second factor to protect your account. You'll need an authenticator app (Google Authenticator, Authy, etc.).</p>
-        <button onclick={startTotpSetup}>Set up 2FA</button>
+        <p class="muted">{$_('settings.totp_disabled_message')}</p>
+        <button onclick={startTotpSetup}>{$_('settings.totp_setup_button')}</button>
         {#if totpSetupMessage}<p class="error">{totpSetupMessage}</p>{/if}
     {/if}
 </div>
 
 <div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">Account</h3>
-    <p class="muted">Export all your data or permanently delete your account.</p>
+    <h3 style="margin-top:0">{$_('settings.account_heading')}</h3>
+    <p class="muted">{$_('settings.account_description')}</p>
     <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
-        <button class="secondary" onclick={exportAccount}>Export my data</button>
-        <button class="danger" onclick={() => (deleteAccountOpen = true)}>Delete account</button>
+        <button class="secondary" onclick={exportAccount}>{$_('settings.export_data_button')}</button>
+        <button class="danger" onclick={() => (deleteAccountOpen = true)}>{$_('settings.delete_account_button')}</button>
     </div>
 </div>
 
 {#if $me?.is_admin}
     {#if siteSettingsLoaded}
         <div class="card" style="margin-top: 1rem">
-            <h3 style="margin-top:0">Server Settings</h3>
+            <h3 style="margin-top:0">{$_('settings.server_settings_heading')}</h3>
             <p class="muted">
-                These override environment variables at runtime. Values set here take precedence
-                over Docker/env config without requiring a restart.
-                <span class="muted" style="font-size:0.8rem">Env vars shown as source indicator only.</span>
+                {$_('settings.server_settings_description')}
+                <span class="muted" style="font-size:0.8rem">{$_('settings.server_settings_env_note')}</span>
             </p>
             {#each Object.entries(SECTION_LABELS) as [section, label] (section)}
                 {@const group = siteSettings.filter(s => s.section === section)}
@@ -579,7 +579,7 @@
                                     {:else}
                                         <div class="sensitive-wrap">
                                             {#if s.sensitive && s.is_set && !(s.key in siteSettingsEdits)}
-                                                <span class="set-badge" title="A value is stored — it is never sent to the browser">Set</span>
+                                                <span class="set-badge" title={$_('settings.setting_sensitive_title')}>{$_('settings.setting_sensitive_set_badge')}</span>
                                             {/if}
                                             <input
                                                 type={s.sensitive ? 'password' : 'text'}
@@ -591,7 +591,7 @@
                                         </div>
                                     {/if}
                                     {#if s.source === 'database'}
-                                        <button class="secondary small" title="Revert to env/default" onclick={() => clearSiteSetting(s.key)}>Revert</button>
+                                        <button class="secondary small" title={$_('settings.setting_revert_title')} onclick={() => clearSiteSetting(s.key)}>{$_('settings.setting_revert_button')}</button>
                                     {/if}
                                 </div>
                             </div>
@@ -600,30 +600,30 @@
                 {/if}
             {/each}
             {#if siteSettingsError}<p class="error">{siteSettingsError}</p>{/if}
-            {#if siteSettingsSaved}<p class="ok">Settings saved.</p>{/if}
+            {#if siteSettingsSaved}<p class="ok">{$_('settings.settings_saved_message')}</p>{/if}
             <div style="margin-top:1rem;display:flex;gap:0.5rem">
-                <button onclick={saveSiteSettings}>Save settings</button>
-                <button class="secondary" onclick={loadSiteSettings}>Reset</button>
+                <button onclick={saveSiteSettings}>{$_('settings.save_settings_button')}</button>
+                <button class="secondary" onclick={loadSiteSettings}>{$_('settings.reset_settings_button')}</button>
             </div>
         </div>
     {/if}
     <div class="card" style="margin-top: 1rem">
-        <h3 style="margin-top:0">System Maintenance</h3>
+        <h3 style="margin-top:0">{$_('settings.system_maintenance_heading')}</h3>
         <p class="muted">
-            Admin only. Scrub all inventory-domain data for clean rebuilds while developing.
+            {$_('settings.system_maintenance_description')}
         </p>
-        <button class="danger" type="button" onclick={() => (scrubModalOpen = true)}>Scrub Inventory Data</button>
+        <button class="danger" type="button" onclick={() => (scrubModalOpen = true)}>{$_('settings.scrub_inventory_button')}</button>
     </div>
 {/if}
 
 {#if revokeModalTokenId}
     <div class="modal-backdrop" role="presentation" onclick={() => (revokeModalTokenId = null)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="revoke-title">Revoke token?</h3>
-            <p class="muted">This token will stop working immediately.</p>
+            <h3 id="revoke-title">{$_('settings.revoke_token_title')}</h3>
+            <p class="muted">{$_('settings.revoke_token_text')}</p>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (revokeModalTokenId = null)}>Cancel</button>
-                <button type="button" class="danger" onclick={revokeConfirmed}>Revoke</button>
+                <button type="button" class="secondary" onclick={() => (revokeModalTokenId = null)}>{$_('common.cancel')}</button>
+                <button type="button" class="danger" onclick={revokeConfirmed}>{$_('settings.revoke_token_confirm')}</button>
             </div>
         </div>
     </div>
@@ -632,21 +632,20 @@
 {#if scrubModalOpen}
     <div class="modal-backdrop" role="presentation" onclick={() => (scrubModalOpen = false)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scrub-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="scrub-title">Scrub inventory data?</h3>
+            <h3 id="scrub-title">{$_('settings.scrub_title')}</h3>
             <p class="muted">
-                This deletes collections, items, lots, photos, tags, loans, maintenance, invites, and related sync data.
-                Users/accounts are kept.
+                {$_('settings.scrub_text')}
             </p>
-            <label for="scrub-confirm" class="muted">Type {scrubPhrase} to confirm</label>
+            <label for="scrub-confirm" class="muted">{$_('settings.scrub_confirm_label', { values: { phrase: scrubPhrase } })}</label>
             <input id="scrub-confirm" bind:value={scrubConfirmText} placeholder={scrubPhrase} />
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (scrubModalOpen = false)}>Cancel</button>
+                <button type="button" class="secondary" onclick={() => (scrubModalOpen = false)}>{$_('common.cancel')}</button>
                 <button
                     type="button"
                     class="danger"
                     disabled={scrubConfirmText.trim().toUpperCase() !== scrubPhrase}
                     onclick={scrubInventory}
-                >Scrub now</button>
+                >{$_('settings.scrub_confirm_button')}</button>
             </div>
         </div>
     </div>
@@ -655,13 +654,13 @@
 {#if totpDisableOpen}
     <div class="modal-backdrop" role="presentation" onclick={() => (totpDisableOpen = false)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="totp-disable-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="totp-disable-title">Disable two-factor authentication?</h3>
-            <p class="muted">Enter your password and current authenticator code to disable 2FA.</p>
-            <div class="field"><label>Password<input type="password" bind:value={totpDisablePassword} autocomplete="current-password" /></label></div>
-            <div class="field"><label>Authenticator code<input bind:value={totpDisableCode} maxlength={10} inputmode="numeric" placeholder="000000" /></label></div>
+            <h3 id="totp-disable-title">{$_('settings.totp_disable_title')}</h3>
+            <p class="muted">{$_('settings.totp_disable_text')}</p>
+            <div class="field"><label>{$_('settings.totp_disable_password_label')}<input type="password" bind:value={totpDisablePassword} autocomplete="current-password" /></label></div>
+            <div class="field"><label>{$_('settings.totp_disable_code_label')}<input bind:value={totpDisableCode} maxlength={10} inputmode="numeric" placeholder={$_('settings.totp_disable_code_placeholder')} /></label></div>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (totpDisableOpen = false)}>Cancel</button>
-                <button type="button" class="danger" onclick={disableTotp}>Disable 2FA</button>
+                <button type="button" class="secondary" onclick={() => (totpDisableOpen = false)}>{$_('common.cancel')}</button>
+                <button type="button" class="danger" onclick={disableTotp}>{$_('settings.totp_disable_confirm')}</button>
             </div>
         </div>
     </div>
@@ -670,12 +669,12 @@
 {#if totpRegenOpen}
     <div class="modal-backdrop" role="presentation" onclick={() => (totpRegenOpen = false)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="totp-regen-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="totp-regen-title">Regenerate backup codes?</h3>
-            <p class="muted">Old backup codes will be invalidated. Enter your current authenticator code to confirm.</p>
-            <div class="field"><label>Authenticator code<input bind:value={totpRegenCode} maxlength={10} inputmode="numeric" placeholder="000000" /></label></div>
+            <h3 id="totp-regen-title">{$_('settings.totp_regen_title')}</h3>
+            <p class="muted">{$_('settings.totp_regen_text')}</p>
+            <div class="field"><label>{$_('settings.totp_disable_code_label')}<input bind:value={totpRegenCode} maxlength={10} inputmode="numeric" placeholder={$_('settings.totp_regen_code_placeholder')} /></label></div>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (totpRegenOpen = false)}>Cancel</button>
-                <button type="button" onclick={regenBackupCodes}>Regenerate</button>
+                <button type="button" class="secondary" onclick={() => (totpRegenOpen = false)}>{$_('common.cancel')}</button>
+                <button type="button" onclick={regenBackupCodes}>{$_('settings.totp_regen_confirm')}</button>
             </div>
         </div>
     </div>
@@ -684,16 +683,16 @@
 {#if deleteAccountOpen}
     <div class="modal-backdrop" role="presentation" onclick={() => (deleteAccountOpen = false)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="delete-account-title">Delete account?</h3>
-            <p class="muted">This permanently deletes your account and all collections you own. This cannot be undone.</p>
-            <div class="field"><label>Password<input type="password" bind:value={deletePassword} autocomplete="current-password" /></label></div>
+            <h3 id="delete-account-title">{$_('settings.delete_account_title')}</h3>
+            <p class="muted">{$_('settings.delete_account_text')}</p>
+            <div class="field"><label>{$_('settings.totp_disable_password_label')}<input type="password" bind:value={deletePassword} autocomplete="current-password" /></label></div>
             {#if totpStatus?.enabled}
-                <div class="field"><label>Authenticator code<input bind:value={deleteTotpCode} maxlength={10} inputmode="numeric" placeholder="000000" /></label></div>
+                <div class="field"><label>{$_('settings.totp_disable_code_label')}<input bind:value={deleteTotpCode} maxlength={10} inputmode="numeric" placeholder={$_('settings.delete_totp_placeholder')} /></label></div>
             {/if}
             {#if deleteMessage}<p class="error">{deleteMessage}</p>{/if}
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (deleteAccountOpen = false)}>Cancel</button>
-                <button type="button" class="danger" onclick={deleteAccount}>Delete my account</button>
+                <button type="button" class="secondary" onclick={() => (deleteAccountOpen = false)}>{$_('common.cancel')}</button>
+                <button type="button" class="danger" onclick={deleteAccount}>{$_('settings.delete_confirm_button')}</button>
             </div>
         </div>
     </div>

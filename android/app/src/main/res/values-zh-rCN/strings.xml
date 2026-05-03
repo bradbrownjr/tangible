@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Tangible</string>
+
+    <!-- Common actions -->
+    <string name="cancel">取消</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="retry">重试</string>
+    <string name="close">关闭</string>
+    <string name="done">完成</string>
+    <string name="create">创建</string>
+    <string name="add">添加</string>
+    <string name="edit">编辑</string>
+    <string name="refresh">刷新</string>
+    <string name="custom">自定义</string>
+    <string name="select_placeholder">选择…</string>
+    <string name="saving">保存中…</string>
+    <string name="loading">加载中…</string>
+    <string name="all">全部</string>
+    <string name="error_generic">出错了。</string>
+
+    <!-- Common content descriptions -->
+    <string name="cd_back">返回</string>
+    <string name="cd_menu">菜单</string>
+    <string name="cd_delete">删除</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_clear_search">清除搜索</string>
+
+    <!-- Login screen -->
+    <string name="server_url">服务器地址</string>
+    <string name="server_url_hint">服务器地址（例如 https://tangible.example.com）</string>
+    <string name="username">用户名</string>
+    <string name="password">密码</string>
+    <string name="sign_in">登录</string>
+    <string name="test_connection">测试连接</string>
+    <string name="msg_connected_successfully">连接成功</string>
+    <string name="msg_connection_failed">连接失败</string>
+    <string name="msg_login_failed">登录失败</string>
+
+    <!-- Collections list -->
+    <string name="collections">藏品</string>
+    <string name="grocery_list">购物清单</string>
+    <string name="maintenance">维护</string>
+    <string name="settings">设置</string>
+    <string name="about">关于</string>
+    <string name="cd_new_collection">新建藏品</string>
+    <string name="no_collections">暂无藏品，点击 + 创建一个。</string>
+    <string name="what_are_you_collecting">你在收藏什么？</string>
+    <string name="new_collection">新建藏品</string>
+    <string name="collection_name">名称</string>
+    <string name="collection_description_optional">描述（可选）</string>
+
+    <!-- Collection detail -->
+    <string name="collection_default_title">藏品</string>
+    <string name="this_collection">此藏品</string>
+    <string name="cd_edit_collection">编辑藏品</string>
+    <string name="cd_delete_collection">删除藏品</string>
+    <string name="cd_grid_view">网格视图</string>
+    <string name="cd_list_view">列表视图</string>
+    <string name="cd_scan_barcode">扫描条形码</string>
+    <string name="cd_scan_barcode_image">从图片扫描</string>
+    <string name="cd_add_item">添加物品</string>
+    <string name="no_items">暂无物品。</string>
+    <string name="no_items_in_category">此分类暂无物品。</string>
+    <string name="looking_up_barcode">正在查找条形码…</string>
+    <string name="choose_a_match">选择匹配项</string>
+    <string name="enter_manually">手动输入</string>
+    <string name="edit_collection">编辑藏品</string>
+    <string name="collection_description">描述</string>
+    <string name="delete_collection_title">删除 %s？</string>
+    <string name="add_item">添加物品</string>
+    <string name="category">分类</string>
+    <string name="no_category">无分类</string>
+    <string name="sub_category">子分类</string>
+    <string name="title">标题</string>
+    <string name="selected_count">已选：%d</string>
+    <string name="select_visible">选择可见项</string>
+    <string name="clear">清除</string>
+    <string name="depleted">已耗尽</string>
+    <string name="in_stock">有库存</string>
+    <string name="wanted">想要</string>
+    <string name="owned">已拥有</string>
+    <string name="archive">归档</string>
+    <string name="restore">恢复</string>
+    <string name="add_tag">添加标签</string>
+    <string name="remove_tag">删除标签</string>
+    <string name="move">移动</string>
+    <string name="clear_location">清除位置</string>
+    <string name="lend">借出</string>
+    <string name="search_items">搜索物品…</string>
+    <string name="tag_placeholder">标签…</string>
+    <string name="contact_placeholder">借给…</string>
+    <string name="location_placeholder">位置…</string>
+
+    <!-- Item detail -->
+    <string name="edit_item">编辑物品</string>
+    <string name="item_default_title">物品</string>
+    <string name="quantity">数量</string>
+    <string name="condition">状态</string>
+    <string name="location">位置</string>
+    <string name="purchase_price">购买价格</string>
+    <string name="current_value">当前价值</string>
+    <string name="notes">备注</string>
+    <string name="manuals">说明书</string>
+    <string name="cd_delete_photo">删除照片</string>
+    <string name="cd_add_photo">添加照片</string>
+    <string name="write_nfc_tag">写入 NFC 标签</string>
+    <string name="nfc_write_instructions">将手机靠近空白 NFC 标签以写入 Tangible ID。</string>
+    <string name="nfc_not_available">此设备不支持 NFC。</string>
+    <string name="nfc_write_success">标签写入成功。</string>
+    <string name="nfc_write_failed_prefix">写入失败：</string>
+    <string name="title_required">标题 *</string>
+    <string name="subtitle">副标题</string>
+    <string name="qty">数量</string>
+    <string name="currency_hint">货币（ISO，例如 CNY）</string>
+    <string name="no_location">— 无位置 —</string>
+    <string name="location_button">位置：%s</string>
+
+    <!-- Grocery list -->
+    <string name="add_grocery_item">添加物品</string>
+    <string name="cd_add_grocery_item">添加购物物品</string>
+    <string name="cd_select_store">选择商店</string>
+    <string name="all_stocked">全部备货！🎉</string>
+    <string name="all_stocked_subtitle">库存充足。</string>
+    <string name="everything_stocked">库存充足。</string>
+    <string name="add_an_item">添加物品</string>
+    <string name="sort_by_store_aisle">按货架排序</string>
+    <string name="no_store_default_order">无商店（默认顺序）</string>
+    <string name="no_store_default">无商店（默认顺序）</string>
+    <string name="manage_stores">管理商店</string>
+    <string name="grocery_item_name_required">物品名称 *</string>
+    <string name="item_name_required">物品名称 *</string>
+    <string name="collection_required">藏品 *</string>
+    <string name="category_slug_optional">分类（可选）</string>
+    <string name="category_slug_placeholder">例如 食品.乳制品</string>
+    <string name="cd_remove">移除</string>
+    <string name="remove">移除</string>
+    <string name="cd_got_it">知道了</string>
+    <string name="got_it">知道了</string>
+    <string name="aisle_group_other">其他</string>
+    <string name="other">其他</string>
+
+    <!-- Grocery stores -->
+    <string name="my_stores">我的商店</string>
+    <string name="cd_add_store">添加商店</string>
+    <string name="no_stores">暂无商店。</string>
+    <string name="no_stores_hint">添加商店以按货架排序您的清单。</string>
+    <string name="cd_edit_aisles">编辑货架</string>
+    <string name="cd_delete_store">删除商店</string>
+    <string name="new_store">新建商店</string>
+    <string name="store_name">商店名称</string>
+    <string name="delete_store_title">删除商店？</string>
+    <string name="delete_store_body">将删除 \"%s\" 及其所有货架。购物清单不受影响。</string>
+    <string name="aisles_title">货架</string>
+    <string name="cd_add_aisle">添加货架</string>
+    <string name="no_aisles">暂无货架。</string>
+    <string name="no_aisles_hint">添加货架并分配分类。\n清单将按货架顺序排序。</string>
+    <string name="aisle_position">位置 %d</string>
+    <string name="position">位置 %d</string>
+    <string name="new_aisle">新建货架</string>
+    <string name="edit_aisle">编辑货架</string>
+    <string name="delete_aisle_title">删除货架？</string>
+    <string name="delete_aisle_body">将从此商店删除 \"%s\"。</string>
+    <string name="aisle_name_required">货架名称 *</string>
+    <string name="aisle_name_placeholder">例如 乳制品、果蔬、第3货架</string>
+    <string name="aisle_categories_label">分类</string>
+    <string name="categories">分类</string>
+    <string name="custom_categories_optional">自定义分类（可选）</string>
+    <string name="custom_categories_placeholder">例如 有机、无麸质</string>
+    <string name="custom_categories_hint">用逗号分隔。匹配分类的物品将显示在此货架。</string>
+
+    <!-- Grocery category presets -->
+    <string name="cat_produce">果蔬</string>
+    <string name="cat_bread">面包</string>
+    <string name="cat_bakery">烘焙</string>
+    <string name="cat_meat_seafood">肉类和海鲜</string>
+    <string name="cat_deli">熟食</string>
+    <string name="cat_dairy_eggs">乳制品和鸡蛋</string>
+    <string name="cat_frozen">冷冻食品</string>
+    <string name="cat_canned_pantry">罐头和干货</string>
+    <string name="cat_pasta_grains">面食和谷物</string>
+    <string name="cat_snacks">零食</string>
+    <string name="cat_beverages">饮料</string>
+    <string name="cat_breakfast_cereal">早餐和麦片</string>
+    <string name="cat_condiments_spices">调味品和香料</string>
+    <string name="cat_cleaning_household">清洁和家居</string>
+    <string name="cat_health_beauty">健康和美容</string>
+    <string name="cat_pet_supplies">宠物用品</string>
+    <string name="cat_alcohol">酒类</string>
+
+    <!-- Scanner -->
+    <string name="grant_camera_permission">允许访问相机</string>
+
+    <!-- Settings -->
+    <string name="server_prefix">服务器：%s</string>
+    <string name="signed_in_as">已登录：%s</string>
+    <string name="appearance">外观</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="notifications">通知</string>
+    <string name="no_notification_prefs">无通知偏好设置。</string>
+    <string name="app_label">应用</string>
+    <string name="due_soon">即将到期</string>
+    <string name="no_upcoming_alerts">未来14天内没有提醒。</string>
+    <string name="sign_out">退出登录</string>
+    <string name="logout">退出登录</string>
+
+    <!-- Notification kind labels -->
+    <string name="notif_maintenance_due">维护到期</string>
+    <string name="notif_chore_due">任务到期</string>
+    <string name="notif_item_use_by">物品使用期限</string>
+    <string name="notif_item_expires">物品有效期</string>
+    <string name="notif_lot_use_by">批次使用期限</string>
+    <string name="notif_low_stock">库存不足</string>
+
+    <!-- Maintenance screen -->
+    <string name="maintenance_alerts_title">维护和提醒</string>
+    <string name="no_alerts">未来%d天内没有提醒。</string>
+
+    <!-- Alert kind labels -->
+    <string name="alert_maintenance">维护</string>
+    <string name="alert_chore">任务</string>
+    <string name="alert_use_by">使用期限</string>
+    <string name="alert_expires">有效期</string>
+    <string name="alert_package">包裹</string>
+    <string name="alert_low_stock">库存不足</string>
+    <string name="alert_overdue">已逾期 — %s</string>
+    <string name="alert_due">到期：%s</string>
+
+    <!-- About screen -->
+    <string name="about_description">适用于图书、音乐、游戏等的个人藏品管理工具。自托管、开源，专为希望掌控自己数据的收藏爱好者设计。</string>
+    <string name="version">版本 %s</string>
+    <string name="whats_new">新功能</string>
+    <string name="help_user_guide">帮助 / 用户指南</string>
+    <string name="copy_diagnostics">复制诊断信息</string>
+    <string name="user_guide">用户指南</string>
+    <string name="diagnostics_clipboard_label">Tangible 诊断信息</string>
+    <string name="diagnostics_copied">诊断信息已复制到剪贴板</string>
+
+    <!-- Notification worker -->
+    <string name="notif_channel_name">维护和提醒</string>
+    <string name="notif_channel_description">逾期和即将到来的维护任务的每日摘要。</string>
+    <string name="notif_alert_title">Tangible — 维护提醒</string>
+    <string name="notif_overdue_count">%d 项逾期</string>
+    <string name="notif_due_soon_count">%d 项即将到期</string>
+
+    <!-- Plurals (Chinese has only "other") -->
+    <plurals name="aisle_count">
+        <item quantity="other">%d 个货架</item>
+    </plurals>
+    <plurals name="asset_count">
+        <item quantity="other">%d 个文件</item>
+    </plurals>
+    <plurals name="delete_collection_confirm">
+        <item quantity="other">将永久删除此藏品中的 %d 件物品。此操作无法撤销。</item>
+    </plurals>
+</resources>

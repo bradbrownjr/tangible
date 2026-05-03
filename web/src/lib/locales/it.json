@@ -396,7 +396,15 @@
     "source_manual": "manuale",
     "source_linked": "collegato",
     "mark_purchased_button": "Segna come acquistato",
-    "remove_button": "Rimuovi"
+    "remove_button": "Rimuovi",
+    "no_pantry": "Nessuna raccolta dispensa ancora.",
+    "create_pantry_button": "Crea raccolta dispensa",
+    "creating_button": "Creazione…",
+    "manage_stores_title": "Gestisci negozi",
+    "no_category": "Nessuna categoria",
+    "custom_option": "Personalizzato…",
+    "custom_placeholder": "Nome categoria",
+    "col_category": "Categoria"
   },
   "import_page": {
     "title": "Importa",

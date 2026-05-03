@@ -3,6 +3,7 @@
     import { api, type Collection } from '$lib/api';
     import GroceryStoreManager from '$lib/GroceryStoreManager.svelte';
     import { GROCERY_CATEGORIES } from '$lib/groceryCategories';
+    import { _ } from 'svelte-i18n';
 
     interface FeedEntry {
         id: string;
@@ -148,10 +149,10 @@
 </script>
 
 <div class="page-heading">
-    <h1>Grocery List</h1>
-    <button type="button" class="store-mgr-btn" title="Manage stores" onclick={() => { showStoreManager = true; }}>🏪 Stores</button>
+    <h1>{$_('grocery.title')}</h1>
+    <button type="button" class="store-mgr-btn" title={$_('grocery.manage_stores_title')} onclick={() => { showStoreManager = true; }}>🏪 {$_('grocery.manage_stores_title')}</button>
 </div>
-<p class="muted">Items added by you, plus anything marked depleted across your shared collections.</p>
+<p class="muted">{$_('grocery.description')}</p>
 
 {#if showStoreManager}
     <GroceryStoreManager onClose={() => { showStoreManager = false; }} />
@@ -159,31 +160,31 @@
 
 {#if !loading && !hasPantry}
     <div class="pantry-notice">
-        No Pantry collection yet.
+        {$_('grocery.no_pantry')}
         <button type="button" class="inline-btn" onclick={createPantry} disabled={creatingPantry}>
-            {creatingPantry ? 'Creating…' : 'Create Pantry collection'}
+            {creatingPantry ? $_('grocery.creating_button') : $_('grocery.create_pantry_button')}
         </button>
     </div>
 {/if}
 
 <form class="add-form" onsubmit={addItem}>
     <div class="add-row-main">
-        <input class="name-input" type="text" bind:value={newName} placeholder="Add item (e.g. Bananas)" required />
+        <input class="name-input" type="text" bind:value={newName} placeholder={$_('grocery.item_name_placeholder')} required />
         <select class="category-select" bind:value={newCategorySlug}>
-            <option value="">No category</option>
+            <option value="">{$_('grocery.no_category')}</option>
             {#each GROCERY_CATEGORIES as cat (cat.slug)}
                 <option value={cat.slug}>{cat.label}</option>
             {/each}
-            <option value="custom">Custom…</option>
+            <option value="custom">{$_('grocery.custom_option')}</option>
         </select>
         {#if newCategorySlug === 'custom'}
-            <input type="text" bind:value={customCategory} placeholder="Category name" class="custom-cat" />
+            <input type="text" bind:value={customCategory} placeholder={$_('grocery.custom_placeholder')} class="custom-cat" />
         {/if}
     </div>
     <div class="add-row-details">
         <input type="number" min="1" bind:value={newQuantity} class="qty" />
-        <input type="text" bind:value={newUnit} placeholder="unit" class="unit" />
-        <input type="text" bind:value={newNotes} placeholder="notes" class="notes" />
+        <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
+        <input type="text" bind:value={newNotes} placeholder={$_('grocery.notes_placeholder')} class="notes" />
         {#if collections.size > 1}
             <select bind:value={newCollectionId} class="collection-select">
                 {#each [...collections.values()] as c (c.id)}
@@ -191,24 +192,24 @@
                 {/each}
             </select>
         {/if}
-        <button type="submit" disabled={adding || !newName.trim()}>{adding ? 'Adding…' : 'Add'}</button>
+        <button type="submit" disabled={adding || !newName.trim()}>{adding ? $_('grocery.adding_button') : $_('grocery.add_button')}</button>
     </div>
 </form>
 
 {#if loading}
-    <p class="muted">Loading…</p>
+    <p class="muted">{$_('common.loading')}</p>
 {:else if error}
     <p class="error">{error}</p>
 {:else if feed.length === 0}
-    <p class="muted">Nothing on the list — all clear!</p>
+    <p class="muted">{$_('grocery.empty')}</p>
 {:else}
     <table>
         <thead>
             <tr>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Qty</th>
-                <th>Collection</th>
+                <th>{$_('grocery.col_item')}</th>
+                <th>{$_('grocery.col_category')}</th>
+                <th>{$_('grocery.col_qty')}</th>
+                <th>{$_('grocery.col_collection')}</th>
                 <th></th>
             </tr>
         </thead>
@@ -220,7 +221,7 @@
                         {#if entry.subtitle}<span class="muted"> · {entry.subtitle}</span>{/if}
                         {#if entry.notes}<div class="muted small">{entry.notes}</div>{/if}
                         {#if entry.source.kind === 'depleted_item'}
-                            <span class="badge-depleted">depleted</span>
+                            <span class="badge-depleted">{$_('grocery.source_depleted')}</span>
                         {/if}
                     </td>
                     <td>
@@ -236,11 +237,11 @@
                     </td>
                     <td class="actions">
                         <button type="button" onclick={() => markPurchased(entry)}>
-                            Mark purchased
+                            {$_('grocery.mark_purchased_button')}
                         </button>
                         {#if entry.source.kind === 'ad_hoc'}
                             <button type="button" class="secondary" onclick={() => removeItem(entry)}>
-                                Remove
+                                {$_('grocery.remove_button')}
                             </button>
                         {/if}
                     </td>

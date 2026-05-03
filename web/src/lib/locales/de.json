@@ -396,7 +396,15 @@
     "source_manual": "manuell",
     "source_linked": "verknüpft",
     "mark_purchased_button": "Als gekauft markieren",
-    "remove_button": "Entfernen"
+    "remove_button": "Entfernen",
+    "no_pantry": "Noch keine Vorratskammer-Sammlung.",
+    "create_pantry_button": "Vorratskammer-Sammlung erstellen",
+    "creating_button": "Erstelle…",
+    "manage_stores_title": "Geschäfte verwalten",
+    "no_category": "Keine Kategorie",
+    "custom_option": "Benutzerdefiniert…",
+    "custom_placeholder": "Kategoriename",
+    "col_category": "Kategorie"
   },
   "import_page": {
     "title": "Importieren",

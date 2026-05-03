@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -34,6 +36,7 @@ import io.github.bradbrownjr.tangible.data.remote.GroceryFeedEntryDto
 import io.github.bradbrownjr.tangible.data.remote.GroceryStoreDto
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.GroceryRepository
+import io.github.bradbrownjr.tangible.R
 import javax.inject.Inject
 
 data class GroceryListUi(
@@ -181,6 +184,7 @@ private data class AisleGroup(
 private fun groupByAisle(
     items: List<GroceryFeedEntryDto>,
     aisles: List<GroceryAisleDto>,
+    otherLabel: String = "Other",
 ): List<AisleGroup> {
     val slugToAisle = mutableMapOf<String, GroceryAisleDto>()
     for (aisle in aisles) {
@@ -201,7 +205,7 @@ private fun groupByAisle(
         if (!group.isNullOrEmpty()) result.add(AisleGroup(aisle.name, group))
     }
     val other = grouped[null]
-    if (!other.isNullOrEmpty()) result.add(AisleGroup("Other", other))
+    if (!other.isNullOrEmpty()) result.add(AisleGroup(otherLabel, other))
     return result
 }
 
@@ -219,14 +223,15 @@ fun GroceryListScreen(
 ) {
     val ui by viewModel.state.collectAsState()
     val selectedStore = ui.stores.find { it.id == ui.selectedStoreId }
-    val aisleGroups = if (selectedStore != null) groupByAisle(ui.items, selectedStore.aisles) else null
+    val otherLabel = stringResource(R.string.other)
+    val aisleGroups = if (selectedStore != null) groupByAisle(ui.items, selectedStore.aisles, otherLabel) else null
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Grocery List")
+                        Text(stringResource(R.string.grocery_list))
                         if (selectedStore != null) {
                             Text(
                                 selectedStore.name,
@@ -238,14 +243,14 @@ fun GroceryListScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.toggleStoreSelector() }) {
                         Icon(
                             Icons.Default.Store,
-                            contentDescription = "Select store",
+                            contentDescription = stringResource(R.string.cd_select_store),
                             tint = if (ui.selectedStoreId != null)
                                 MaterialTheme.colorScheme.primary
                             else
@@ -257,7 +262,7 @@ fun GroceryListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.showAddDialog() }) {
-                Icon(Icons.Default.Add, contentDescription = "Add grocery item")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_grocery_item))
             }
         },
     ) { innerPadding ->
@@ -279,9 +284,9 @@ fun GroceryListScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Text("All stocked! 🎉", style = MaterialTheme.typography.headlineSmall)
-                                Text("Everything is in good supply.", style = MaterialTheme.typography.bodySmall)
-                                TextButton(onClick = { viewModel.showAddDialog() }) { Text("Add an item") }
+                                Text(stringResource(R.string.all_stocked), style = MaterialTheme.typography.headlineSmall)
+                                Text(stringResource(R.string.all_stocked_subtitle), style = MaterialTheme.typography.bodySmall)
+                                TextButton(onClick = { viewModel.showAddDialog() }) { Text(stringResource(R.string.add_an_item)) }
                             }
                         }
                     }
@@ -420,7 +425,7 @@ private fun GroceryEntryCard(
                     IconButton(onClick = onDelete, enabled = !isUpdating) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Remove",
+                            contentDescription = stringResource(R.string.remove),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(18.dp),
                         )
@@ -438,7 +443,7 @@ private fun GroceryEntryCard(
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                     } else {
-                        Icon(Icons.Default.Check, contentDescription = "Got it", Modifier.size(18.dp))
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.got_it), Modifier.size(18.dp))
                     }
                 }
             }
@@ -456,11 +461,11 @@ private fun StoreSelectorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Sort by store aisle") },
+        title = { Text(stringResource(R.string.sort_by_store_aisle)) },
         text = {
             Column {
                 ListItem(
-                    headlineContent = { Text("No store (default order)") },
+                    headlineContent = { Text(stringResource(R.string.no_store_default_order)) },
                     leadingContent = {
                         RadioButton(selected = selectedStoreId == null, onClick = { onSelect(null) })
                     },
@@ -469,7 +474,7 @@ private fun StoreSelectorDialog(
                 stores.forEach { store ->
                     ListItem(
                         headlineContent = { Text(store.name) },
-                        supportingContent = { Text("${store.aisles.size} aisle${if (store.aisles.size == 1) "" else "s"}") },
+                        supportingContent = { Text(pluralStringResource(R.plurals.aisle_count, store.aisles.size, store.aisles.size)) },
                         leadingContent = {
                             RadioButton(selected = store.id == selectedStoreId, onClick = { onSelect(store.id) })
                         },
@@ -478,11 +483,12 @@ private fun StoreSelectorDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onManageStores) { Text("Manage stores") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onManageStores) { Text(stringResource(R.string.manage_stores)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddGroceryItemDialog(
     collections: List<CollectionDto>,
@@ -497,13 +503,13 @@ private fun AddGroceryItemDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add grocery item") },
+        title = { Text(stringResource(R.string.add_grocery_item)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Item name *") },
+                    label = { Text(stringResource(R.string.grocery_item_name_required)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -512,7 +518,7 @@ private fun AddGroceryItemDialog(
                         value = collections.find { it.id == selectedCollectionId }?.name ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Collection *") },
+                        label = { Text(stringResource(R.string.collection_required)) },
                         modifier = Modifier.fillMaxWidth().clickable { collectionMenuExpanded = true },
                     )
                     DropdownMenu(
@@ -527,22 +533,46 @@ private fun AddGroceryItemDialog(
                         }
                     }
                 }
+                var categoryMenuExpanded by remember { mutableStateOf(false) }
+
                 OutlinedTextField(
                     value = quantityText,
                     onValueChange = { quantityText = it.filter { c -> c.isDigit() } },
-                    label = { Text("Quantity") },
+                    label = { Text(stringResource(R.string.quantity)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
-                    value = categorySlug,
-                    onValueChange = { categorySlug = it },
-                    label = { Text("Category slug (optional)") },
-                    placeholder = { Text("e.g. food.dairy") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                ExposedDropdownMenuBox(
+                    expanded = categoryMenuExpanded,
+                    onExpandedChange = { categoryMenuExpanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = if (categorySlug.isBlank()) stringResource(R.string.no_category)
+                                else GROCERY_CATEGORY_PRESETS.find { it.slug == categorySlug }
+                                    ?.let { stringResource(it.labelRes) } ?: categorySlug,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.category)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = categoryMenuExpanded,
+                        onDismissRequest = { categoryMenuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.no_category)) },
+                            onClick = { categorySlug = ""; categoryMenuExpanded = false },
+                        )
+                        GROCERY_CATEGORY_PRESETS.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(cat.labelRes)) },
+                                onClick = { categorySlug = cat.slug; categoryMenuExpanded = false },
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -553,9 +583,9 @@ private fun AddGroceryItemDialog(
                     }
                 },
                 enabled = name.isNotBlank() && selectedCollectionId.isNotBlank(),
-            ) { Text("Add") }
+            ) { Text(stringResource(R.string.add)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

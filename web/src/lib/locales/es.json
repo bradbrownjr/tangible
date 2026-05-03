@@ -396,7 +396,15 @@
     "source_manual": "manual",
     "source_linked": "vinculado",
     "mark_purchased_button": "Marcar como comprado",
-    "remove_button": "Eliminar"
+    "remove_button": "Eliminar",
+    "no_pantry": "Aún no hay colección de despensa.",
+    "create_pantry_button": "Crear colección de despensa",
+    "creating_button": "Creando…",
+    "manage_stores_title": "Gestionar tiendas",
+    "no_category": "Sin categoría",
+    "custom_option": "Personalizado…",
+    "custom_placeholder": "Nombre de categoría",
+    "col_category": "Categoría"
   },
   "import_page": {
     "title": "Importar",

@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -37,6 +39,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.remote.ItemDto
 import io.github.bradbrownjr.tangible.data.remote.ItemPatch
 import io.github.bradbrownjr.tangible.data.remote.LocationDto
@@ -226,12 +229,12 @@ fun ItemDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (s.editing) "Edit item" else s.item?.title ?: "Item") },
+                title = { Text(if (s.editing) stringResource(R.string.edit_item) else s.item?.title ?: stringResource(R.string.item_default_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (s.editing) vm.cancelEditing() else onBack()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -244,12 +247,12 @@ fun ItemDetailScreen(
                                 if (s.saving) {
                                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                 } else {
-                                    Icon(Icons.Default.Save, contentDescription = "Save")
+                                    Icon(Icons.Default.Save, contentDescription = stringResource(R.string.save))
                                 }
                             }
                         } else {
                             IconButton(onClick = vm::startEditing) {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                             }
                         }
                     }
@@ -268,7 +271,7 @@ fun ItemDetailScreen(
             ) {
                 Text(s.error!!, color = MaterialTheme.colorScheme.error)
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = vm::load) { Text("Retry") }
+                OutlinedButton(onClick = vm::load) { Text(stringResource(R.string.retry)) }
             }
             s.editing -> EditForm(s, vm, Modifier.padding(padding))
             else -> DetailView(s, vm, Modifier.padding(padding))
@@ -294,7 +297,7 @@ fun ItemDetailScreen(
                         onClick = vm::closeFullScreen,
                         modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.ui.graphics.Color.White)
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close), tint = androidx.compose.ui.graphics.Color.White)
                     }
                 }
             }
@@ -341,20 +344,20 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
             item.subtitle?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            item.category_slug?.let { Field("Category", it) }
-            Field("Quantity", item.quantity.toString())
-            item.condition?.takeIf { it.isNotBlank() }?.let { Field("Condition", it) }
-            item.location_path?.takeIf { it.isNotEmpty() }?.let { Field("Location", it.joinToString(" / ")) }
-            item.purchase_price?.let { Field("Purchase price", formatPrice(it, item.currency)) }
-            item.current_value?.let { Field("Current value", formatPrice(it, item.currency)) }
+            item.category_slug?.let { Field(stringResource(R.string.category), it) }
+            Field(stringResource(R.string.quantity), item.quantity.toString())
+            item.condition?.takeIf { it.isNotBlank() }?.let { Field(stringResource(R.string.condition), it) }
+            item.location_path?.takeIf { it.isNotEmpty() }?.let { Field(stringResource(R.string.location), it.joinToString(" / ")) }
+            item.purchase_price?.let { Field(stringResource(R.string.purchase_price), formatPrice(it, item.currency)) }
+            item.current_value?.let { Field(stringResource(R.string.current_value), formatPrice(it, item.currency)) }
             item.notes?.takeIf { it.isNotBlank() }?.let {
                 Spacer(Modifier.height(4.dp))
-                Text("Notes", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.notes), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(it, style = MaterialTheme.typography.bodyMedium)
             }
             if (s.bundles.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Manuals", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.manuals), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 s.bundles.forEach { b ->
                     Text(b.title, style = MaterialTheme.typography.bodyMedium)
                     if (!b.description.isNullOrBlank()) {
@@ -362,7 +365,7 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
                     }
                     if (b.assets.isNotEmpty()) {
                         Text(
-                            "${b.assets.size} asset${if (b.assets.size == 1) "" else "s"}",
+                            pluralStringResource(R.plurals.asset_count, b.assets.size, b.assets.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -383,14 +386,16 @@ private fun NfcWriteSection(itemId: String) {
     val nfcAdapter = remember { NfcAdapter.getDefaultAdapter(context) }
     var showDialog by remember { mutableStateOf(false) }
     var nfcMessage by remember { mutableStateOf<String?>(null) }
+    val writeSuccessMsg = stringResource(R.string.nfc_write_success)
+    val writeFailedPrefix = stringResource(R.string.nfc_write_failed_prefix)
 
     // Collect write results when dialog is open.
     LaunchedEffect(showDialog) {
         if (!showDialog) return@LaunchedEffect
         NfcManager.writeResult.collect { result ->
             nfcMessage = when (result) {
-                is NfcManager.WriteResult.Success -> "Tag written successfully."
-                is NfcManager.WriteResult.Failure -> "Write failed: ${result.message}"
+                is NfcManager.WriteResult.Success -> writeSuccessMsg
+                is NfcManager.WriteResult.Failure -> "$writeFailedPrefix${result.message}"
             }
             NfcManager.pendingWriteItemId = null
         }
@@ -421,7 +426,7 @@ private fun NfcWriteSection(itemId: String) {
 
         AlertDialog(
             onDismissRequest = { showDialog = false; nfcMessage = null },
-            title = { Text("Write NFC Tag") },
+            title = { Text(stringResource(R.string.write_nfc_tag)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (nfcMessage != null) {
@@ -429,21 +434,21 @@ private fun NfcWriteSection(itemId: String) {
                     } else {
                         CircularProgressIndicator(Modifier.size(20.dp).align(Alignment.CenterHorizontally), strokeWidth = 2.dp)
                         Text(
-                            "Hold your phone to a blank NFC tag to write the Tangible item ID.",
+                            stringResource(R.string.nfc_write_instructions),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showDialog = false; nfcMessage = null }) { Text("Done") }
+                TextButton(onClick = { showDialog = false; nfcMessage = null }) { Text(stringResource(R.string.done)) }
             },
         )
     }
 
     if (nfcAdapter == null) {
         Text(
-            "NFC not available on this device.",
+            stringResource(R.string.nfc_not_available),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -452,7 +457,7 @@ private fun NfcWriteSection(itemId: String) {
             onClick = { showDialog = true },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Write NFC Tag")
+            Text(stringResource(R.string.write_nfc_tag))
         }
     }
 }
@@ -491,7 +496,7 @@ private fun PhotoStrip(
                 ) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete photo",
+                        contentDescription = stringResource(R.string.cd_delete_photo),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(16.dp),
                     )
@@ -510,7 +515,7 @@ private fun PhotoStrip(
                     contentPadding = PaddingValues(0.dp),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
+                        Icon(Icons.Default.AddAPhoto, contentDescription = stringResource(R.string.cd_add_photo))
                     }
                 }
             }
@@ -550,7 +555,7 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
         OutlinedTextField(
             value = s.title,
             onValueChange = { vm.update { copy(title = it) } },
-            label = { Text("Title *") },
+            label = { Text(stringResource(R.string.title_required)) },
             isError = s.title.isBlank(),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -558,7 +563,7 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
         OutlinedTextField(
             value = s.subtitle,
             onValueChange = { vm.update { copy(subtitle = it) } },
-            label = { Text("Subtitle") },
+            label = { Text(stringResource(R.string.subtitle)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -566,14 +571,14 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
             OutlinedTextField(
                 value = s.condition,
                 onValueChange = { vm.update { copy(condition = it) } },
-                label = { Text("Condition") },
+                label = { Text(stringResource(R.string.condition)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f),
             )
             OutlinedTextField(
                 value = s.quantity,
                 onValueChange = { vm.update { copy(quantity = it.filter { c -> c.isDigit() }) } },
-                label = { Text("Qty") },
+                label = { Text(stringResource(R.string.qty)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(72.dp),
@@ -589,21 +594,21 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
             s.locations.forEach { walk(it, 0) }
             out
         }
-        val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name
-            ?: "— No location —"
+        val noLocation = stringResource(R.string.no_location)
+        val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name ?: noLocation
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(
                 onClick = { locationMenuOpen = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Location: $selectedName")
+                Text(stringResource(R.string.location_button, selectedName))
             }
             DropdownMenu(
                 expanded = locationMenuOpen,
                 onDismissRequest = { locationMenuOpen = false },
             ) {
                 DropdownMenuItem(
-                    text = { Text("— No location —") },
+                    text = { Text(noLocation) },
                     onClick = {
                         vm.update { copy(locationId = "") }
                         locationMenuOpen = false
@@ -624,7 +629,7 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
             OutlinedTextField(
                 value = s.purchasePrice,
                 onValueChange = { vm.update { copy(purchasePrice = it) } },
-                label = { Text("Purchase price") },
+                label = { Text(stringResource(R.string.purchase_price)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.weight(1f),
@@ -632,7 +637,7 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
             OutlinedTextField(
                 value = s.currentValue,
                 onValueChange = { vm.update { copy(currentValue = it) } },
-                label = { Text("Current value") },
+                label = { Text(stringResource(R.string.current_value)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.weight(1f),
@@ -641,14 +646,14 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
         OutlinedTextField(
             value = s.currency,
             onValueChange = { vm.update { copy(currency = it.take(3).uppercase()) } },
-            label = { Text("Currency (ISO, e.g. USD)") },
+            label = { Text(stringResource(R.string.currency_hint)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = s.notes,
             onValueChange = { vm.update { copy(notes = it) } },
-            label = { Text("Notes") },
+            label = { Text(stringResource(R.string.notes)) },
             minLines = 3,
             maxLines = 6,
             modifier = Modifier.fillMaxWidth(),

@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Tangible</string>
+
+    <!-- Common actions -->
+    <string name="cancel">キャンセル</string>
+    <string name="save">保存</string>
+    <string name="delete">削除</string>
+    <string name="retry">再試行</string>
+    <string name="close">閉じる</string>
+    <string name="done">完了</string>
+    <string name="create">作成</string>
+    <string name="add">追加</string>
+    <string name="edit">編集</string>
+    <string name="refresh">更新</string>
+    <string name="custom">カスタム</string>
+    <string name="select_placeholder">選択…</string>
+    <string name="saving">保存中…</string>
+    <string name="loading">読み込み中…</string>
+    <string name="all">すべて</string>
+    <string name="error_generic">エラーが発生しました。</string>
+
+    <!-- Common content descriptions -->
+    <string name="cd_back">戻る</string>
+    <string name="cd_menu">メニュー</string>
+    <string name="cd_delete">削除</string>
+    <string name="cd_close">閉じる</string>
+    <string name="cd_clear_search">検索をクリア</string>
+
+    <!-- Login screen -->
+    <string name="server_url">サーバーURL</string>
+    <string name="server_url_hint">サーバーURL（例：https://tangible.example.com）</string>
+    <string name="username">ユーザー名</string>
+    <string name="password">パスワード</string>
+    <string name="sign_in">サインイン</string>
+    <string name="test_connection">接続テスト</string>
+    <string name="msg_connected_successfully">接続成功</string>
+    <string name="msg_connection_failed">接続失敗</string>
+    <string name="msg_login_failed">ログイン失敗</string>
+
+    <!-- Collections list -->
+    <string name="collections">コレクション</string>
+    <string name="grocery_list">買い物リスト</string>
+    <string name="maintenance">メンテナンス</string>
+    <string name="settings">設定</string>
+    <string name="about">アプリについて</string>
+    <string name="cd_new_collection">新しいコレクション</string>
+    <string name="no_collections">コレクションがありません。+をタップして作成してください。</string>
+    <string name="what_are_you_collecting">何を集めていますか？</string>
+    <string name="new_collection">新しいコレクション</string>
+    <string name="collection_name">名前</string>
+    <string name="collection_description_optional">説明（任意）</string>
+
+    <!-- Collection detail -->
+    <string name="collection_default_title">コレクション</string>
+    <string name="this_collection">このコレクション</string>
+    <string name="cd_edit_collection">コレクションを編集</string>
+    <string name="cd_delete_collection">コレクションを削除</string>
+    <string name="cd_grid_view">グリッド表示</string>
+    <string name="cd_list_view">リスト表示</string>
+    <string name="cd_scan_barcode">バーコードをスキャン</string>
+    <string name="cd_scan_barcode_image">画像からスキャン</string>
+    <string name="cd_add_item">アイテムを追加</string>
+    <string name="no_items">アイテムがありません。</string>
+    <string name="no_items_in_category">このカテゴリにアイテムがありません。</string>
+    <string name="looking_up_barcode">バーコードを検索中…</string>
+    <string name="choose_a_match">一致を選択</string>
+    <string name="enter_manually">手動で入力</string>
+    <string name="edit_collection">コレクションを編集</string>
+    <string name="collection_description">説明</string>
+    <string name="delete_collection_title">%sを削除しますか？</string>
+    <string name="add_item">アイテムを追加</string>
+    <string name="category">カテゴリ</string>    <string name="no_category">カテゴリーなし</string>    <string name="sub_category">サブカテゴリ</string>
+    <string name="title">タイトル</string>
+    <string name="selected_count">選択済み：%d</string>
+    <string name="select_visible">表示中を選択</string>
+    <string name="clear">クリア</string>
+    <string name="depleted">在庫切れ</string>
+    <string name="in_stock">在庫あり</string>
+    <string name="wanted">欲しい</string>
+    <string name="owned">所有済み</string>
+    <string name="archive">アーカイブ</string>
+    <string name="restore">復元</string>
+    <string name="add_tag">タグを追加</string>
+    <string name="remove_tag">タグを削除</string>
+    <string name="move">移動</string>
+    <string name="clear_location">場所をクリア</string>
+    <string name="lend">貸し出す</string>
+    <string name="search_items">アイテムを検索…</string>
+    <string name="tag_placeholder">タグ…</string>
+    <string name="contact_placeholder">貸し出す相手…</string>
+    <string name="location_placeholder">場所…</string>
+
+    <!-- Item detail -->
+    <string name="edit_item">アイテムを編集</string>
+    <string name="item_default_title">アイテム</string>
+    <string name="quantity">数量</string>
+    <string name="condition">状態</string>
+    <string name="location">場所</string>
+    <string name="purchase_price">購入価格</string>
+    <string name="current_value">現在の価値</string>
+    <string name="notes">メモ</string>
+    <string name="manuals">マニュアル</string>
+    <string name="cd_delete_photo">写真を削除</string>
+    <string name="cd_add_photo">写真を追加</string>
+    <string name="write_nfc_tag">NFCタグに書き込む</string>
+    <string name="nfc_write_instructions">空のNFCタグに端末を近づけてTangible IDを書き込みます。</string>
+    <string name="nfc_not_available">このデバイスではNFCが使用できません。</string>
+    <string name="nfc_write_success">タグへの書き込み成功。</string>
+    <string name="nfc_write_failed_prefix">書き込み失敗：</string>
+    <string name="title_required">タイトル *</string>
+    <string name="subtitle">サブタイトル</string>
+    <string name="qty">数量</string>
+    <string name="currency_hint">通貨（ISO例：JPY）</string>
+    <string name="no_location">— 場所なし —</string>
+    <string name="location_button">場所：%s</string>
+
+    <!-- Grocery list -->
+    <string name="add_grocery_item">アイテムを追加</string>
+    <string name="cd_add_grocery_item">買い物アイテムを追加</string>
+    <string name="cd_select_store">店舗を選択</string>
+    <string name="all_stocked">全て揃っています！ 🎉</string>
+    <string name="all_stocked_subtitle">十分なストックがあります。</string>
+    <string name="everything_stocked">十分なストックがあります。</string>
+    <string name="add_an_item">アイテムを追加</string>
+    <string name="sort_by_store_aisle">売り場順に並べる</string>
+    <string name="no_store_default_order">店舗なし（デフォルト順）</string>
+    <string name="no_store_default">店舗なし（デフォルト順）</string>
+    <string name="manage_stores">店舗を管理</string>
+    <string name="grocery_item_name_required">アイテム名 *</string>
+    <string name="item_name_required">アイテム名 *</string>
+    <string name="collection_required">コレクション *</string>
+    <string name="category_slug_optional">カテゴリ（任意）</string>
+    <string name="category_slug_placeholder">例：食品.乳製品</string>
+    <string name="cd_remove">削除</string>
+    <string name="remove">削除</string>
+    <string name="cd_got_it">了解</string>
+    <string name="got_it">了解</string>
+    <string name="aisle_group_other">その他</string>
+    <string name="other">その他</string>
+
+    <!-- Grocery stores -->
+    <string name="my_stores">マイストア</string>
+    <string name="cd_add_store">店舗を追加</string>
+    <string name="no_stores">店舗がありません。</string>
+    <string name="no_stores_hint">店舗を追加してリストを売り場順に並べましょう。</string>
+    <string name="cd_edit_aisles">売り場を編集</string>
+    <string name="cd_delete_store">店舗を削除</string>
+    <string name="new_store">新しい店舗</string>
+    <string name="store_name">店舗名</string>
+    <string name="delete_store_title">店舗を削除しますか？</string>
+    <string name="delete_store_body">\"%s\" とその全売り場が削除されます。買い物リストには影響しません。</string>
+    <string name="aisles_title">売り場</string>
+    <string name="cd_add_aisle">売り場を追加</string>
+    <string name="no_aisles">売り場がありません。</string>
+    <string name="no_aisles_hint">売り場を追加してカテゴリを割り当ててください。\nリストは売り場順に並び替えられます。</string>
+    <string name="aisle_position">位置 %d</string>
+    <string name="position">位置 %d</string>
+    <string name="new_aisle">新しい売り場</string>
+    <string name="edit_aisle">売り場を編集</string>
+    <string name="delete_aisle_title">売り場を削除しますか？</string>
+    <string name="delete_aisle_body">\"%s\" がこの店舗から削除されます。</string>
+    <string name="aisle_name_required">売り場名 *</string>
+    <string name="aisle_name_placeholder">例：乳製品、青果、売り場3</string>
+    <string name="aisle_categories_label">カテゴリ</string>
+    <string name="categories">カテゴリ</string>
+    <string name="custom_categories_optional">カスタムカテゴリ（任意）</string>
+    <string name="custom_categories_placeholder">例：オーガニック、グルテンフリー</string>
+    <string name="custom_categories_hint">カンマ区切り。一致するカテゴリのアイテムがこの売り場に表示されます。</string>
+
+    <!-- Grocery category presets -->
+    <string name="cat_produce">青果</string>
+    <string name="cat_bread">パン</string>
+    <string name="cat_bakery">ベーカリー</string>
+    <string name="cat_meat_seafood">肉・魚介</string>
+    <string name="cat_deli">デリ</string>
+    <string name="cat_dairy_eggs">乳製品・卵</string>
+    <string name="cat_frozen">冷凍食品</string>
+    <string name="cat_canned_pantry">缶詰・乾物</string>
+    <string name="cat_pasta_grains">パスタ・穀物</string>
+    <string name="cat_snacks">スナック</string>
+    <string name="cat_beverages">飲料</string>
+    <string name="cat_breakfast_cereal">朝食・シリアル</string>
+    <string name="cat_condiments_spices">調味料・スパイス</string>
+    <string name="cat_cleaning_household">掃除・日用品</string>
+    <string name="cat_health_beauty">健康・美容</string>
+    <string name="cat_pet_supplies">ペット用品</string>
+    <string name="cat_alcohol">アルコール</string>
+
+    <!-- Scanner -->
+    <string name="grant_camera_permission">カメラのアクセスを許可</string>
+
+    <!-- Settings -->
+    <string name="server_prefix">サーバー：%s</string>
+    <string name="signed_in_as">ログイン中：%s</string>
+    <string name="appearance">外観</string>
+    <string name="theme_system">システム</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="notifications">通知</string>
+    <string name="no_notification_prefs">通知設定がありません。</string>
+    <string name="app_label">アプリ</string>
+    <string name="due_soon">もうすぐ期限</string>
+    <string name="no_upcoming_alerts">今後14日間のアラートはありません。</string>
+    <string name="sign_out">サインアウト</string>
+    <string name="logout">ログアウト</string>
+
+    <!-- Notification kind labels -->
+    <string name="notif_maintenance_due">メンテナンス期限</string>
+    <string name="notif_chore_due">作業期限</string>
+    <string name="notif_item_use_by">アイテム使用期限</string>
+    <string name="notif_item_expires">アイテム有効期限</string>
+    <string name="notif_lot_use_by">ロット使用期限</string>
+    <string name="notif_low_stock">在庫少</string>
+
+    <!-- Maintenance screen -->
+    <string name="maintenance_alerts_title">メンテナンス・アラート</string>
+    <string name="no_alerts">今後%d日間のアラートはありません。</string>
+
+    <!-- Alert kind labels -->
+    <string name="alert_maintenance">メンテナンス</string>
+    <string name="alert_chore">作業</string>
+    <string name="alert_use_by">使用期限</string>
+    <string name="alert_expires">有効期限</string>
+    <string name="alert_package">パッケージ</string>
+    <string name="alert_low_stock">在庫少</string>
+    <string name="alert_overdue">期限超過 — %s</string>
+    <string name="alert_due">期限：%s</string>
+
+    <!-- About screen -->
+    <string name="about_description">本、音楽、ゲームなどのための個人コレクション管理ツール。セルフホスト型・オープンソース。データを自分で管理したいコレクター向け。</string>
+    <string name="version">バージョン %s</string>
+    <string name="whats_new">新機能</string>
+    <string name="help_user_guide">ヘルプ / ユーザーガイド</string>
+    <string name="copy_diagnostics">診断情報をコピー</string>
+    <string name="user_guide">ユーザーガイド</string>
+    <string name="diagnostics_clipboard_label">Tangible診断情報</string>
+    <string name="diagnostics_copied">診断情報をクリップボードにコピーしました</string>
+
+    <!-- Notification worker -->
+    <string name="notif_channel_name">メンテナンス・アラート</string>
+    <string name="notif_channel_description">期限超過および近日中のメンテナンスタスクのデイリーサマリー。</string>
+    <string name="notif_alert_title">Tangible — メンテナンスアラート</string>
+    <string name="notif_overdue_count">%d件超過</string>
+    <string name="notif_due_soon_count">%d件もうすぐ期限</string>
+
+    <!-- Plurals (Japanese has only "other") -->
+    <plurals name="aisle_count">
+        <item quantity="other">%d 売り場</item>
+    </plurals>
+    <plurals name="asset_count">
+        <item quantity="other">%d ファイル</item>
+    </plurals>
+    <plurals name="delete_collection_confirm">
+        <item quantity="other">このコレクションの %d 件のアイテムが完全に削除されます。この操作は元に戻せません。</item>
+    </plurals>
+</resources>

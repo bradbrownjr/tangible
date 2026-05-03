@@ -1,18 +1,262 @@
 <resources>
+    <!-- App -->
     <string name="app_name">Tangible</string>
-    <string name="server_url">Server URL</string>
-    <string name="username">Username</string>
-    <string name="password">Password</string>
-    <string name="sign_in">Sign in</string>
-    <string name="loading">Loading…</string>
-    <string name="logout">Sign out</string>
-    <string name="scan_barcode">Scan barcode</string>
-    <string name="add_item">Add item</string>
-    <string name="settings">Settings</string>
-    <string name="collections">Collections</string>
-    <string name="title">Title</string>
+
+    <!-- Common actions -->
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>
+    <string name="retry">Retry</string>
+    <string name="close">Close</string>
+    <string name="done">Done</string>
+    <string name="create">Create</string>
+    <string name="add">Add</string>
+    <string name="edit">Edit</string>
+    <string name="refresh">Refresh</string>
+    <string name="custom">Custom</string>
+    <string name="select_placeholder">Select…</string>
+    <string name="saving">Saving…</string>
+    <string name="loading">Loading…</string>
+    <string name="all">All</string>
     <string name="error_generic">Something went wrong.</string>
+
+    <!-- Common content descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_clear_search">Clear search</string>
+
+    <!-- Login screen -->
+    <string name="server_url">Server URL</string>
+    <string name="server_url_hint">Server URL (e.g. https://tangible.example.com)</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="sign_in">Sign in</string>
+    <string name="test_connection">Test connection</string>
+    <string name="msg_connected_successfully">Connected successfully</string>
+    <string name="msg_connection_failed">Connection failed</string>
+    <string name="msg_login_failed">Login failed</string>
+
+    <!-- Collections list -->
+    <string name="collections">Collections</string>
+    <string name="grocery_list">Grocery List</string>
+    <string name="maintenance">Maintenance</string>
+    <string name="settings">Settings</string>
+    <string name="about">About</string>
+    <string name="cd_new_collection">New collection</string>
+    <string name="no_collections">No collections yet. Tap + to create one.</string>
+    <string name="what_are_you_collecting">What are you collecting?</string>
+    <string name="new_collection">New collection</string>
+    <string name="collection_name">Name</string>
+    <string name="collection_description_optional">Description (optional)</string>
+
+    <!-- Collection detail -->
+    <string name="collection_default_title">Collection</string>
+    <string name="this_collection">this collection</string>
+    <string name="cd_edit_collection">Edit collection</string>
+    <string name="cd_delete_collection">Delete collection</string>
+    <string name="cd_grid_view">Grid view</string>
+    <string name="cd_list_view">List view</string>
+    <string name="cd_scan_barcode">Scan barcode</string>
+    <string name="cd_scan_barcode_image">Scan barcode from image</string>
+    <string name="cd_add_item">Add item</string>
+    <string name="no_items">No items yet.</string>
+    <string name="no_items_in_category">No items in this category.</string>
+    <string name="looking_up_barcode">Looking up barcode…</string>
+    <string name="choose_a_match">Choose a match</string>
+    <string name="enter_manually">Enter manually</string>
+    <string name="edit_collection">Edit collection</string>
+    <string name="collection_description">Description</string>
+    <string name="delete_collection_title">Delete %s?</string>
+    <string name="add_item">Add item</string>
+    <string name="category">Category</string>
+    <string name="no_category">No category</string>
+    <string name="sub_category">Sub-category</string>
+    <string name="title">Title</string>
+    <string name="selected_count">Selected: %d</string>
+    <string name="select_visible">Select visible</string>
+    <string name="clear">Clear</string>
+    <string name="depleted">Depleted</string>
+    <string name="in_stock">In stock</string>
+    <string name="wanted">Wanted</string>
+    <string name="owned">Owned</string>
+    <string name="archive">Archive</string>
+    <string name="restore">Restore</string>
+    <string name="add_tag">Add tag</string>
+    <string name="remove_tag">Remove tag</string>
+    <string name="move">Move</string>
+    <string name="clear_location">Clear location</string>
+    <string name="lend">Lend</string>
+    <string name="search_items">Search items…</string>
+    <string name="tag_placeholder">Tag…</string>
+    <string name="contact_placeholder">Lend to…</string>
+    <string name="location_placeholder">Location…</string>
+
+    <!-- Item detail -->
+    <string name="edit_item">Edit item</string>
+    <string name="item_default_title">Item</string>
+    <string name="quantity">Quantity</string>
+    <string name="condition">Condition</string>
+    <string name="location">Location</string>
+    <string name="purchase_price">Purchase price</string>
+    <string name="current_value">Current value</string>
+    <string name="notes">Notes</string>
+    <string name="manuals">Manuals</string>
+    <string name="cd_delete_photo">Delete photo</string>
+    <string name="cd_add_photo">Add photo</string>
+    <string name="write_nfc_tag">Write NFC Tag</string>
+    <string name="nfc_write_instructions">Hold your phone to a blank NFC tag to write the Tangible item ID.</string>
+    <string name="nfc_not_available">NFC not available on this device.</string>
+    <string name="nfc_write_success">Tag written successfully.</string>
+    <string name="nfc_write_failed_prefix">Write failed: </string>
+    <string name="title_required">Title *</string>
+    <string name="subtitle">Subtitle</string>
+    <string name="qty">Qty</string>
+    <string name="currency_hint">Currency (ISO, e.g. USD)</string>
+    <string name="no_location">— No location —</string>
+    <string name="location_button">Location: %s</string>
+
+    <!-- Grocery list -->
+    <string name="add_grocery_item">Add grocery item</string>
+    <string name="cd_select_store">Select store</string>
+    <string name="all_stocked">All stocked! 🎉</string>
+    <string name="all_stocked_subtitle">Everything is in good supply.</string>
+    <string name="everything_stocked">Everything is in good supply.</string>
+    <string name="add_an_item">Add an item</string>
+    <string name="sort_by_store_aisle">Sort by store aisle</string>
+    <string name="no_store_default_order">No store (default order)</string>
+    <string name="no_store_default">No store (default order)</string>
+    <string name="manage_stores">Manage stores</string>
+    <string name="grocery_item_name_required">Item name *</string>
+    <string name="item_name_required">Item name *</string>
+    <string name="collection_required">Collection *</string>
+    <string name="category_slug_optional">Category slug (optional)</string>
+    <string name="category_slug_placeholder">e.g. food.dairy</string>
+    <string name="cd_remove">Remove</string>
+    <string name="remove">Remove</string>
+    <string name="cd_got_it">Got it</string>
+    <string name="got_it">Got it</string>
+    <string name="aisle_group_other">Other</string>
+    <string name="other">Other</string>
+    <string name="cd_add_grocery_item">Add grocery item</string>
+
+    <!-- Grocery stores -->
+    <string name="my_stores">My Stores</string>
+    <string name="cd_add_store">Add store</string>
+    <string name="no_stores">No stores yet.</string>
+    <string name="no_stores_hint">Add a store to sort your shopping list by aisle.</string>
+    <string name="cd_edit_aisles">Edit aisles</string>
+    <string name="cd_delete_store">Delete store</string>
+    <string name="new_store">New store</string>
+    <string name="store_name">Store name</string>
+    <string name="delete_store_title">Delete store?</string>
+    <string name="delete_store_body">\"%s\" and all its aisles will be deleted. Your grocery list is not affected.</string>
+    <string name="aisles_title">Aisles</string>
+    <string name="cd_add_aisle">Add aisle</string>
+    <string name="no_aisles">No aisles yet.</string>
+    <string name="no_aisles_hint">Add aisles and assign category slugs to each one.\nYour grocery list will then be sorted by aisle order.</string>
+    <string name="aisle_position">Position %d</string>
+    <string name="position">Position %d</string>
+    <string name="new_aisle">New aisle</string>
+    <string name="edit_aisle">Edit aisle</string>
+    <string name="delete_aisle_title">Delete aisle?</string>
+    <string name="delete_aisle_body">\"%s\" will be removed from this store.</string>
+    <string name="aisle_name_required">Aisle name *</string>
+    <string name="aisle_name_placeholder">e.g. Dairy, Produce, Aisle 3</string>
+    <string name="aisle_categories_label">Categories</string>
+    <string name="categories">Categories</string>
+    <string name="custom_categories_optional">Custom categories (optional)</string>
+    <string name="custom_categories_placeholder">e.g. organic, gluten-free</string>
+    <string name="custom_categories_hint">Comma-separated. Items with matching categories appear in this aisle.</string>
+
+    <!-- Grocery category presets -->
+    <string name="cat_produce">Produce</string>
+    <string name="cat_bread">Bread</string>
+    <string name="cat_bakery">Bakery</string>
+    <string name="cat_meat_seafood">Meat &amp; Seafood</string>
+    <string name="cat_deli">Deli</string>
+    <string name="cat_dairy_eggs">Dairy &amp; Eggs</string>
+    <string name="cat_frozen">Frozen</string>
+    <string name="cat_canned_pantry">Canned &amp; Pantry</string>
+    <string name="cat_pasta_grains">Pasta &amp; Grains</string>
+    <string name="cat_snacks">Snacks</string>
+    <string name="cat_beverages">Beverages</string>
+    <string name="cat_breakfast_cereal">Breakfast &amp; Cereal</string>
+    <string name="cat_condiments_spices">Condiments &amp; Spices</string>
+    <string name="cat_cleaning_household">Cleaning &amp; Household</string>
+    <string name="cat_health_beauty">Health &amp; Beauty</string>
+    <string name="cat_pet_supplies">Pet Supplies</string>
+    <string name="cat_alcohol">Alcohol</string>
+
+    <!-- Scanner -->
+    <string name="grant_camera_permission">Grant camera permission</string>
+
+    <!-- Settings -->
+    <string name="server_prefix">Server: %s</string>
+    <string name="signed_in_as">Signed in as: %s</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="notifications">Notifications</string>
+    <string name="no_notification_prefs">No notification preferences.</string>
+    <string name="app_label">App</string>
+    <string name="due_soon">Due soon</string>
+    <string name="no_upcoming_alerts">No upcoming alerts in the next 14 days.</string>
+    <string name="sign_out">Sign out</string>
+    <string name="logout">Sign out</string>
+
+    <!-- Notification kind labels (settings screen) -->
+    <string name="notif_maintenance_due">Maintenance due</string>
+    <string name="notif_chore_due">Chore due</string>
+    <string name="notif_item_use_by">Item use-by</string>
+    <string name="notif_item_expires">Item expires</string>
+    <string name="notif_lot_use_by">Package use-by</string>
+    <string name="notif_low_stock">Low stock</string>
+
+    <!-- Maintenance screen -->
+    <string name="maintenance_alerts_title">Maintenance &amp; alerts</string>
+    <string name="no_alerts">No alerts in the next %d days.</string>
+
+    <!-- Alert kind labels (maintenance screen) -->
+    <string name="alert_maintenance">Maintenance</string>
+    <string name="alert_chore">Chore</string>
+    <string name="alert_use_by">Use by</string>
+    <string name="alert_expires">Expires</string>
+    <string name="alert_package">Package</string>
+    <string name="alert_low_stock">Low stock</string>
+    <string name="alert_overdue">Overdue — %s</string>
+    <string name="alert_due">Due %s</string>
+
+    <!-- About screen -->
+    <string name="about_description">A personal collection tracker for books, music, games, and more. Self-hosted, open-source, and designed for collectors who want ownership of their data.</string>
+    <string name="version">Version %s</string>
+    <string name="whats_new">What\'s new</string>
+    <string name="help_user_guide">Help / User guide</string>
+    <string name="copy_diagnostics">Copy diagnostics</string>
+    <string name="user_guide">User guide</string>
+    <string name="diagnostics_clipboard_label">Tangible diagnostics</string>
+    <string name="diagnostics_copied">Diagnostics copied to clipboard</string>
+
+    <!-- Notification worker -->
+    <string name="notif_channel_name">Maintenance &amp; alerts</string>
+    <string name="notif_channel_description">Daily summary of overdue and upcoming maintenance tasks, chores, and expiry alerts.</string>
+    <string name="notif_alert_title">Tangible — maintenance alert</string>
+    <string name="notif_overdue_count">%d overdue</string>
+    <string name="notif_due_soon_count">%d due soon</string>
+
+    <!-- Plurals -->
+    <plurals name="aisle_count">
+        <item quantity="one">1 aisle</item>
+        <item quantity="other">%d aisles</item>
+    </plurals>
+    <plurals name="asset_count">
+        <item quantity="one">1 asset</item>
+        <item quantity="other">%d assets</item>
+    </plurals>
+    <plurals name="delete_collection_confirm">
+        <item quantity="one">This will permanently delete %d item in this collection. This cannot be undone.</item>
+        <item quantity="other">This will permanently delete %d items in this collection. This cannot be undone.</item>
+    </plurals>
 </resources>

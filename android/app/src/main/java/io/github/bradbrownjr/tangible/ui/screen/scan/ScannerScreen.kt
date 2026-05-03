@@ -22,7 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.bradbrownjr.tangible.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -53,7 +55,7 @@ fun ScannerScreen(onResult: (String) -> Unit) {
         } else {
             Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                 Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) {
-                    Text("Grant camera permission")
+                    Text(stringResource(R.string.grant_camera_permission))
                 }
             }
         }

@@ -29,11 +29,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,13 +44,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private val KIND_LABELS = mapOf(
-    "maintenance_due" to "Maintenance",
-    "chore_due" to "Chore",
-    "item_use_by" to "Use by",
-    "item_expires" to "Expires",
-    "lot_use_by" to "Package",
-    "low_stock" to "Low stock",
+private val KIND_LABEL_RES = mapOf(
+    "maintenance_due" to R.string.alert_maintenance,
+    "chore_due" to R.string.alert_chore,
+    "item_use_by" to R.string.alert_use_by,
+    "item_expires" to R.string.alert_expires,
+    "lot_use_by" to R.string.alert_package,
+    "low_stock" to R.string.alert_low_stock,
 )
 
 data class MaintenanceUi(
@@ -111,10 +113,10 @@ fun MaintenanceScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Maintenance & alerts") },
+                title = { Text(stringResource(R.string.maintenance_alerts_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -126,7 +128,7 @@ fun MaintenanceScreen(
                         if (s.loading) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("Refresh")
+                            Text(stringResource(R.string.refresh))
                         }
                     }
                 },
@@ -166,13 +168,14 @@ fun MaintenanceScreen(
                         FilterChip(
                             selected = s.selectedKind == null,
                             onClick = { vm.setKindFilter(null) },
-                            label = { Text("All") },
+                            label = { Text(stringResource(R.string.all)) },
                         )
                         allKinds.forEach { kind ->
+                            val label = KIND_LABEL_RES[kind]?.let { stringResource(it) } ?: kind
                             FilterChip(
                                 selected = s.selectedKind == kind,
                                 onClick = { vm.setKindFilter(if (s.selectedKind == kind) null else kind) },
-                                label = { Text(KIND_LABELS[kind] ?: kind) },
+                                label = { Text(label) },
                             )
                         }
                     }
@@ -192,7 +195,7 @@ fun MaintenanceScreen(
             } else if (visibleAlerts.isEmpty()) {
                 item {
                     Text(
-                        "No alerts in the next ${s.withinDays} days.",
+                        stringResource(R.string.no_alerts, s.withinDays),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(vertical = 24.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -210,6 +213,7 @@ fun MaintenanceScreen(
 @Composable
 private fun AlertCard(alert: DueAlertDto) {
     val isOverdue = alert.severity == "critical"
+    val kindLabel = KIND_LABEL_RES[alert.kind]?.let { stringResource(it) } ?: alert.kind
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -226,14 +230,15 @@ private fun AlertCard(alert: DueAlertDto) {
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = KIND_LABELS[alert.kind] ?: alert.kind,
+                    text = kindLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (!alert.due_at.isNullOrBlank()) {
                 Text(
-                    text = if (isOverdue) "Overdue — ${alert.due_at!!.take(10)}" else "Due ${alert.due_at!!.take(10)}",
+                    text = if (isOverdue) stringResource(R.string.alert_overdue, alert.due_at!!.take(10))
+                           else stringResource(R.string.alert_due, alert.due_at!!.take(10)),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isOverdue) Color(0xFFB00020) else MaterialTheme.colorScheme.onSurfaceVariant,
                 )

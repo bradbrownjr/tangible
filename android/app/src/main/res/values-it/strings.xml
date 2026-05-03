@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Tangible</string>
+
+    <!-- Common actions -->
+    <string name="cancel">Annulla</string>
+    <string name="save">Salva</string>
+    <string name="delete">Elimina</string>
+    <string name="retry">Riprova</string>
+    <string name="close">Chiudi</string>
+    <string name="done">Fatto</string>
+    <string name="create">Crea</string>
+    <string name="add">Aggiungi</string>
+    <string name="edit">Modifica</string>
+    <string name="refresh">Aggiorna</string>
+    <string name="custom">Personalizzato</string>
+    <string name="select_placeholder">Seleziona…</string>
+    <string name="saving">Salvataggio…</string>
+    <string name="loading">Caricamento…</string>
+    <string name="all">Tutti</string>
+    <string name="error_generic">Qualcosa è andato storto.</string>
+
+    <!-- Common content descriptions -->
+    <string name="cd_back">Indietro</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_delete">Elimina</string>
+    <string name="cd_close">Chiudi</string>
+    <string name="cd_clear_search">Cancella ricerca</string>
+
+    <!-- Login screen -->
+    <string name="server_url">URL server</string>
+    <string name="server_url_hint">URL server (es. https://tangible.example.com)</string>
+    <string name="username">Nome utente</string>
+    <string name="password">Password</string>
+    <string name="sign_in">Accedi</string>
+    <string name="test_connection">Testa connessione</string>
+    <string name="msg_connected_successfully">Connessione riuscita</string>
+    <string name="msg_connection_failed">Connessione fallita</string>
+    <string name="msg_login_failed">Accesso fallito</string>
+
+    <!-- Collections list -->
+    <string name="collections">Collezioni</string>
+    <string name="grocery_list">Lista della spesa</string>
+    <string name="maintenance">Manutenzione</string>
+    <string name="settings">Impostazioni</string>
+    <string name="about">Informazioni</string>
+    <string name="cd_new_collection">Nuova collezione</string>
+    <string name="no_collections">Nessuna collezione. Premi + per crearne una.</string>
+    <string name="what_are_you_collecting">Cosa stai collezionando?</string>
+    <string name="new_collection">Nuova collezione</string>
+    <string name="collection_name">Nome</string>
+    <string name="collection_description_optional">Descrizione (opzionale)</string>
+
+    <!-- Collection detail -->
+    <string name="collection_default_title">Collezione</string>
+    <string name="this_collection">questa collezione</string>
+    <string name="cd_edit_collection">Modifica collezione</string>
+    <string name="cd_delete_collection">Elimina collezione</string>
+    <string name="cd_grid_view">Vista griglia</string>
+    <string name="cd_list_view">Vista elenco</string>
+    <string name="cd_scan_barcode">Scansiona codice a barre</string>
+    <string name="cd_scan_barcode_image">Scansiona da immagine</string>
+    <string name="cd_add_item">Aggiungi articolo</string>
+    <string name="no_items">Nessun articolo per ora.</string>
+    <string name="no_items_in_category">Nessun articolo in questa categoria.</string>
+    <string name="looking_up_barcode">Ricerca codice a barre…</string>
+    <string name="choose_a_match">Scegli corrispondenza</string>
+    <string name="enter_manually">Inserisci manualmente</string>
+    <string name="edit_collection">Modifica collezione</string>
+    <string name="collection_description">Descrizione</string>
+    <string name="delete_collection_title">Eliminare %s?</string>
+    <string name="add_item">Aggiungi articolo</string>
+    <string name="category">Categoria</string>
+    <string name="no_category">Nessuna categoria</string>
+    <string name="sub_category">Sottocategoria</string>
+    <string name="title">Titolo</string>
+    <string name="selected_count">Selezionati: %d</string>
+    <string name="select_visible">Seleziona visibili</string>
+    <string name="clear">Cancella</string>
+    <string name="depleted">Esaurito</string>
+    <string name="in_stock">Disponibile</string>
+    <string name="wanted">Desiderato</string>
+    <string name="owned">Posseduto</string>
+    <string name="archive">Archivia</string>
+    <string name="restore">Ripristina</string>
+    <string name="add_tag">Aggiungi tag</string>
+    <string name="remove_tag">Rimuovi tag</string>
+    <string name="move">Sposta</string>
+    <string name="clear_location">Cancella posizione</string>
+    <string name="lend">Presta</string>
+    <string name="search_items">Cerca articoli…</string>
+    <string name="tag_placeholder">Tag…</string>
+    <string name="contact_placeholder">Presta a…</string>
+    <string name="location_placeholder">Posizione…</string>
+
+    <!-- Item detail -->
+    <string name="edit_item">Modifica articolo</string>
+    <string name="item_default_title">Articolo</string>
+    <string name="quantity">Quantità</string>
+    <string name="condition">Condizione</string>
+    <string name="location">Posizione</string>
+    <string name="purchase_price">Prezzo d\'acquisto</string>
+    <string name="current_value">Valore attuale</string>
+    <string name="notes">Note</string>
+    <string name="manuals">Manuali</string>
+    <string name="cd_delete_photo">Elimina foto</string>
+    <string name="cd_add_photo">Aggiungi foto</string>
+    <string name="write_nfc_tag">Scrivi tag NFC</string>
+    <string name="nfc_write_instructions">Avvicina il telefono a un tag NFC vuoto per scrivere l\'ID Tangible.</string>
+    <string name="nfc_not_available">NFC non disponibile su questo dispositivo.</string>
+    <string name="nfc_write_success">Tag scritto con successo.</string>
+    <string name="nfc_write_failed_prefix">Scrittura fallita: </string>
+    <string name="title_required">Titolo *</string>
+    <string name="subtitle">Sottotitolo</string>
+    <string name="qty">Qtà</string>
+    <string name="currency_hint">Valuta (ISO, es. EUR)</string>
+    <string name="no_location">— Nessuna posizione —</string>
+    <string name="location_button">Posizione: %s</string>
+
+    <!-- Grocery list -->
+    <string name="add_grocery_item">Aggiungi articolo</string>
+    <string name="cd_add_grocery_item">Aggiungi articolo alla lista</string>
+    <string name="cd_select_store">Seleziona negozio</string>
+    <string name="all_stocked">Tutto rifornito! 🎉</string>
+    <string name="all_stocked_subtitle">Tutto è ben fornito.</string>
+    <string name="everything_stocked">Tutto è ben fornito.</string>
+    <string name="add_an_item">Aggiungi un articolo</string>
+    <string name="sort_by_store_aisle">Ordina per corsia</string>
+    <string name="no_store_default_order">Nessun negozio (ordine predefinito)</string>
+    <string name="no_store_default">Nessun negozio (ordine predefinito)</string>
+    <string name="manage_stores">Gestisci negozi</string>
+    <string name="grocery_item_name_required">Nome articolo *</string>
+    <string name="item_name_required">Nome articolo *</string>
+    <string name="collection_required">Collezione *</string>
+    <string name="category_slug_optional">Categoria (opzionale)</string>
+    <string name="category_slug_placeholder">es. cibo.latticini</string>
+    <string name="cd_remove">Rimuovi</string>
+    <string name="remove">Rimuovi</string>
+    <string name="cd_got_it">Ok</string>
+    <string name="got_it">Ok</string>
+    <string name="aisle_group_other">Altro</string>
+    <string name="other">Altro</string>
+
+    <!-- Grocery stores -->
+    <string name="my_stores">I miei negozi</string>
+    <string name="cd_add_store">Aggiungi negozio</string>
+    <string name="no_stores">Nessun negozio per ora.</string>
+    <string name="no_stores_hint">Aggiungi un negozio per ordinare la lista per corsia.</string>
+    <string name="cd_edit_aisles">Modifica corsie</string>
+    <string name="cd_delete_store">Elimina negozio</string>
+    <string name="new_store">Nuovo negozio</string>
+    <string name="store_name">Nome negozio</string>
+    <string name="delete_store_title">Eliminare il negozio?</string>
+    <string name="delete_store_body">\"%s\" e tutte le sue corsie verranno eliminati. La lista della spesa non verrà modificata.</string>
+    <string name="aisles_title">Corsie</string>
+    <string name="cd_add_aisle">Aggiungi corsia</string>
+    <string name="no_aisles">Nessuna corsia per ora.</string>
+    <string name="no_aisles_hint">Aggiungi corsie e assegna categorie.\nLa lista verrà ordinata in base all\'ordine delle corsie.</string>
+    <string name="aisle_position">Posizione %d</string>
+    <string name="position">Posizione %d</string>
+    <string name="new_aisle">Nuova corsia</string>
+    <string name="edit_aisle">Modifica corsia</string>
+    <string name="delete_aisle_title">Eliminare la corsia?</string>
+    <string name="delete_aisle_body">\"%s\" verrà rimossa da questo negozio.</string>
+    <string name="aisle_name_required">Nome corsia *</string>
+    <string name="aisle_name_placeholder">es. Latticini, Frutta, Corsia 3</string>
+    <string name="aisle_categories_label">Categorie</string>
+    <string name="categories">Categorie</string>
+    <string name="custom_categories_optional">Categorie personalizzate (opzionale)</string>
+    <string name="custom_categories_placeholder">es. bio, senza-glutine</string>
+    <string name="custom_categories_hint">Separate da virgola. Gli articoli con categorie corrispondenti appariranno in questa corsia.</string>
+
+    <!-- Grocery category presets -->
+    <string name="cat_produce">Frutta e verdura</string>
+    <string name="cat_bread">Pane</string>
+    <string name="cat_bakery">Panetteria</string>
+    <string name="cat_meat_seafood">Carne e pesce</string>
+    <string name="cat_deli">Salumeria</string>
+    <string name="cat_dairy_eggs">Latticini e uova</string>
+    <string name="cat_frozen">Surgelati</string>
+    <string name="cat_canned_pantry">Conserve e dispensa</string>
+    <string name="cat_pasta_grains">Pasta e cereali</string>
+    <string name="cat_snacks">Snack</string>
+    <string name="cat_beverages">Bevande</string>
+    <string name="cat_breakfast_cereal">Colazione e cereali</string>
+    <string name="cat_condiments_spices">Condimenti e spezie</string>
+    <string name="cat_cleaning_household">Pulizia e casa</string>
+    <string name="cat_health_beauty">Salute e bellezza</string>
+    <string name="cat_pet_supplies">Animali</string>
+    <string name="cat_alcohol">Alcol</string>
+
+    <!-- Scanner -->
+    <string name="grant_camera_permission">Consenti accesso fotocamera</string>
+
+    <!-- Settings -->
+    <string name="server_prefix">Server: %s</string>
+    <string name="signed_in_as">Accesso come: %s</string>
+    <string name="appearance">Aspetto</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="notifications">Notifiche</string>
+    <string name="no_notification_prefs">Nessuna preferenza di notifica.</string>
+    <string name="app_label">App</string>
+    <string name="due_soon">In scadenza</string>
+    <string name="no_upcoming_alerts">Nessun avviso nei prossimi 14 giorni.</string>
+    <string name="sign_out">Esci</string>
+    <string name="logout">Esci</string>
+
+    <!-- Notification kind labels -->
+    <string name="notif_maintenance_due">Manutenzione in scadenza</string>
+    <string name="notif_chore_due">Attività in scadenza</string>
+    <string name="notif_item_use_by">Scadenza articolo</string>
+    <string name="notif_item_expires">Scadenza articolo</string>
+    <string name="notif_lot_use_by">Scadenza lotto</string>
+    <string name="notif_low_stock">Scorte basse</string>
+
+    <!-- Maintenance screen -->
+    <string name="maintenance_alerts_title">Manutenzione e avvisi</string>
+    <string name="no_alerts">Nessun avviso nei prossimi %d giorni.</string>
+
+    <!-- Alert kind labels -->
+    <string name="alert_maintenance">Manutenzione</string>
+    <string name="alert_chore">Attività</string>
+    <string name="alert_use_by">Scadenza</string>
+    <string name="alert_expires">Scadenza</string>
+    <string name="alert_package">Lotto</string>
+    <string name="alert_low_stock">Scorte basse</string>
+    <string name="alert_overdue">Scaduto — %s</string>
+    <string name="alert_due">Scade il %s</string>
+
+    <!-- About screen -->
+    <string name="about_description">Un gestore di collezioni personale per libri, musica, giochi e altro. Self-hosted, open-source, pensato per i collezionisti che vogliono controllare i propri dati.</string>
+    <string name="version">Versione %s</string>
+    <string name="whats_new">Novità</string>
+    <string name="help_user_guide">Aiuto / Guida utente</string>
+    <string name="copy_diagnostics">Copia diagnostica</string>
+    <string name="user_guide">Guida utente</string>
+    <string name="diagnostics_clipboard_label">Diagnostica Tangible</string>
+    <string name="diagnostics_copied">Diagnostica copiata negli appunti</string>
+
+    <!-- Notification worker -->
+    <string name="notif_channel_name">Manutenzione e avvisi</string>
+    <string name="notif_channel_description">Riepilogo giornaliero delle attività di manutenzione scadute e in arrivo.</string>
+    <string name="notif_alert_title">Tangible — avviso manutenzione</string>
+    <string name="notif_overdue_count">%d scaduti</string>
+    <string name="notif_due_soon_count">%d in scadenza</string>
+
+    <!-- Plurals -->
+    <plurals name="aisle_count">
+        <item quantity="one">1 corsia</item>
+        <item quantity="other">%d corsie</item>
+    </plurals>
+    <plurals name="asset_count">
+        <item quantity="one">1 file</item>
+        <item quantity="other">%d file</item>
+    </plurals>
+    <plurals name="delete_collection_confirm">
+        <item quantity="one">Questo eliminerà definitivamente %d articolo da questa collezione. Questa operazione non può essere annullata.</item>
+        <item quantity="other">Questo eliminerà definitivamente %d articoli da questa collezione. Questa operazione non può essere annullata.</item>
+    </plurals>
+</resources>

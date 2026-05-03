@@ -32,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -62,6 +64,7 @@ import io.github.bradbrownjr.tangible.data.repo.CategoryRepository
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ItemRepository
 import io.github.bradbrownjr.tangible.data.repo.LocationRepository
+import io.github.bradbrownjr.tangible.R
 import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
@@ -655,35 +658,35 @@ fun CollectionDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(s.collection?.name ?: "Collection") },
+                title = { Text(s.collection?.name ?: stringResource(R.string.collection_default_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
                     if (s.collection?.my_role == "owner" || s.collection?.my_role == "editor") {
                         IconButton(onClick = vm::startEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit collection")
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_edit_collection))
                         }
                     }
                     if (s.collection?.my_role == "owner") {
                         IconButton(onClick = vm::startDeleteCollection) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete collection")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.cd_delete_collection))
                         }
                     }
                     IconButton(onClick = vm::toggleViewMode) {
                         Icon(
                             if (s.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
-                            contentDescription = if (s.viewMode == ViewMode.LIST) "Grid view" else "List view",
+                            contentDescription = if (s.viewMode == ViewMode.LIST) stringResource(R.string.cd_grid_view) else stringResource(R.string.cd_list_view),
                         )
                     }
                     if (onScan != null) {
                         IconButton(onClick = onScan) {
-                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode")
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.cd_scan_barcode))
                         }
                         IconButton(onClick = { imagePicker.launch("image/*") }) {
-                            Icon(Icons.Default.Image, contentDescription = "Scan barcode from image")
+                            Icon(Icons.Default.Image, contentDescription = stringResource(R.string.cd_scan_barcode_image))
                         }
                     }
                 },
@@ -691,7 +694,7 @@ fun CollectionDetailScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { vm.showCreate(true) }) {
-                Icon(Icons.Default.Add, contentDescription = "Add item")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_item))
             }
         },
     ) { padding ->
@@ -721,10 +724,10 @@ fun CollectionDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(s.error!!, color = MaterialTheme.colorScheme.error)
-                        OutlinedButton(onClick = vm::refresh) { Text("Retry") }
+                        OutlinedButton(onClick = vm::refresh) { Text(stringResource(R.string.retry)) }
                     }
                 s.items.isEmpty() -> Text(
-                    "No items yet.", Modifier.align(Alignment.Center).padding(16.dp),
+                    stringResource(R.string.no_items), Modifier.align(Alignment.Center).padding(16.dp),
                 )
                 else -> {
                     val headerContent: @Composable () -> Unit = {
@@ -783,7 +786,7 @@ fun CollectionDetailScreen(
                             }
                             if (displayItems.isEmpty()) {
                                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                                    Text("No items in this category.", modifier = Modifier.padding(8.dp))
+                                    Text(stringResource(R.string.no_items_in_category), modifier = Modifier.padding(8.dp))
                                 }
                             } else {
                                 items(displayItems, key = { it.id }) { item ->
@@ -803,7 +806,7 @@ fun CollectionDetailScreen(
                             if (displayItems.isEmpty()) {
                                 item {
                                     Text(
-                                        "No items in this category.",
+                                        stringResource(R.string.no_items_in_category),
                                         modifier = Modifier.padding(16.dp),
                                     )
                                 }
@@ -830,7 +833,7 @@ fun CollectionDetailScreen(
                                         },
                                         trailingContent = {
                                             IconButton(onClick = { vm.delete(item.id) }) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                                             }
                                         },
                                         modifier = Modifier.clickable { onItem(item.id) },
@@ -860,7 +863,7 @@ fun CollectionDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Text("Looking up barcode…")
+                        Text(stringResource(R.string.looking_up_barcode))
                     }
                 }
             }
@@ -868,7 +871,7 @@ fun CollectionDetailScreen(
         if (s.showCandidatePicker) {
             AlertDialog(
                 onDismissRequest = vm::dismissCandidatePicker,
-                title = { Text("Choose a match") },
+                title = { Text(stringResource(R.string.choose_a_match)) },
                 text = {
                     LazyColumn {
                         items(s.candidates) { c ->
@@ -886,7 +889,7 @@ fun CollectionDetailScreen(
                         }
                         item {
                             ListItem(
-                                headlineContent = { Text("Enter manually") },
+                                headlineContent = { Text(stringResource(R.string.enter_manually)) },
                                 modifier = Modifier.clickable { vm.pickManually() },
                             )
                         }
@@ -894,7 +897,7 @@ fun CollectionDetailScreen(
                 },
                 confirmButton = {},
                 dismissButton = {
-                    TextButton(onClick = vm::dismissCandidatePicker) { Text("Cancel") }
+                    TextButton(onClick = vm::dismissCandidatePicker) { Text(stringResource(R.string.cancel)) }
                 },
             )
         }
@@ -902,20 +905,20 @@ fun CollectionDetailScreen(
         if (s.showEdit) {
             AlertDialog(
                 onDismissRequest = vm::cancelEdit,
-                title = { Text("Edit collection") },
+                title = { Text(stringResource(R.string.edit_collection)) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = s.editName,
                             onValueChange = vm::setEditName,
-                            label = { Text("Name") },
+                            label = { Text(stringResource(R.string.collection_name)) },
                             singleLine = true,
                             enabled = !s.editSaving,
                         )
                         OutlinedTextField(
                             value = s.editDescription,
                             onValueChange = vm::setEditDescription,
-                            label = { Text("Description") },
+                            label = { Text(stringResource(R.string.collection_description)) },
                             minLines = 2,
                             enabled = !s.editSaving,
                         )
@@ -925,23 +928,20 @@ fun CollectionDetailScreen(
                     TextButton(
                         onClick = vm::saveEdit,
                         enabled = !s.editSaving && s.editName.isNotBlank(),
-                    ) { Text(if (s.editSaving) "Saving…" else "Save") }
+                    ) { Text(if (s.editSaving) stringResource(R.string.saving) else stringResource(R.string.save)) }
                 },
-                dismissButton = { TextButton(onClick = vm::cancelEdit) { Text("Cancel") } },
+                dismissButton = { TextButton(onClick = vm::cancelEdit) { Text(stringResource(R.string.cancel)) } },
             )
         }
 
         if (s.showDeleteConfirm) {
-            val name = s.collection?.name ?: "this collection"
+            val name = s.collection?.name ?: stringResource(R.string.this_collection)
             val count = s.items.size
             AlertDialog(
                 onDismissRequest = vm::cancelDeleteCollection,
-                title = { Text("Delete $name?") },
+                title = { Text(stringResource(R.string.delete_collection_title, name)) },
                 text = {
-                    Text(
-                        "This will permanently delete $count item${if (count != 1) "s" else ""} " +
-                            "in this collection. This cannot be undone.",
-                    )
+                    Text(pluralStringResource(R.plurals.delete_collection_confirm, count, count))
                 },
                 confirmButton = {
                     TextButton(
@@ -949,16 +949,16 @@ fun CollectionDetailScreen(
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error,
                         ),
-                    ) { Text("Delete") }
+                    ) { Text(stringResource(R.string.delete)) }
                 },
-                dismissButton = { TextButton(onClick = vm::cancelDeleteCollection) { Text("Cancel") } },
+                dismissButton = { TextButton(onClick = vm::cancelDeleteCollection) { Text(stringResource(R.string.cancel)) } },
             )
         }
 
         if (s.showCreate) {
             AlertDialog(
                 onDismissRequest = { vm.showCreate(false) },
-                title = { Text("Add item") },
+                title = { Text(stringResource(R.string.add_item)) },
                 text = {
                     if (s.scraping) {
                         Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
@@ -968,7 +968,7 @@ fun CollectionDetailScreen(
                         Column {
                             // Root category picker
                             CategoryDropdown(
-                                label = "Category",
+                                label = stringResource(R.string.category),
                                 options = s.rootCategories,
                                 selected = s.selectedRoot,
                                 onSelect = vm::setSelectedRoot,
@@ -976,7 +976,7 @@ fun CollectionDetailScreen(
                             if (s.leafCategories.isNotEmpty()) {
                                 Spacer(Modifier.height(8.dp))
                                 CategoryDropdown(
-                                    label = "Sub-category",
+                                    label = stringResource(R.string.sub_category),
                                     options = s.leafCategories,
                                     selected = s.selectedLeaf,
                                     onSelect = vm::setSelectedLeaf,
@@ -986,7 +986,7 @@ fun CollectionDetailScreen(
                             OutlinedTextField(
                                 value = s.newTitle,
                                 onValueChange = vm::setNewTitle,
-                                label = { Text("Title") },
+                                label = { Text(stringResource(R.string.title)) },
                                 singleLine = true,
                             )
                         }
@@ -997,9 +997,9 @@ fun CollectionDetailScreen(
                         onClick = vm::create,
                         enabled = !s.scraping && s.newTitle.isNotBlank()
                             && (s.selectedLeaf != null || s.selectedRoot != null),
-                    ) { Text("Add") }
+                    ) { Text(stringResource(R.string.add)) }
                 },
-                dismissButton = { TextButton(onClick = { vm.showCreate(false) }) { Text("Cancel") } },
+                dismissButton = { TextButton(onClick = { vm.showCreate(false) }) { Text(stringResource(R.string.cancel)) } },
             )
         }
     }
@@ -1023,7 +1023,7 @@ private fun CategoryDropdown(
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
-            placeholder = { Text("Select…") },
+            placeholder = { Text(stringResource(R.string.select_placeholder)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             isError = selected == null,
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
@@ -1125,7 +1125,7 @@ private fun ItemCard(
                 horizontalArrangement = Arrangement.End,
             ) {
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -1163,12 +1163,15 @@ private fun BulkActionBar(
     var tagMenuOpen by remember { mutableStateOf(false) }
     var contactMenuOpen by remember { mutableStateOf(false) }
     var locationMenuOpen by remember { mutableStateOf(false) }
-    val selectedTagName = tags.firstOrNull { it.id == selectedBulkTagId }?.name ?: "Tag…"
-    val selectedContactName = contacts.firstOrNull { it.id == selectedBulkContactId }?.name ?: "Lend to…"
+    val tagPlaceholder = stringResource(R.string.tag_placeholder)
+    val contactPlaceholder = stringResource(R.string.contact_placeholder)
+    val locationPlaceholder = stringResource(R.string.location_placeholder)
+    val selectedTagName = tags.firstOrNull { it.id == selectedBulkTagId }?.name ?: tagPlaceholder
+    val selectedContactName = contacts.firstOrNull { it.id == selectedBulkContactId }?.name ?: contactPlaceholder
     val flatLocations = remember(locations) { flattenLocationsWithDepth(locations) }
     val selectedLocationName = flatLocations
         .firstOrNull { it.second.id == bulkMoveLocationId }
-        ?.second?.name ?: "Location…"
+        ?.second?.name ?: locationPlaceholder
 
     Row(
         modifier = Modifier
@@ -1178,15 +1181,15 @@ private fun BulkActionBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AssistChip(onClick = {}, label = { Text("Selected: $selectedCount") })
-        OutlinedButton(onClick = onSelectVisible, enabled = !allVisibleSelected) { Text("Select visible") }
-        OutlinedButton(onClick = onClearSelection, enabled = selectedCount > 0) { Text("Clear") }
-        OutlinedButton(onClick = onBulkDepleted, enabled = selectedCount > 0) { Text("Depleted") }
-        OutlinedButton(onClick = onBulkInStock, enabled = selectedCount > 0) { Text("In stock") }
-        OutlinedButton(onClick = onBulkWanted, enabled = selectedCount > 0) { Text("Wanted") }
-        OutlinedButton(onClick = onBulkOwned, enabled = selectedCount > 0) { Text("Owned") }
-        OutlinedButton(onClick = onBulkArchive, enabled = selectedCount > 0) { Text("Archive") }
-        OutlinedButton(onClick = onBulkRestore, enabled = selectedCount > 0) { Text("Restore") }
+        AssistChip(onClick = {}, label = { Text(stringResource(R.string.selected_count, selectedCount)) })
+        OutlinedButton(onClick = onSelectVisible, enabled = !allVisibleSelected) { Text(stringResource(R.string.select_visible)) }
+        OutlinedButton(onClick = onClearSelection, enabled = selectedCount > 0) { Text(stringResource(R.string.clear)) }
+        OutlinedButton(onClick = onBulkDepleted, enabled = selectedCount > 0) { Text(stringResource(R.string.depleted)) }
+        OutlinedButton(onClick = onBulkInStock, enabled = selectedCount > 0) { Text(stringResource(R.string.in_stock)) }
+        OutlinedButton(onClick = onBulkWanted, enabled = selectedCount > 0) { Text(stringResource(R.string.wanted)) }
+        OutlinedButton(onClick = onBulkOwned, enabled = selectedCount > 0) { Text(stringResource(R.string.owned)) }
+        OutlinedButton(onClick = onBulkArchive, enabled = selectedCount > 0) { Text(stringResource(R.string.archive)) }
+        OutlinedButton(onClick = onBulkRestore, enabled = selectedCount > 0) { Text(stringResource(R.string.restore)) }
         Box {
             OutlinedButton(onClick = { tagMenuOpen = true }, enabled = tags.isNotEmpty()) {
                 Text(selectedTagName)
@@ -1206,11 +1209,11 @@ private fun BulkActionBar(
         OutlinedButton(
             onClick = onBulkTagAdd,
             enabled = selectedCount > 0 && selectedBulkTagId.isNotBlank(),
-        ) { Text("Add tag") }
+        ) { Text(stringResource(R.string.add_tag)) }
         OutlinedButton(
             onClick = onBulkTagRemove,
             enabled = selectedCount > 0 && selectedBulkTagId.isNotBlank(),
-        ) { Text("Remove tag") }
+        ) { Text(stringResource(R.string.remove_tag)) }
         Box {
             OutlinedButton(onClick = { locationMenuOpen = true }, enabled = flatLocations.isNotEmpty()) {
                 Text(selectedLocationName)
@@ -1230,11 +1233,11 @@ private fun BulkActionBar(
         OutlinedButton(
             onClick = onBulkMoveLocation,
             enabled = selectedCount > 0 && bulkMoveLocationId.isNotBlank(),
-        ) { Text("Move") }
+        ) { Text(stringResource(R.string.move)) }
         OutlinedButton(
             onClick = onBulkClearLocation,
             enabled = selectedCount > 0,
-        ) { Text("Clear location") }
+        ) { Text(stringResource(R.string.clear_location)) }
         Box {
             OutlinedButton(onClick = { contactMenuOpen = true }, enabled = contacts.isNotEmpty()) {
                 Text(selectedContactName)
@@ -1254,7 +1257,7 @@ private fun BulkActionBar(
         OutlinedButton(
             onClick = onBulkLend,
             enabled = selectedCount > 0 && selectedBulkContactId.isNotBlank(),
-        ) { Text("Lend") }
+        ) { Text(stringResource(R.string.lend)) }
         Button(
             onClick = onBulkDelete,
             enabled = selectedCount > 0,
@@ -1263,7 +1266,7 @@ private fun BulkActionBar(
                 contentColor = MaterialTheme.colorScheme.onError,
             ),
         ) {
-            Text("Delete")
+            Text(stringResource(R.string.delete))
         }
     }
 }
@@ -1308,12 +1311,12 @@ private fun SearchBar(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Search items…") },
+        placeholder = { Text(stringResource(R.string.search_items)) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = onClear) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                 }
             }
         },

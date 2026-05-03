@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { api, type DueAlert } from '$lib/api';
+    import { _ } from 'svelte-i18n';
 
     let alerts = $state<DueAlert[]>([]);
     let loading = $state(true);
@@ -22,8 +23,8 @@
     onMount(load);
 
     function severityLabel(a: DueAlert): string {
-        if (a.severity === 'critical') return 'Overdue';
-        return 'Upcoming';
+        if (a.severity === 'critical') return $_('maintenance.overdue_label');
+        return $_('maintenance.upcoming_label');
     }
 
     function daysLabel(isoDate: string | null): string {
@@ -34,14 +35,14 @@
         return `in ${diff}d`;
     }
 
-    const kindLabels: Record<string, string> = {
-        maintenance_due: 'Maintenance',
-        chore_due: 'Chore',
-        item_use_by: 'Use by',
-        item_expires: 'Expires',
-        lot_use_by: 'Package',
-        low_stock: 'Low stock'
-    };
+    const kindLabels = $derived<Record<string, string>>({
+        maintenance_due: $_('maintenance.kind_maintenance_due'),
+        chore_due: $_('maintenance.kind_chore_due'),
+        item_use_by: $_('maintenance.kind_item_use_by'),
+        item_expires: $_('maintenance.kind_item_expires'),
+        lot_use_by: $_('maintenance.kind_lot_use_by'),
+        low_stock: $_('maintenance.kind_low_stock'),
+    });
 
     const grouped = $derived(
         alerts.reduce<Record<string, DueAlert[]>>((acc, a) => {
@@ -53,26 +54,26 @@
     );
 </script>
 
-<svelte:head><title>Maintenance & alerts</title></svelte:head>
+<svelte:head><title>{$_('maintenance.title')}</title></svelte:head>
 
 <div class="page-header">
-    <h1>Maintenance &amp; alerts</h1>
-    <p class="hint">Upcoming and overdue tasks, chores, expiry dates, and low stock.</p>
+    <h1>{$_('maintenance.title')}</h1>
+    <p class="hint">{$_('maintenance.description')}</p>
 </div>
 
 <div class="filter-row">
     <label>
-        Show next
+        {$_('maintenance.show_next_label')}
         <select bind:value={withinDays} onchange={load}>
-            <option value={7}>7 days</option>
-            <option value={14}>14 days</option>
-            <option value={30}>30 days</option>
-            <option value={60}>60 days</option>
-            <option value={90}>90 days</option>
-            <option value={365}>1 year</option>
+            <option value={7}>{$_('maintenance.days_7')}</option>
+            <option value={14}>{$_('maintenance.days_14')}</option>
+            <option value={30}>{$_('maintenance.days_30')}</option>
+            <option value={60}>{$_('maintenance.days_60')}</option>
+            <option value={90}>{$_('maintenance.days_90')}</option>
+            <option value={365}>{$_('maintenance.days_365')}</option>
         </select>
     </label>
-    <button onclick={load}>Refresh</button>
+    <button onclick={load}>{$_('maintenance.refresh_button')}</button>
 </div>
 
 {#if loading}
@@ -80,7 +81,7 @@
 {:else if error}
     <p class="error">{error}</p>
 {:else if alerts.length === 0}
-    <p class="empty">No alerts in the next {withinDays} days.</p>
+    <p class="empty">{$_('maintenance.empty', { values: { days: withinDays } })}</p>
 {:else}
     {#each Object.entries(grouped) as [kind, items]}
         <section class="group">
@@ -103,12 +104,12 @@
                         <div class="alert-links">
                             {#if alert.item_id}
                                 <a href="/collections/{alert.collection_id}?item={alert.item_id}">
-                                    View item
+                                    {$_('maintenance.view_item_link')}
                                 </a>
                             {/if}
-                            <a href="/collections/{alert.collection_id}">Collection</a>
+                            <a href="/collections/{alert.collection_id}">{$_('maintenance.collection_link')}</a>
                             {#if kind === 'chore_due'}
-                                <a href="/collections/{alert.collection_id}/chores">Chores</a>
+                                <a href="/collections/{alert.collection_id}/chores">{$_('maintenance.chores_link')}</a>
                             {/if}
                         </div>
                     </li>

@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +29,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.tangible.BuildConfig
+import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -130,18 +132,18 @@ fun AboutScreen(
     LaunchedEffect(s.diagnosticsReady) {
         val text = s.diagnosticsReady ?: return@LaunchedEffect
         val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Tangible diagnostics", text))
-        snackbarHostState.showSnackbar("Diagnostics copied to clipboard")
+        clipboard.setPrimaryClip(ClipData.newPlainText(ctx.getString(R.string.diagnostics_clipboard_label), text))
+        snackbarHostState.showSnackbar(ctx.getString(R.string.diagnostics_copied))
         vm.clearDiagnostics()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("About") },
+                title = { Text(stringResource(R.string.about)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
             )
@@ -157,13 +159,11 @@ fun AboutScreen(
         ) {
             Text("Tangible", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "A personal collection tracker for books, music, games, and more. " +
-                    "Self-hosted, open-source, and designed for collectors who want " +
-                    "ownership of their data.",
+                stringResource(R.string.about_description),
                 style = MaterialTheme.typography.bodyMedium,
             )
             HorizontalDivider()
-            Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.bodyMedium)
             TextButton(
                 onClick = {
                     ctx.startActivity(
@@ -192,7 +192,7 @@ fun AboutScreen(
                         strokeWidth = 2.dp,
                     )
                 }
-                Text(if (s.changelogLoading) "Loading…" else "What's new")
+                Text(if (s.changelogLoading) stringResource(R.string.loading) else stringResource(R.string.whats_new))
             }
             if (s.changelogError != null) {
                 Text(
@@ -205,13 +205,13 @@ fun AboutScreen(
                 onClick = vm::showHelp,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Help / User guide")
+                Text(stringResource(R.string.help_user_guide))
             }
             OutlinedButton(
                 onClick = vm::prepareDiagnostics,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Copy diagnostics")
+                Text(stringResource(R.string.copy_diagnostics))
             }
         }
     }
@@ -219,7 +219,7 @@ fun AboutScreen(
     if (s.showChangelog) {
         AlertDialog(
             onDismissRequest = vm::dismissChangelog,
-            title = { Text("What's new") },
+            title = { Text(stringResource(R.string.whats_new)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -233,7 +233,7 @@ fun AboutScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = vm::dismissChangelog) { Text("Close") }
+                TextButton(onClick = vm::dismissChangelog) { Text(stringResource(R.string.close)) }
             },
         )
     }
@@ -241,7 +241,7 @@ fun AboutScreen(
     if (s.showHelp) {
         AlertDialog(
             onDismissRequest = vm::dismissHelp,
-            title = { Text("User guide") },
+            title = { Text(stringResource(R.string.user_guide)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -255,7 +255,7 @@ fun AboutScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = vm::dismissHelp) { Text("Close") }
+                TextButton(onClick = vm::dismissHelp) { Text(stringResource(R.string.close)) }
             },
         )
     }
