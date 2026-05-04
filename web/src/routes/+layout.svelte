@@ -4,7 +4,7 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { me, refreshMe, loadPublicConfig, logout, publicConfig } from '$lib/session';
-    import { userLabel, api } from '$lib/api';
+    import { userLabel, api, type Collection } from '$lib/api';
     import { get } from 'svelte/store';
     import { initTheme } from '$lib/theme';
     import { _, locale } from 'svelte-i18n';
@@ -29,7 +29,18 @@
     let shoppingCount = $state(0);
     let shoppingByType = $state<Record<string, number>>({});
     let listsMenuOpen = $state(false);
+    let collectionsMenuOpen = $state(false);
+    let navCollections = $state<Collection[]>([]);
     let menuOpen = $state(false);
+
+    async function refreshNavCollections() {
+        if (!$me) { navCollections = []; return; }
+        try {
+            navCollections = await api.get<Collection[]>('/collections');
+        } catch {
+            navCollections = [];
+        }
+    }
 
     async function refreshShoppingCount() {
         if (!$me) { shoppingCount = 0; shoppingByType = {}; return; }
@@ -72,7 +83,7 @@
         }
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
-        await refreshShoppingCount();
+        await Promise.all([refreshShoppingCount(), refreshNavCollections()]);
         const path = page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
@@ -121,9 +132,9 @@
         await goto('/login');
     }
 
-    function closeMenu() { menuOpen = false; listsMenuOpen = false; }
+    function closeMenu() { menuOpen = false; listsMenuOpen = false; collectionsMenuOpen = false; }
 
-    function handleDocumentClick() { listsMenuOpen = false; }
+    function handleDocumentClick() { listsMenuOpen = false; collectionsMenuOpen = false; }
 
     $effect(() => {
         document.documentElement.lang = $locale ?? 'en';
@@ -169,8 +180,34 @@
     {/if}
     <nav class:open={menuOpen}>
         {#if $me}
-            <a href="/" onclick={closeMenu}>{$_('nav.collections')}</a>
-            <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
+            <div class="nav-lists-menu" class:open={collectionsMenuOpen}>
+                    <button
+                        class="nav-lists-trigger"
+                        onclick={(e) => { e.stopPropagation(); collectionsMenuOpen = !collectionsMenuOpen; }}
+                        aria-haspopup="true"
+                        aria-expanded={collectionsMenuOpen}
+                    >
+                        {$_('nav.collections')}
+                        <svg class="chevron" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                            <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                    {#if collectionsMenuOpen}
+                        <div class="nav-lists-dropdown" role="menu">
+                            <a href="/" role="menuitem" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
+                                {$_('nav.all_collections')}
+                            </a>
+                            {#each navCollections as col}
+                                <a href="/collections/{col.id}" role="menuitem" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
+                                    {col.name}
+                                </a>
+                            {/each}
+                            <a href="/?new=1" role="menuitem" class="add-collection-link" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
+                                + {$_('collections.add_button')}
+                            </a>
+                        </div>
+                    {/if}
+                </div>
             <div class="nav-lists-menu" class:open={listsMenuOpen}>
                 <button
                     class="nav-lists-trigger"
@@ -200,6 +237,7 @@
                     </div>
                 {/if}
             </div>
+            <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
             <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
             <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
@@ -332,6 +370,11 @@
     .nav-lists-dropdown a:hover {
         background: color-mix(in srgb, var(--accent) 10%, transparent);
         color: var(--accent);
+    }
+    .nav-lists-dropdown .add-collection-link {
+        border-top: 1px solid var(--border);
+        color: var(--accent);
+        font-size: 0.9rem;
     }
     main {
         padding: 1.5rem;

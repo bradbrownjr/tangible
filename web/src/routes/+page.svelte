@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Category, type Collection } from '$lib/api';
     import { loadCategories, rootCategories } from '$lib/categories';
@@ -73,7 +74,10 @@
         }
     }
 
-    onMount(refresh);
+    onMount(async () => {
+        await refresh();
+        if (page.url.searchParams.get('new') === '1') openPicker();
+    });
 </script>
 
 <h1>{$_('collections.title')}</h1>

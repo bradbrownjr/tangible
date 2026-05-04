@@ -4,6 +4,11 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.11] — 2026-05-04
+
+- **Redesigned navigation menu** — order is now Collections, Lists, Maintenance, Settings, Profile, Log out.
+- **Collections dropdown** — the Collections nav item is now a dropdown that lists all your collections for one-click access, plus an "All Collections" link and an "Add Collection" shortcut that opens the new-collection wizard directly.
+
 ## [0.17.10] — 2026-05-04
 
 - **Android: Renamed "Grocery List" to "Lists"** — the app bar title and navigation label now correctly reflect that the screen hosts all four list types, not just groceries.

@@ -1,6 +1,7 @@
 {
   "nav": {
     "collections": "Colecciones",
+    "all_collections": "Todas las colecciones",
     "maintenance": "Mantenimiento",
     "grocery_list": "Lista de la compra",
     "settings": "Configuración",

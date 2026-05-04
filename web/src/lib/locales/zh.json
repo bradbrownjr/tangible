@@ -1,6 +1,7 @@
 {
   "nav": {
     "collections": "收藏",
+    "all_collections": "所有收藏",
     "maintenance": "维护",
     "grocery_list": "购物清单",
     "settings": "设置",
