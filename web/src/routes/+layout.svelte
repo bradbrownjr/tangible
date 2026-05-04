@@ -183,7 +183,7 @@
             <div class="nav-lists-menu" class:open={collectionsMenuOpen}>
                     <button
                         class="nav-lists-trigger"
-                        onclick={(e) => { e.stopPropagation(); collectionsMenuOpen = !collectionsMenuOpen; }}
+                        onclick={(e) => { e.stopPropagation(); collectionsMenuOpen = !collectionsMenuOpen; listsMenuOpen = false; }}
                         aria-haspopup="true"
                         aria-expanded={collectionsMenuOpen}
                     >
@@ -203,7 +203,7 @@
                                 </a>
                             {/each}
                             <a href="/?new=1" role="menuitem" class="add-collection-link" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
-                                + {$_('collections.add_button')}
+                                {$_('collections.add_button')}
                             </a>
                         </div>
                     {/if}
@@ -211,7 +211,7 @@
             <div class="nav-lists-menu" class:open={listsMenuOpen}>
                 <button
                     class="nav-lists-trigger"
-                    onclick={(e) => { e.stopPropagation(); listsMenuOpen = !listsMenuOpen; }}
+                    onclick={(e) => { e.stopPropagation(); listsMenuOpen = !listsMenuOpen; collectionsMenuOpen = false; }}
                     aria-haspopup="true"
                     aria-expanded={listsMenuOpen}
                 >
