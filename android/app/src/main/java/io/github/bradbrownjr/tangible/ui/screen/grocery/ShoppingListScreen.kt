@@ -44,12 +44,12 @@ import javax.inject.Inject
 
 private val LIST_TYPES = listOf("groceries", "hardware", "home_goods", "wish_list")
 
-/** Implied collection name that will be auto-created if absent for each list type. */
+/** Implied collection name that will be auto-created if absent for each list type.
+ *  Wish List is intentionally absent — the user picks the target collection in the dialog. */
 private val IMPLIED_COLLECTION_NAME = mapOf(
     "groceries"  to "Pantry",
     "hardware"   to "Workshop",
     "home_goods" to "Home",
-    "wish_list"  to "Wish List",
 )
 
 data class ShoppingListUi(
@@ -172,8 +172,8 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun addItem(name: String, quantity: Int, categorySlug: String?) {
-        val collId = _state.value.impliedCollectionId ?: return
+    fun addItem(name: String, quantity: Int, categorySlug: String?, collectionId: String? = null) {
+        val collId = collectionId ?: _state.value.impliedCollectionId ?: return
         _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "")
         viewModelScope.launch {
             try {
@@ -468,12 +468,16 @@ fun ShoppingListScreen(
     }
 
     if (ui.showAddDialog) {
+        val allCollections = ui.collections.values.toList()
         AddShoppingItemDialog(
             listType = ui.listType,
             preFillName = ui.addDialogPreFillName,
+            collections = allCollections,
+            initialCollectionId = allCollections.find { it.name.equals("Wish List", ignoreCase = true) }?.id
+                ?: allCollections.firstOrNull()?.id,
             onDismiss = { viewModel.dismissAddDialog() },
-            onAdd = { itemName, qty, catSlug ->
-                viewModel.addItem(itemName, qty, catSlug)
+            onAdd = { itemName, qty, catSlug, collId ->
+                viewModel.addItem(itemName, qty, catSlug, collId)
             },
         )
     }
@@ -612,14 +616,19 @@ private fun StoreSelectorDialog(
 private fun AddShoppingItemDialog(
     listType: String = "groceries",
     preFillName: String = "",
+    collections: List<CollectionDto> = emptyList(),
+    initialCollectionId: String? = null,
     onDismiss: () -> Unit,
-    onAdd: (name: String, quantity: Int, categorySlug: String?) -> Unit,
+    onAdd: (name: String, quantity: Int, categorySlug: String?, collectionId: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf(preFillName) }
     var quantityText by remember { mutableStateOf("1") }
     var categorySlug by remember { mutableStateOf("") }
     // Show category picker only for hardware and home_goods.
     val showCategory = listType == "hardware" || listType == "home_goods"
+    // Show collection picker only for wish_list.
+    val showCollectionPicker = listType == "wish_list" && collections.isNotEmpty()
+    var selectedCollectionId by remember { mutableStateOf(initialCollectionId ?: collections.firstOrNull()?.id) }
     val categoryPresets = presetsForType(listType)
     val dialogTitle = when (listType) {
         "hardware"   -> stringResource(R.string.list_type_hardware)
@@ -648,6 +657,33 @@ private fun AddShoppingItemDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (showCollectionPicker) {
+                    var collectionMenuExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = collectionMenuExpanded,
+                        onExpandedChange = { collectionMenuExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = collections.find { it.id == selectedCollectionId }?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.collection_default_title)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = collectionMenuExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = collectionMenuExpanded,
+                            onDismissRequest = { collectionMenuExpanded = false },
+                        ) {
+                            collections.forEach { coll ->
+                                DropdownMenuItem(
+                                    text = { Text(coll.name) },
+                                    onClick = { selectedCollectionId = coll.id; collectionMenuExpanded = false },
+                                )
+                            }
+                        }
+                    }
+                }
                 if (showCategory) {
                     var categoryMenuExpanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -687,7 +723,12 @@ private fun AddShoppingItemDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        onAdd(name.trim(), quantityText.toIntOrNull() ?: 1, categorySlug.takeIf { it.isNotBlank() })
+                        onAdd(
+                            name.trim(),
+                            quantityText.toIntOrNull() ?: 1,
+                            categorySlug.takeIf { it.isNotBlank() },
+                            if (showCollectionPicker) selectedCollectionId else null,
+                        )
                     }
                 },
                 enabled = name.isNotBlank(),
