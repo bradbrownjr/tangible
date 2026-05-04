@@ -322,6 +322,20 @@ If a good translation is not available, use `tools:ignore="MissingTranslation"`
 on the element in the base file rather than shipping untranslated text or
 skipping the locales.
 
+### Removing a wrapper composable — delete BOTH its opening AND closing brace
+
+When removing a wrapper composable (e.g. `Box`, `Column`, `Card`) that
+wraps other composables, you must delete both the opening call **and** its
+matching closing `}`. Deleting only the opening leaves a stray `}` that
+unbalances the brace tree. Kotlin's parser then treats everything after the
+imbalance point as top-level declarations, producing a cascade of
+`Expecting a top level declaration` / `Function declaration must have a name`
+errors from KSP, not from `kotlinc` directly.
+
+To catch this before pushing: after any composable-wrapper removal, count
+that the nesting depth at the end of the function is zero (i.e. the final
+`}` of the outermost composable closes at the correct indentation level).
+
 ### Local Android build environment (no toolchain in dev container)
 
 CI is the only place this used to build. To validate Android changes
