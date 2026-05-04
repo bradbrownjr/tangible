@@ -4,6 +4,11 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.18] — 2026-05-04
+
+- **Android: Fixed Add Item dialog crash on shopping lists** — restored a missing `if (showCollectionPicker)` wrapper and a missing `PullToRefreshBox` closing brace in `ShoppingListScreen`. Together they caused the 0.17.13 through 0.17.17 Android builds to fail. Locally verified with `lintDebug + testDebugUnitTest + assembleDebug` before tagging.
+- **Android: Add Item dialog only shows the collection picker for the wish list** — previously the picker was always rendered (groceries, hardware, home goods all showed an empty dropdown). Now it only appears for the wish list when at least one collection exists.
+
 ## [0.17.17] — 2026-05-04
 
 - **Android: Fixed shopping lists build error** — corrected a brace mismatch in the shopping list screen that caused the 0.17.15 and 0.17.16 Android builds to fail.

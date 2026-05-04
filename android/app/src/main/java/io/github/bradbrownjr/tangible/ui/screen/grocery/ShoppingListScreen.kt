@@ -525,7 +525,7 @@ fun ShoppingListScreen(
                         }
                     }
                 }
-            }
+            } // end PullToRefreshBox
 
             if (ui.showStoreSelector) {
                 StoreSelectorDialog(
@@ -790,6 +790,7 @@ private fun AddShoppingItemDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (showCollectionPicker) {
                     var collectionMenuExpanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = collectionMenuExpanded,

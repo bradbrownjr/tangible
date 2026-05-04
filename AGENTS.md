@@ -344,8 +344,25 @@ that the nesting depth at the end of the function is zero (i.e. the final
 
 ### Local Android build environment (no toolchain in dev container)
 
-CI is the only place this used to build. To validate Android changes
-locally before pushing (highly recommended — CI ping-pong is slow):
+**The Android toolchain IS installed in this dev container** — JDK 17 at
+`/usr/lib/jvm/java-17-openjdk-amd64`, SDK at `~/android-sdk`. **Always
+run the local Android build before pushing any change to `android/`**, do
+not rely on CI to catch syntax errors. v0.17.13 through v0.17.17 all
+shipped with a broken `ShoppingListScreen.kt` because each release
+trusted CI to run later, and CI failures snowballed into 4 patch
+releases. One local build run takes ~5 minutes; four CI failures take
+hours.
+
+The minimum local check before any tag:
+
+```bash
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+       ANDROID_HOME=$HOME/android-sdk \
+       PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$PATH
+cd android && ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug --no-daemon
+```
+
+If the toolchain is ever absent, install it once with:
 
 ```bash
 apt-get install -y --no-install-recommends openjdk-17-jdk-headless unzip
