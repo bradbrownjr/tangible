@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.bradbrownjr.tangible"
         minSdk = 26 // Android 8.0
         targetSdk = 35
-        versionCode = 38
-        versionName = "0.17.13"
+        versionCode = 39
+        versionName = "0.17.14"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }

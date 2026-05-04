@@ -116,7 +116,10 @@ interface TangibleApi {
     ): List<ShoppingFeedEntryDto>
 
     @POST("lists")
-    suspend fun createShoppingItem(@Body body: ShoppingItemCreateRequest): ShoppingFeedEntryDto
+    suspend fun createShoppingItem(@Body body: ShoppingItemCreateRequest): ShoppingItemReadDto
+
+    @PATCH("lists/{id}")
+    suspend fun patchShoppingItem(@Path("id") id: String, @Body body: ShoppingItemPatchRequest): ShoppingItemReadDto
 
     @DELETE("lists/{id}")
     suspend fun deleteShoppingItem(@Path("id") id: String)

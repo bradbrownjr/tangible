@@ -38,6 +38,7 @@ import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingItemPatchRequest
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
@@ -68,9 +69,11 @@ data class ShoppingListUi(
     val showAddDialog: Boolean = false,
     val showStoreSelector: Boolean = false,
     val addDialogPreFillName: String = "",
+    val addDialogPreFillNotes: String = "",
     val impliedCollectionId: String? = null,
     val barcodeLookupLoading: Boolean = false,
     val availableCategories: List<CategoryDto> = emptyList(),
+    val editingEntry: ShoppingFeedEntryDto? = null,
 )
 
 @HiltViewModel
@@ -135,7 +138,7 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     fun dismissAddDialog() {
-        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "")
+        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "", addDialogPreFillNotes = "")
     }
 
     fun setListType(type: String) {
@@ -164,16 +167,23 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val response = api.barcodeLookup(BarcodeLookupRequest(barcode))
-                val name = response.candidates.firstOrNull()?.title.orEmpty()
+                val candidate = response.candidates.firstOrNull()
+                // Use the product title as the item name, description as notes.
+                // Barcode APIs often return "Brand, Category, Item" in one string;
+                // splitting to title + notes lets the user edit each part separately.
+                val name = candidate?.title.orEmpty()
+                val notes = candidate?.description.orEmpty()
                 _state.value = _state.value.copy(
                     showAddDialog = true,
                     addDialogPreFillName = name,
+                    addDialogPreFillNotes = notes,
                     barcodeLookupLoading = false,
                 )
             } catch (_: Throwable) {
                 _state.value = _state.value.copy(
                     showAddDialog = true,
                     addDialogPreFillName = "",
+                    addDialogPreFillNotes = "",
                     barcodeLookupLoading = false,
                 )
             }
@@ -183,12 +193,13 @@ class ShoppingListViewModel @Inject constructor(
     fun addItem(
         name: String,
         quantity: Int,
+        notes: String?,
         categorySlug: String?,
         collectionId: String? = null,
         newCollectionName: String? = null,
         newCollectionCategorySlug: String? = null,
     ) {
-        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "")
+        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "", addDialogPreFillNotes = "")
         viewModelScope.launch {
             try {
                 val collId = when {
@@ -203,11 +214,44 @@ class ShoppingListViewModel @Inject constructor(
                     collectionId = collId,
                     name = name,
                     quantity = quantity,
+                    notes = notes?.takeIf { it.isNotBlank() },
                     categorySlug = categorySlug?.takeIf { it.isNotBlank() },
+                    listType = _state.value.listType,
                 )
                 load(isRefresh = false)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun startEdit(entry: ShoppingFeedEntryDto) {
+        if (entry.id.startsWith("item:")) return  // depleted-item virtual entries are read-only
+        _state.value = _state.value.copy(editingEntry = entry)
+    }
+
+    fun dismissEdit() {
+        _state.value = _state.value.copy(editingEntry = null)
+    }
+
+    fun saveEdit(entry: ShoppingFeedEntryDto, name: String, quantity: Int, notes: String?) {
+        _state.value = _state.value.copy(editingEntry = null, updating = _state.value.updating + entry.id)
+        viewModelScope.launch {
+            try {
+                api.patchShoppingItem(
+                    entry.id,
+                    ShoppingItemPatchRequest(
+                        name = name.trim(),
+                        quantity = quantity,
+                        notes = notes?.takeIf { it.isNotBlank() },
+                    )
+                )
+                load(isRefresh = false)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(
+                    error = t.message,
+                    updating = _state.value.updating - entry.id,
+                )
             }
         }
     }
@@ -425,6 +469,7 @@ fun ShoppingListScreen(
                                             onMarkPurchased = { viewModel.markPurchased(entry.id) },
                                             onDelete = { viewModel.deleteItem(entry.id) },
                                             onNavigateToCollection = { onNavigateToCollection(entry.collection_id) },
+                                            onEdit = { viewModel.startEdit(entry) },
                                         )
                                     }
                                 }
@@ -437,6 +482,7 @@ fun ShoppingListScreen(
                                         onMarkPurchased = { viewModel.markPurchased(entry.id) },
                                         onDelete = { viewModel.deleteItem(entry.id) },
                                         onNavigateToCollection = { onNavigateToCollection(entry.collection_id) },
+                                        onEdit = { viewModel.startEdit(entry) },
                                     )
                                 }
                             }
@@ -494,14 +540,23 @@ fun ShoppingListScreen(
         AddShoppingItemDialog(
             listType = ui.listType,
             preFillName = ui.addDialogPreFillName,
+            preFillNotes = ui.addDialogPreFillNotes,
             collections = allCollections,
             initialCollectionId = allCollections.find { it.name.equals("Wish List", ignoreCase = true) }?.id
                 ?: allCollections.firstOrNull()?.id,
             availableCategories = ui.availableCategories,
             onDismiss = { viewModel.dismissAddDialog() },
-            onAdd = { itemName, qty, catSlug, collId, newCollName, newCollCatSlug ->
-                viewModel.addItem(itemName, qty, catSlug, collId, newCollName, newCollCatSlug)
+            onAdd = { itemName, qty, itemNotes, catSlug, collId, newCollName, newCollCatSlug ->
+                viewModel.addItem(itemName, qty, itemNotes, catSlug, collId, newCollName, newCollCatSlug)
             },
+        )
+    }
+
+    ui.editingEntry?.let { entry ->
+        EditShoppingItemDialog(
+            entry = entry,
+            onDismiss = { viewModel.dismissEdit() },
+            onSave = { name, qty, notes -> viewModel.saveEdit(entry, name, qty, notes) },
         )
     }
 }
@@ -526,6 +581,7 @@ private fun ShoppingEntryCard(
     onMarkPurchased: () -> Unit,
     onDelete: () -> Unit,
     onNavigateToCollection: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     val isAdHoc = !entry.id.startsWith("item:")
     Card(
@@ -538,10 +594,11 @@ private fun ShoppingEntryCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
-                modifier = Modifier.weight(1f).padding(end = 8.dp).clickable { onNavigateToCollection() },
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    .clickable { if (isAdHoc) onEdit() else onNavigateToCollection() },
             ) {
                 Text(
-                    text = if (entry.quantity > 1) "${entry.name} ×${entry.quantity}" else entry.name,
+                    text = if (entry.quantity > 1) "${entry.name} \u00d7${entry.quantity}" else entry.name,
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                 )
@@ -549,6 +606,7 @@ private fun ShoppingEntryCard(
                     text = collectionName,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = if (!isAdHoc) Modifier.clickable { onNavigateToCollection() } else Modifier,
                 )
                 if (!entry.category_slug.isNullOrBlank()) {
                     Text(
@@ -639,14 +697,16 @@ private fun StoreSelectorDialog(
 private fun AddShoppingItemDialog(
     listType: String = "groceries",
     preFillName: String = "",
+    preFillNotes: String = "",
     collections: List<CollectionDto> = emptyList(),
     initialCollectionId: String? = null,
     availableCategories: List<CategoryDto> = emptyList(),
     onDismiss: () -> Unit,
-    onAdd: (name: String, quantity: Int, itemCategorySlug: String?, collectionId: String?, newCollectionName: String?, newCollectionCategorySlug: String?) -> Unit,
+    onAdd: (name: String, quantity: Int, notes: String?, itemCategorySlug: String?, collectionId: String?, newCollectionName: String?, newCollectionCategorySlug: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf(preFillName) }
     var quantityText by remember { mutableStateOf("1") }
+    var notes by remember { mutableStateOf(preFillNotes) }
     var categorySlug by remember { mutableStateOf("") }
     // Show category picker only for hardware and home_goods.
     val showCategory = listType == "hardware" || listType == "home_goods"
@@ -686,7 +746,13 @@ private fun AddShoppingItemDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (showCollectionPicker) {
+                    OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.notes_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                     var collectionMenuExpanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = collectionMenuExpanded,
@@ -792,6 +858,7 @@ private fun AddShoppingItemDialog(
                             showCreateCollection -> onAdd(
                                 name.trim(),
                                 quantityText.toIntOrNull() ?: 1,
+                                notes.trim().takeIf { it.isNotBlank() },
                                 categorySlug.takeIf { it.isNotBlank() },
                                 null,
                                 newCollectionName.trim().ifBlank { "Wish List" },
@@ -800,6 +867,7 @@ private fun AddShoppingItemDialog(
                             else -> onAdd(
                                 name.trim(),
                                 quantityText.toIntOrNull() ?: 1,
+                                notes.trim().takeIf { it.isNotBlank() },
                                 categorySlug.takeIf { it.isNotBlank() },
                                 if (showCollectionPicker) selectedCollectionId else null,
                                 null,
@@ -815,4 +883,60 @@ private fun AddShoppingItemDialog(
     )
 }
 
+@Composable
+private fun EditShoppingItemDialog(
+    entry: ShoppingFeedEntryDto,
+    onDismiss: () -> Unit,
+    onSave: (name: String, quantity: Int, notes: String?) -> Unit,
+) {
+    var name by remember { mutableStateOf(entry.name) }
+    var quantityText by remember { mutableStateOf(entry.quantity.toString()) }
+    var notes by remember { mutableStateOf(entry.notes.orEmpty()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit_item)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.grocery_item_name_required)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = quantityText,
+                    onValueChange = { quantityText = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.quantity)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.notes_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(
+                            name.trim(),
+                            quantityText.toIntOrNull() ?: entry.quantity,
+                            notes.trim().takeIf { it.isNotBlank() },
+                        )
+                    }
+                },
+                enabled = name.isNotBlank(),
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
 

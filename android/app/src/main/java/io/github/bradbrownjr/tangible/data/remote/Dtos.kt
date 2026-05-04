@@ -383,6 +383,27 @@ data class ShoppingItemCreateRequest(
     val unit: String? = null,
     val notes: String? = null,
     val category_slug: String? = null,
+    val list_type: String = "groceries",
+)
+
+/** Matches the server's ShoppingItemRead (not ShoppingFeedEntry — no `source` field). */
+@JsonClass(generateAdapter = true)
+data class ShoppingItemReadDto(
+    val id: String,
+    val collection_id: String,
+    val name: String,
+    val quantity: Int = 1,
+    val notes: String? = null,
+    val category_slug: String? = null,
+    val list_type: String = "groceries",
+    val created_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class ShoppingItemPatchRequest(
+    val name: String? = null,
+    val quantity: Int? = null,
+    val notes: String? = null,
 )
 
 // ---------------------------------------------------------------------------

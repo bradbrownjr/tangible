@@ -34,6 +34,7 @@ import io.github.bradbrownjr.tangible.data.remote.RestockRequest
 import io.github.bradbrownjr.tangible.data.remote.TagDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingItemCreateRequest
+import io.github.bradbrownjr.tangible.data.remote.ShoppingItemReadDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreCreate
@@ -390,7 +391,8 @@ class ShoppingRepository @Inject constructor(
         unit: String? = null,
         notes: String? = null,
         categorySlug: String? = null,
-    ): ShoppingFeedEntryDto = api.createShoppingItem(
+        listType: String = "groceries",
+    ): ShoppingItemReadDto = api.createShoppingItem(
         ShoppingItemCreateRequest(
             collection_id = collectionId,
             name = name,
@@ -398,6 +400,7 @@ class ShoppingRepository @Inject constructor(
             unit = unit,
             notes = notes,
             category_slug = categorySlug,
+            list_type = listType,
         )
     )
 

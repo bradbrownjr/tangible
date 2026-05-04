@@ -103,6 +103,7 @@
     <string name="purchase_price">Precio de compra</string>
     <string name="current_value">Valor actual</string>
     <string name="notes">Notas</string>
+    <string name="notes_optional">Notas (opcional)</string>
     <string name="manuals">Manuales</string>
     <string name="cd_delete_photo">Eliminar foto</string>
     <string name="cd_add_photo">Añadir foto</string>

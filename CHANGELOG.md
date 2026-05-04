@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.14] — 2026-05-04
+
+- **Android: Barcode scan fills separate Notes field** — scanning a barcode now puts the product title in the Name field and the description (brand/category context) in an optional Notes field, so you can trim the name without losing brand details.
+- **Android: Edit shopping list item** — tapping an item in any shopping list opens an edit dialog (name, quantity, notes) instead of navigating to its collection. Depleted-item feed entries still navigate to the collection as before.
+- **Android: Fixed JSON error after adding item** — a mismatch between the server's create-item response and the app's expected shape caused an error overlay after every successful add. The app now parses the correct response type.
+
 ## [0.17.13] — 2026-05-04
 
 - **Android: Help guide renders markdown** — the Help dialog now uses the same markdown renderer as the What's New changelog (headings, bullets) instead of showing plain text.

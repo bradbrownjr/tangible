@@ -101,6 +101,7 @@
     <string name="purchase_price">購入価格</string>
     <string name="current_value">現在の価値</string>
     <string name="notes">メモ</string>
+    <string name="notes_optional">メモ（任意）</string>
     <string name="manuals">マニュアル</string>
     <string name="cd_delete_photo">写真を削除</string>
     <string name="cd_add_photo">写真を追加</string>
