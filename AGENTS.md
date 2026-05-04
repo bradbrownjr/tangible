@@ -91,6 +91,12 @@ This is the bar that protects shipped features:
 - Before any large file rewrite, list the named features / API routes /
   exported functions present in that file, then confirm each one survives
   the rewrite. Cross-reference against the Feature Registry below.
+- **After every targeted edit, read the surrounding ~10 lines** above and
+  below the change. Verify that structural markers (braces, indentation
+  blocks, closing tags, closing parentheses) are still balanced and that
+  no dangling fragment was left behind. This applies regardless of language.
+  A structurally broken file will compile-error at a point far from the
+  edit, making root-cause diagnosis slow.
 - Run the full local test suite after any multi-file change or any deletion
   of a non-trivial block:
   - Server: `cd server && uv run ruff check . && uv run pytest -q`
