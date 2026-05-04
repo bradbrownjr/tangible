@@ -299,4 +299,6 @@
     <string name="priority_low">Niedrig</string>
     <string name="priority_medium">Mittel</string>
     <string name="priority_high">Hoch</string>
+    <string name="wish_url_hint">Link (optional)</string>
+    <string name="wish_priority_hint">Priorität</string>
 </resources>

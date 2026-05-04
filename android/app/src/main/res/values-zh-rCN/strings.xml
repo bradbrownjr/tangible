@@ -296,4 +296,6 @@
     <string name="priority_low">低</string>
     <string name="priority_medium">中</string>
     <string name="priority_high">高</string>
+    <string name="wish_url_hint">链接（可选）</string>
+    <string name="wish_priority_hint">优先级</string>
 </resources>
