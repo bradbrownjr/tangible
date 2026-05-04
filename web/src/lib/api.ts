@@ -3,7 +3,13 @@
  *
  * Pages call `api.get('/items?...')` or `api.post('/auth/login', {...})`.
  * Errors are normalised to `ApiError` with the original status + body.
+ *
+ * Set `silent: true` on individual calls to suppress automatic toast
+ * notifications (e.g. background polls, login where the page shows its own
+ * error display).
  */
+
+import { showError } from './toast';
 
 export class ApiError extends Error {
     status: number;
@@ -15,7 +21,7 @@ export class ApiError extends Error {
     }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, silent = false): Promise<T> {
     const init: RequestInit = {
         method,
         credentials: 'include',
@@ -40,18 +46,24 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
             (parsed && typeof parsed === 'object' && 'detail' in parsed
                 ? String((parsed as { detail: unknown }).detail)
                 : res.statusText) || `HTTP ${res.status}`;
-        throw new ApiError(res.status, parsed, message);
+        const err = new ApiError(res.status, parsed, message);
+        // Surface error as a toast unless the caller opted out or it's a
+        // 401/403 (handled by the auth layer / page-level error display).
+        if (!silent && res.status !== 401 && res.status !== 403) {
+            showError(message);
+        }
+        throw err;
     }
     return parsed as T;
 }
 
 export const api = {
-    get: <T>(path: string) => request<T>('GET', path),
-    post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
-    patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
-    put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
-    delete: <T>(path: string) => request<T>('DELETE', path),
-    upload: async <T>(path: string, formData: FormData): Promise<T> => {
+    get: <T>(path: string, silent = false) => request<T>('GET', path, undefined, silent),
+    post: <T>(path: string, body?: unknown, silent = false) => request<T>('POST', path, body, silent),
+    patch: <T>(path: string, body?: unknown, silent = false) => request<T>('PATCH', path, body, silent),
+    put: <T>(path: string, body?: unknown, silent = false) => request<T>('PUT', path, body, silent),
+    delete: <T>(path: string, silent = false) => request<T>('DELETE', path, undefined, silent),
+    upload: async <T>(path: string, formData: FormData, silent = false): Promise<T> => {
         const res = await fetch('/api' + path, {
             method: 'POST',
             credentials: 'include',
@@ -68,6 +80,9 @@ export const api = {
                 (parsed && typeof parsed === 'object' && 'detail' in parsed
                     ? String((parsed as { detail: unknown }).detail)
                     : res.statusText) || `HTTP ${res.status}`;
+            if (!silent && res.status !== 401 && res.status !== 403) {
+                showError(message);
+            }
             throw new ApiError(res.status, parsed, message);
         }
         return parsed as T;

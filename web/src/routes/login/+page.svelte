@@ -16,7 +16,7 @@
         busy = true;
         error = '';
         try {
-            const res = await api.post<{ totp_required?: boolean; ticket?: string }>('/auth/login', { username, password });
+            const res = await api.post<{ totp_required?: boolean; ticket?: string }>('/auth/login', { username, password }, true);
             if (res.totp_required && res.ticket) {
                 totpTicket = res.ticket;
             } else {
@@ -35,7 +35,7 @@
         busy = true;
         error = '';
         try {
-            await api.post('/auth/totp/confirm-login', { ticket: totpTicket, code: totpCode });
+            await api.post('/auth/totp/confirm-login', { ticket: totpTicket, code: totpCode }, true);
             await refreshMe();
             await goto('/');
         } catch (e) {

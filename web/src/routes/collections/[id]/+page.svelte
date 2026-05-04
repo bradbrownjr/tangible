@@ -658,14 +658,14 @@
         editUseByDate = i.use_by_date ? new Date(i.use_by_date).toISOString().slice(0, 16) : '';
         editDateFrozen = i.date_frozen ? new Date(i.date_frozen).toISOString().slice(0, 16) : '';
         editDateOpened = i.date_opened ? new Date(i.date_opened).toISOString().slice(0, 16) : '';
-        // Lazy-load suggestions on first edit.
+        // Lazy-load suggestions on first edit (silent — non-critical, user just gets no autocomplete).
         if (!conditionSuggestions.length) {
-            api.get<string[]>(`/collections/${cid}/field-suggestions?field=condition`)
+            api.get<string[]>(`/collections/${cid}/field-suggestions?field=condition`, true)
                 .then((v) => { conditionSuggestions = v; })
                 .catch(() => {});
         }
         if (collectionCreatorLabel && !creatorSuggestions.length) {
-            api.get<string[]>(`/collections/${cid}/field-suggestions?field=creator`)
+            api.get<string[]>(`/collections/${cid}/field-suggestions?field=creator`, true)
                 .then((v) => { creatorSuggestions = v; })
                 .catch(() => {});
         }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -284,6 +285,10 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun clearError() {
+        _state.value = _state.value.copy(error = null)
+    }
+
     fun deleteItem(entryId: String) {
         if (entryId.startsWith("item:")) return
         _state.value = _state.value.copy(updating = _state.value.updating + entryId)
@@ -359,6 +364,16 @@ fun ShoppingListScreen(
     val selectedStore = ui.stores.find { it.id == ui.selectedStoreId }
     val otherLabel = stringResource(R.string.other)
     val aisleGroups = if (selectedStore != null) groupByAisle(ui.items, selectedStore.aisles, otherLabel) else null
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Show errors as snackbars and clear the state so they don't re-fire.
+    LaunchedEffect(ui.error) {
+        ui.error?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearError()
+        }
+    }
 
     // When a barcode arrives from the scanner, look it up and pre-fill the add dialog.
     LaunchedEffect(scannedBarcode) {
@@ -407,6 +422,7 @@ fun ShoppingListScreen(
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_grocery_item))
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         val pagerState = rememberPagerState(pageCount = { LIST_TYPES.size })
         // Sync pager → ViewModel when user swipes
@@ -422,7 +438,7 @@ fun ShoppingListScreen(
                 pagerState.animateScrollToPage(targetPage)
             }
         }
-        Column(modifier = Modifier.padding(innerPadding)) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             // List type tabs
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
@@ -447,8 +463,7 @@ fun ShoppingListScreen(
             modifier = Modifier.weight(1f),
             beyondViewportPageCount = 0,
         ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            PullToRefreshBox(
+        PullToRefreshBox(
                 isRefreshing = ui.refreshing,
                 onRefresh = { viewModel.pullRefresh() },
                 modifier = Modifier.fillMaxSize(),
@@ -510,14 +525,6 @@ fun ShoppingListScreen(
                         }
                     }
                 }
-                if (ui.error != null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(ui.error!!, color = MaterialTheme.colorScheme.error)
-                    }
-                }
             }
 
             if (ui.showStoreSelector) {
@@ -529,7 +536,7 @@ fun ShoppingListScreen(
                     onDismiss = { viewModel.dismissStoreSelector() },
                 )
             }
-        } // end inner Box
+        } // end PullToRefreshBox
         } // end HorizontalPager page
         } // end HorizontalPager
         } // end Column
@@ -647,7 +654,16 @@ private fun ShoppingEntryCard(
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Depleted-item entries show a navigation arrow so the user knows tapping opens the collection.
+                if (!isAdHoc) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (isAdHoc) {
                     IconButton(onClick = onDelete, enabled = !isUpdating) {
                         Icon(

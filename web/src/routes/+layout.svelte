@@ -11,6 +11,7 @@
     import { initI18n } from '$lib/i18n';
     import WhatsNew from '$lib/WhatsNew.svelte';
     import AlertsDropdown from '$lib/AlertsDropdown.svelte';
+    import Toast from '$lib/Toast.svelte';
 
     // Initialise i18n synchronously so strings are ready before first render.
     initI18n();
@@ -36,7 +37,7 @@
     async function refreshNavCollections() {
         if (!$me) { navCollections = []; return; }
         try {
-            navCollections = await api.get<Collection[]>('/collections');
+            navCollections = await api.get<Collection[]>('/collections', true);
         } catch {
             navCollections = [];
         }
@@ -45,7 +46,7 @@
     async function refreshShoppingCount() {
         if (!$me) { shoppingCount = 0; shoppingByType = {}; return; }
         try {
-            const c = await api.get<ShoppingCount>("/lists/count");
+            const c = await api.get<ShoppingCount>("/lists/count", true);
             shoppingCount = c.total;
             shoppingByType = c.by_type ?? {};
         } catch {
@@ -256,6 +257,8 @@
 {#if whatsNewOpen}
     <WhatsNew onClose={closeWhatsNew} />
 {/if}
+
+<Toast />
 
 <style>
     header {

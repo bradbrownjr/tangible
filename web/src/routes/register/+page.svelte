@@ -23,11 +23,11 @@
                 password,
                 email: email || null,
                 display_name: displayName || null
-            });
-            await api.post('/auth/login', { username, password });
+            }, true);
+            await api.post('/auth/login', { username, password }, true);
             // Save locale preference to profile immediately after registration.
             if (selectedLocale && selectedLocale !== 'en') {
-                try { await api.patch('/auth/me', { locale: selectedLocale }); } catch { /* non-fatal */ }
+                try { await api.patch('/auth/me', { locale: selectedLocale }, true); } catch { /* non-fatal */ }
             }
             setLocale(selectedLocale);
             await refreshMe();
