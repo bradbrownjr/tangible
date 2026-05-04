@@ -4,6 +4,16 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.9] — 2026-05-04
+
+- **Multi-type shopping lists** — the shopping list is now a hub for four list types: **Groceries**, **Hardware**, **Home Goods**, and **Wish List**. A new "Lists" dropdown in the nav lets you switch between them; each type has its own route (`/lists/groceries`, `/lists/hardware`, etc.).
+- **Hardware & Home Goods categories** — 15 preset category chips for each new list type (fasteners, plumbing, paint, furniture, bedding, lighting, etc.) to keep items organised.
+- **Wish List fields** — wish list items can include a link and a priority (Low / Medium / High). Marking an item "received" removes it from the list, the same as "purchased" for other types.
+- **Auto-backing collection** — adding an item to Groceries, Hardware, or Home Goods silently creates the matching collection (Pantry, Hardware, Home Goods) if it does not already exist.
+- **Android list tabs** — the Android Shopping screen now has four tabs at the top; switching tabs filters the feed to that list type.
+- **MCP `list_shopping_items` tool** — AI agents can now query any list type via the MCP server using the optional `list_type` parameter.
+- **Backward compatibility** — the old `/grocery/*` API paths continue to redirect to `/lists/*` for older clients.
+
 ## [0.17.8] — 2026-05-03
 
 - **Internal refactor** — the shopping list module has been renamed from "Grocery" to "Shopping" throughout the codebase in preparation for expanding the list beyond grocery items. No user-visible behavior changes; the `/grocery/*` API paths continue to work via redirect for older Android clients.
