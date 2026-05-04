@@ -76,6 +76,25 @@
     let testResults = $state<Record<string, { status: 'idle' | 'testing' | 'ok' | 'error'; message: string }>>({});
     const TESTABLE_INTEGRATION_KEYS = new Set(['discogs_token', 'tmdb_api_key', 'igdb_client_id', 'google_books_api_key', 'upcitemdb_key']);
 
+    // Barcode adapter status
+    let barcodeAdapters = $state<string[]>([]);
+    const BARCODE_ADAPTER_INFO: Record<string, { label: string; description: string; keyHint?: string }> = {
+        openlibrary:   { label: 'Open Library',    description: 'ISBN-10/13 lookup for books. Free, no API key required.' },
+        musicbrainz:   { label: 'MusicBrainz',     description: 'Barcode lookup for music releases. Free; set TANGIBLE_MUSICBRAINZ_USER_AGENT for best results.' },
+        openfoodfacts: { label: 'Open Food Facts', description: 'UPC/EAN lookup for food products. Free, no API key required.' },
+        googlebooksapi:{ label: 'Google Books',    description: 'ISBN lookup via Google Books API.', keyHint: 'TANGIBLE_GOOGLE_BOOKS_API_KEY' },
+        upcitemdb:     { label: 'UPCitemdb',       description: 'General product barcode lookup.', keyHint: 'TANGIBLE_UPCITEMDB_KEY' },
+        discogs:       { label: 'Discogs',         description: 'Vinyl / music release lookup.', keyHint: 'TANGIBLE_DISCOGS_TOKEN' },
+        tmdb:          { label: 'TMDB',            description: 'Movie and TV barcode lookup.', keyHint: 'TANGIBLE_TMDB_API_KEY' },
+        igdb:          { label: 'IGDB',            description: 'Video game barcode lookup.', keyHint: 'TANGIBLE_IGDB_CLIENT_ID + TANGIBLE_IGDB_CLIENT_SECRET' },
+    };
+    async function loadBarcodeAdapters() {
+        try {
+            const r = await api.get<{ url: string[]; barcode: string[] }>('/metadata/adapters');
+            barcodeAdapters = r.barcode;
+        } catch { barcodeAdapters = []; }
+    }
+
     // Enrollment enforcement
     const enrollRequired = $derived(!!$me?.enrollment_required);
     const enrollParam = $derived(page.url.searchParams.has('enroll'));
@@ -357,7 +376,7 @@
     onMount(async () => {
         await refreshMe();
         const promises: Promise<unknown>[] = [load(), loadTotpStatus()];
-        if ($me?.is_admin) promises.push(loadSiteSettings());
+        if ($me?.is_admin) promises.push(loadSiteSettings(), loadBarcodeAdapters());
         await Promise.all(promises);
         // Auto-open 2FA setup when enrollment is required or ?enroll param is set
         if ((enrollRequired || enrollParam) && !totpStatus?.enabled && !totpSetup) {
@@ -651,6 +670,46 @@
             </div>
         </div>
     {/if}
+    <div class="card" style="margin-top: 1rem">
+        <h3 style="margin-top:0">Barcode &amp; Metadata Services</h3>
+        <p class="muted">
+            These services are tried in order when a barcode is scanned. Built-in free services require no configuration.
+            Optional services marked with a key icon enhance coverage for specific categories.
+        </p>
+        {#if barcodeAdapters.length === 0}
+            <p class="muted">No barcode adapters loaded.</p>
+        {:else}
+            <table style="width:100%;border-collapse:collapse;font-size:0.9rem">
+                <thead>
+                    <tr style="text-align:left;border-bottom:1px solid var(--border)">
+                        <th style="padding:0.4rem 0.5rem">Service</th>
+                        <th style="padding:0.4rem 0.5rem">Covers</th>
+                        <th style="padding:0.4rem 0.5rem">API key env var</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#each barcodeAdapters as name}
+                        {@const info = BARCODE_ADAPTER_INFO[name]}
+                        <tr style="border-bottom:1px solid var(--border)">
+                            <td style="padding:0.4rem 0.5rem;font-weight:500">{info?.label ?? name}</td>
+                            <td style="padding:0.4rem 0.5rem;color:var(--muted)">{info?.description ?? ''}</td>
+                            <td style="padding:0.4rem 0.5rem">
+                                {#if info?.keyHint}
+                                    <code style="font-size:0.8rem">{info.keyHint}</code>
+                                {:else}
+                                    <span class="muted">not required</span>
+                                {/if}
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        {/if}
+        <p class="muted" style="margin-top:0.75rem;font-size:0.85rem">
+            Add optional API keys in the <strong>Integrations</strong> section of Server Settings above, or via environment variables on the server.
+            See <a href="https://github.com/bradbrownjr/tangible/blob/main/docs/admin-guide.md" target="_blank" rel="noopener">admin guide</a> for details.
+        </p>
+    </div>
     <div class="card" style="margin-top: 1rem">
         <h3 style="margin-top:0">{$_('settings.system_maintenance_heading')}</h3>
         <p class="muted">

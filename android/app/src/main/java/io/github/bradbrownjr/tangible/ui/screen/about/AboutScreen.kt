@@ -247,10 +247,7 @@ fun AboutScreen(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    Text(
-                        ANDROID_USER_GUIDE,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    MarkdownContent(ANDROID_USER_GUIDE)
                     Spacer(Modifier.height(12.dp))
                     TextButton(
                         onClick = {
@@ -326,33 +323,52 @@ private fun MarkdownContent(text: String) {
 
 // Embedded user guide — mirrors docs/android-user-guide.md.
 private val ANDROID_USER_GUIDE = """
-FIRST LAUNCH
-Enter your server URL (e.g. https://tangible.example.com), username, and password, then tap Sign in.
+## First launch
+- Enter your server URL (e.g. https://tangible.example.com), username, and password, then tap Sign in.
 
-COLLECTIONS LIST
-Pull down to refresh. Tap the menu (☰) for Settings, About, and Help. Tap + to create a new collection.
+## Collections list
+- Pull down to refresh.
+- Tap the menu (☰) for Settings, About, and Help.
+- Tap + to create a new collection.
 
-CREATING A COLLECTION
-Choose a preset category (Books, Music, Games, etc.) or Custom, then enter a name and optional description.
+## Creating a collection
+- Choose a preset category (Books, Music, Games, etc.) or Custom.
+- Enter a name and optional description, then tap Create.
 
-EDITING A COLLECTION
-Open a collection and tap the pencil icon (visible to editors and owners). Change the name or description and tap Save.
+## Editing a collection
+- Open a collection and tap the pencil icon (visible to editors and owners).
+- Change the name or description and tap Save.
 
-COLLECTION DETAIL — LIST AND GRID VIEWS
-Tap the grid/list toggle in the toolbar to switch views. Pull down to refresh. Type in the search bar to filter items.
+## Collection detail
+- Tap the grid/list toggle in the toolbar to switch views.
+- Pull down to refresh.
+- Type in the search bar to filter items.
 
-ADDING ITEMS
-Tap + to open the Add item dialog. You can enter a title directly, type/paste an ISBN, or paste a product URL and tap Look up to pre-fill metadata. Use the barcode scanner (QR icon in toolbar) to scan physical items.
+## Adding items
+- Tap + to open the Add item dialog.
+- Enter a title directly, type/paste an ISBN, or paste a product URL and tap Look up to pre-fill metadata.
+- Use the barcode scanner (QR icon in toolbar) to scan physical items.
 
-ITEM DETAIL
-Tap any item to open its detail screen. The photo strip at the top shows attached photos — tap to view full-screen, tap trash to delete. Tap the pencil icon to edit fields and Save to commit.
+## Item detail
+- Tap any item to open its detail screen.
+- The photo strip at the top shows attached photos — tap to view full-screen, tap trash to delete.
+- Tap the pencil icon to edit fields and Save to commit.
 
-BARCODE SCANNING
-Tap the QR icon in the collection detail toolbar. Point at a barcode; the app looks it up and shows matching candidates. Choose one to pre-fill the add-item dialog.
+## Barcode scanning
+- Tap the QR icon in the collection detail toolbar.
+- Point at a barcode; the app looks it up and shows matching candidates.
+- Choose one to pre-fill the add-item dialog.
 
-SETTINGS
-Hamburger menu → Settings. Change server URL, test the connection, or sign out.
+## Lists
+- Use the Lists tab to manage Groceries, Hardware, Home Goods, and Wish Lists.
+- Scan a barcode from the shopping list to look up a product and add it by name.
+- Tap the check button on any item to mark it as purchased.
 
-OFFLINE
-Collections and items are cached on-device. Browse offline; edits require a live connection. The cache refreshes automatically every 15 minutes in the background.
+## Settings
+- Hamburger menu → Settings.
+- Change server URL, test the connection, or sign out.
+
+## Offline
+- Collections and items are cached on-device. Browse offline; edits require a live connection.
+- The cache refreshes automatically every 15 minutes in the background.
 """.trimIndent()

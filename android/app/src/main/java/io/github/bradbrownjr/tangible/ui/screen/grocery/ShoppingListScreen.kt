@@ -44,6 +44,14 @@ import javax.inject.Inject
 
 private val LIST_TYPES = listOf("groceries", "hardware", "home_goods", "wish_list")
 
+/** Implied collection name that will be auto-created if absent for each list type. */
+private val IMPLIED_COLLECTION_NAME = mapOf(
+    "groceries"  to "Pantry",
+    "hardware"   to "Workshop",
+    "home_goods" to "Home",
+    "wish_list"  to "Wish List",
+)
+
 data class ShoppingListUi(
     val listType: String = "groceries",
     val items: List<ShoppingFeedEntryDto> = emptyList(),
@@ -57,6 +65,8 @@ data class ShoppingListUi(
     val showAddDialog: Boolean = false,
     val showStoreSelector: Boolean = false,
     val addDialogPreFillName: String = "",
+    val impliedCollectionId: String? = null,
+    val barcodeLookupLoading: Boolean = false,
 )
 
 @HiltViewModel
@@ -85,10 +95,12 @@ class ShoppingListViewModel @Inject constructor(
                 val items = shoppingRepo.feed(listType.takeIf { it.isNotBlank() })
                 val collections = collectionRepo.list()
                 val stores = shoppingRepo.listStores()
+                val impliedCollectionId = resolveImpliedCollection(listType, collections)
                 _state.value = _state.value.copy(
                     items = items,
                     collections = collections.associateBy { it.id },
                     stores = stores,
+                    impliedCollectionId = impliedCollectionId,
                     loading = false,
                     refreshing = false,
                 )
@@ -124,24 +136,49 @@ class ShoppingListViewModel @Inject constructor(
         load(isRefresh = false)
     }
 
+    /** Returns the ID of the implied collection for [listType], creating it if needed. */
+    private suspend fun resolveImpliedCollection(
+        listType: String,
+        collections: List<CollectionDto>,
+    ): String? {
+        val impliedName = IMPLIED_COLLECTION_NAME[listType] ?: return collections.firstOrNull()?.id
+        val existing = collections.find { it.name.equals(impliedName, ignoreCase = true) }
+        if (existing != null) return existing.id
+        return try {
+            collectionRepo.create(impliedName).id
+        } catch (_: Throwable) {
+            collections.firstOrNull()?.id
+        }
+    }
+
     fun onBarcode(barcode: String) {
+        _state.value = _state.value.copy(barcodeLookupLoading = true, showAddDialog = false)
         viewModelScope.launch {
             try {
                 val response = api.barcodeLookup(BarcodeLookupRequest(barcode))
                 val name = response.candidates.firstOrNull()?.title.orEmpty()
-                _state.value = _state.value.copy(showAddDialog = true, addDialogPreFillName = name)
+                _state.value = _state.value.copy(
+                    showAddDialog = true,
+                    addDialogPreFillName = name,
+                    barcodeLookupLoading = false,
+                )
             } catch (_: Throwable) {
-                _state.value = _state.value.copy(showAddDialog = true, addDialogPreFillName = "")
+                _state.value = _state.value.copy(
+                    showAddDialog = true,
+                    addDialogPreFillName = "",
+                    barcodeLookupLoading = false,
+                )
             }
         }
     }
 
-    fun addItem(collectionId: String, name: String, quantity: Int, categorySlug: String?) {
-        _state.value = _state.value.copy(showAddDialog = false)
+    fun addItem(name: String, quantity: Int, categorySlug: String?) {
+        val collId = _state.value.impliedCollectionId ?: return
+        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "")
         viewModelScope.launch {
             try {
                 shoppingRepo.addItem(
-                    collectionId = collectionId,
+                    collectionId = collId,
                     name = name,
                     quantity = quantity,
                     categorySlug = categorySlug?.takeIf { it.isNotBlank() },
@@ -407,14 +444,36 @@ fun ShoppingListScreen(
         } // end Column
     }
 
+    // Barcode lookup in-progress overlay
+    if (ui.barcodeLookupLoading) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = {}) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.Card {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        CircularProgressIndicator()
+                        Text(stringResource(R.string.barcode_looking_up))
+                    }
+                }
+            }
+        }
+    }
+
     if (ui.showAddDialog) {
         AddShoppingItemDialog(
-            collections = ui.collections.values.toList(),
             listType = ui.listType,
             preFillName = ui.addDialogPreFillName,
             onDismiss = { viewModel.dismissAddDialog() },
-            onAdd = { collId, itemName, qty, catSlug ->
-                viewModel.addItem(collId, itemName, qty, catSlug)
+            onAdd = { itemName, qty, catSlug ->
+                viewModel.addItem(itemName, qty, catSlug)
             },
         )
     }
@@ -551,24 +610,27 @@ private fun StoreSelectorDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddShoppingItemDialog(
-    collections: List<CollectionDto>,
     listType: String = "groceries",
     preFillName: String = "",
     onDismiss: () -> Unit,
-    onAdd: (collectionId: String, name: String, quantity: Int, categorySlug: String?) -> Unit,
+    onAdd: (name: String, quantity: Int, categorySlug: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf(preFillName) }
     var quantityText by remember { mutableStateOf("1") }
     var categorySlug by remember { mutableStateOf("") }
-    var selectedCollectionId by remember { mutableStateOf(collections.firstOrNull()?.id ?: "") }
-    var collectionMenuExpanded by remember { mutableStateOf(false) }
-    // Show category picker only for hardware and home_goods — grocery implies pantry, wish list uses priority.
+    // Show category picker only for hardware and home_goods.
     val showCategory = listType == "hardware" || listType == "home_goods"
     val categoryPresets = presetsForType(listType)
+    val dialogTitle = when (listType) {
+        "hardware"   -> stringResource(R.string.list_type_hardware)
+        "home_goods" -> stringResource(R.string.list_type_home_goods)
+        "wish_list"  -> stringResource(R.string.list_type_wish_list)
+        else         -> stringResource(R.string.list_type_groceries)
+    }.let { stringResource(R.string.add_item_for_list, it) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_grocery_item)) },
+        title = { Text(dialogTitle) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -578,26 +640,6 @@ private fun AddShoppingItemDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Box {
-                    OutlinedTextField(
-                        value = collections.find { it.id == selectedCollectionId }?.name ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.collection_required)) },
-                        modifier = Modifier.fillMaxWidth().clickable { collectionMenuExpanded = true },
-                    )
-                    DropdownMenu(
-                        expanded = collectionMenuExpanded,
-                        onDismissRequest = { collectionMenuExpanded = false },
-                    ) {
-                        collections.forEach { col ->
-                            DropdownMenuItem(
-                                text = { Text(col.name) },
-                                onClick = { selectedCollectionId = col.id; collectionMenuExpanded = false },
-                            )
-                        }
-                    }
-                }
                 OutlinedTextField(
                     value = quantityText,
                     onValueChange = { quantityText = it.filter { c -> c.isDigit() } },
@@ -644,11 +686,11 @@ private fun AddShoppingItemDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.isNotBlank() && selectedCollectionId.isNotBlank()) {
-                        onAdd(selectedCollectionId, name.trim(), quantityText.toIntOrNull() ?: 1, categorySlug.takeIf { it.isNotBlank() })
+                    if (name.isNotBlank()) {
+                        onAdd(name.trim(), quantityText.toIntOrNull() ?: 1, categorySlug.takeIf { it.isNotBlank() })
                     }
                 },
-                enabled = name.isNotBlank() && selectedCollectionId.isNotBlank(),
+                enabled = name.isNotBlank(),
             ) { Text(stringResource(R.string.add)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },

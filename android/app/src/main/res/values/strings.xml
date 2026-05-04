@@ -118,7 +118,9 @@
     <string name="location_button">Location: %s</string>
 
     <!-- Grocery list -->
-    <string name="add_grocery_item">Add grocery item</string>
+    <string name="add_grocery_item">Add item</string>
+    <string name="add_item_for_list">Add %1$s item</string>
+    <string name="barcode_looking_up">Looking up product…</string>
     <string name="cd_select_store">Select store</string>
     <string name="all_stocked">All stocked! 🎉</string>
     <string name="all_stocked_subtitle">Everything is in good supply.</string>
