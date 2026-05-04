@@ -41,7 +41,7 @@
 
     <!-- Collections list -->
     <string name="collections">Sammlungen</string>
-    <string name="grocery_list">Einkaufsliste</string>
+    <string name="grocery_list">Listen</string>
     <string name="maintenance">Wartung</string>
     <string name="settings">Einstellungen</string>
     <string name="about">Über</string>

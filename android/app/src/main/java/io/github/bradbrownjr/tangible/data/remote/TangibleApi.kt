@@ -125,39 +125,39 @@ interface TangibleApi {
     suspend fun purchaseShoppingItem(@Path("id") id: String)
 
     // Shopping stores
-    @GET("grocery/stores")
+    @GET("lists/stores")
     suspend fun listShoppingStores(): List<ShoppingStoreDto>
 
-    @POST("grocery/stores")
+    @POST("lists/stores")
     suspend fun createShoppingStore(@Body body: ShoppingStoreCreate): ShoppingStoreDto
 
-    @PATCH("grocery/stores/{id}")
+    @PATCH("lists/stores/{id}")
     suspend fun updateShoppingStore(@Path("id") id: String, @Body body: ShoppingStorePatch): ShoppingStoreDto
 
-    @DELETE("grocery/stores/{id}")
+    @DELETE("lists/stores/{id}")
     suspend fun deleteShoppingStore(@Path("id") id: String)
 
     // Shopping aisles
-    @GET("grocery/stores/{storeId}/aisles")
+    @GET("lists/stores/{storeId}/aisles")
     suspend fun listShoppingAisles(@Path("storeId") storeId: String): List<ShoppingAisleDto>
 
-    @POST("grocery/stores/{storeId}/aisles")
+    @POST("lists/stores/{storeId}/aisles")
     suspend fun createShoppingAisle(@Path("storeId") storeId: String, @Body body: ShoppingAisleCreate): ShoppingAisleDto
 
-    @PATCH("grocery/stores/{storeId}/aisles/{aisleId}")
+    @PATCH("lists/stores/{storeId}/aisles/{aisleId}")
     suspend fun updateShoppingAisle(
         @Path("storeId") storeId: String,
         @Path("aisleId") aisleId: String,
         @Body body: ShoppingAislePatch,
     ): ShoppingAisleDto
 
-    @DELETE("grocery/stores/{storeId}/aisles/{aisleId}")
+    @DELETE("lists/stores/{storeId}/aisles/{aisleId}")
     suspend fun deleteShoppingAisle(
         @Path("storeId") storeId: String,
         @Path("aisleId") aisleId: String,
     )
 
-    @PUT("grocery/stores/{storeId}/aisles/reorder")
+    @PUT("lists/stores/{storeId}/aisles/reorder")
     suspend fun reorderShoppingAisles(@Path("storeId") storeId: String, @Body order: List<String>)
 
     @POST("items/{id}/restock")

@@ -59,7 +59,10 @@ _grocery_compat = APIRouter(prefix="/grocery", tags=["shopping"])
 
 @_grocery_compat.api_route("/{path:path}", methods=["GET", "POST", "PATCH", "DELETE", "PUT"])
 async def _grocery_compat_redirect(request: Request, path: str = ""):
-    return RedirectResponse(url=f"/lists/{path}", status_code=307)
+    # Swap /grocery/ -> /lists/ in the path while preserving scheme, host, port and query string.
+    new_path = request.url.path.replace("/grocery/", "/lists/", 1)
+    redirect_url = request.url.replace(path=new_path)
+    return RedirectResponse(url=str(redirect_url), status_code=307)
 
 api_router.include_router(_grocery_compat)
 api_router.include_router(maintenance_router.router)

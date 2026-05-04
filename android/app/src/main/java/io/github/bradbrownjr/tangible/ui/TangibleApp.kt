@@ -82,11 +82,16 @@ fun TangibleApp() {
                     onAbout = { nav.navigate(Routes.ABOUT) },
                 )
             }
-            composable(Routes.GROCERY_LIST) {
+            composable(Routes.GROCERY_LIST) { backStack ->
+                val scannedBarcode by backStack.savedStateHandle
+                    .getStateFlow<String?>("barcode", null)
+                    .collectAsState()
                 ShoppingListScreen(
                     onBack = { nav.popBackStack() },
                     onNavigateToCollection = { collectionId -> nav.navigate(Routes.collectionDetail(collectionId)) },
                     onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
+                    onNavigateToScanner = { nav.navigate(Routes.SCANNER) },
+                    scannedBarcode = scannedBarcode,
                 )
             }
             composable(Routes.GROCERY_STORES) {

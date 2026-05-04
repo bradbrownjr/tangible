@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -30,10 +31,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
+import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 import io.github.bradbrownjr.tangible.R
@@ -53,12 +56,14 @@ data class ShoppingListUi(
     val updating: Set<String> = emptySet(),
     val showAddDialog: Boolean = false,
     val showStoreSelector: Boolean = false,
+    val addDialogPreFillName: String = "",
 )
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
     private val shoppingRepo: ShoppingRepository,
     private val collectionRepo: CollectionRepository,
+    private val api: TangibleApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ShoppingListUi())
     val state: StateFlow<ShoppingListUi> = _state.asStateFlow()
@@ -110,13 +115,25 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     fun dismissAddDialog() {
-        _state.value = _state.value.copy(showAddDialog = false)
+        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "")
     }
 
     fun setListType(type: String) {
         if (_state.value.listType == type) return
         _state.value = _state.value.copy(listType = type, items = emptyList())
         load(isRefresh = false)
+    }
+
+    fun onBarcode(barcode: String) {
+        viewModelScope.launch {
+            try {
+                val response = api.barcodeLookup(BarcodeLookupRequest(barcode))
+                val name = response.candidates.firstOrNull()?.title.orEmpty()
+                _state.value = _state.value.copy(showAddDialog = true, addDialogPreFillName = name)
+            } catch (_: Throwable) {
+                _state.value = _state.value.copy(showAddDialog = true, addDialogPreFillName = "")
+            }
+        }
     }
 
     fun addItem(collectionId: String, name: String, quantity: Int, categorySlug: String?) {
@@ -230,11 +247,18 @@ fun ShoppingListScreen(
     onBack: () -> Unit,
     onNavigateToCollection: (collectionId: String) -> Unit,
     onManageStores: () -> Unit,
+    onNavigateToScanner: () -> Unit = {},
+    scannedBarcode: String? = null,
 ) {
     val ui by viewModel.state.collectAsState()
     val selectedStore = ui.stores.find { it.id == ui.selectedStoreId }
     val otherLabel = stringResource(R.string.other)
     val aisleGroups = if (selectedStore != null) groupByAisle(ui.items, selectedStore.aisles, otherLabel) else null
+
+    // When a barcode arrives from the scanner, look it up and pre-fill the add dialog.
+    LaunchedEffect(scannedBarcode) {
+        if (!scannedBarcode.isNullOrBlank()) viewModel.onBarcode(scannedBarcode)
+    }
 
     Scaffold(
         topBar = {
@@ -257,6 +281,9 @@ fun ShoppingListScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToScanner) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.cd_scan_barcode))
+                    }
                     IconButton(onClick = { viewModel.toggleStoreSelector() }) {
                         Icon(
                             Icons.Default.Store,
@@ -383,6 +410,8 @@ fun ShoppingListScreen(
     if (ui.showAddDialog) {
         AddShoppingItemDialog(
             collections = ui.collections.values.toList(),
+            listType = ui.listType,
+            preFillName = ui.addDialogPreFillName,
             onDismiss = { viewModel.dismissAddDialog() },
             onAdd = { collId, itemName, qty, catSlug ->
                 viewModel.addItem(collId, itemName, qty, catSlug)
@@ -523,14 +552,19 @@ private fun StoreSelectorDialog(
 @Composable
 private fun AddShoppingItemDialog(
     collections: List<CollectionDto>,
+    listType: String = "groceries",
+    preFillName: String = "",
     onDismiss: () -> Unit,
     onAdd: (collectionId: String, name: String, quantity: Int, categorySlug: String?) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(preFillName) }
     var quantityText by remember { mutableStateOf("1") }
     var categorySlug by remember { mutableStateOf("") }
     var selectedCollectionId by remember { mutableStateOf(collections.firstOrNull()?.id ?: "") }
     var collectionMenuExpanded by remember { mutableStateOf(false) }
+    // Show category picker only for hardware and home_goods — grocery implies pantry, wish list uses priority.
+    val showCategory = listType == "hardware" || listType == "home_goods"
+    val categoryPresets = presetsForType(listType)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -564,8 +598,6 @@ private fun AddShoppingItemDialog(
                         }
                     }
                 }
-                var categoryMenuExpanded by remember { mutableStateOf(false) }
-
                 OutlinedTextField(
                     value = quantityText,
                     onValueChange = { quantityText = it.filter { c -> c.isDigit() } },
@@ -574,33 +606,36 @@ private fun AddShoppingItemDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                ExposedDropdownMenuBox(
-                    expanded = categoryMenuExpanded,
-                    onExpandedChange = { categoryMenuExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = if (categorySlug.isBlank()) stringResource(R.string.no_category)
-                                else SHOPPING_CATEGORY_PRESETS.find { it.slug == categorySlug }
-                                    ?.let { stringResource(it.labelRes) } ?: categorySlug,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.category)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    )
-                    ExposedDropdownMenu(
+                if (showCategory) {
+                    var categoryMenuExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
                         expanded = categoryMenuExpanded,
-                        onDismissRequest = { categoryMenuExpanded = false },
+                        onExpandedChange = { categoryMenuExpanded = it },
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.no_category)) },
-                            onClick = { categorySlug = ""; categoryMenuExpanded = false },
+                        OutlinedTextField(
+                            value = if (categorySlug.isBlank()) stringResource(R.string.no_category)
+                                    else categoryPresets.find { it.slug == categorySlug }
+                                        ?.let { stringResource(it.labelRes) } ?: categorySlug,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.category)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                         )
-                        SHOPPING_CATEGORY_PRESETS.forEach { cat ->
+                        ExposedDropdownMenu(
+                            expanded = categoryMenuExpanded,
+                            onDismissRequest = { categoryMenuExpanded = false },
+                        ) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(cat.labelRes)) },
-                                onClick = { categorySlug = cat.slug; categoryMenuExpanded = false },
+                                text = { Text(stringResource(R.string.no_category)) },
+                                onClick = { categorySlug = ""; categoryMenuExpanded = false },
                             )
+                            categoryPresets.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(cat.labelRes)) },
+                                    onClick = { categorySlug = cat.slug; categoryMenuExpanded = false },
+                                )
+                            }
                         }
                     }
                 }

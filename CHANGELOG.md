@@ -4,6 +4,15 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.10] — 2026-05-04
+
+- **Android: Renamed "Grocery List" to "Lists"** — the app bar title and navigation label now correctly reflect that the screen hosts all four list types, not just groceries.
+- **Android: Fixed JSON parse error on lists screen** — the `/grocery/*` → `/lists/*` server redirect was producing a broken URL (missing `/api` prefix), causing OkHttp to follow to the wrong endpoint and Moshi to throw a "setLenient(true)" error. The redirect now preserves the full URL including path prefix.
+- **Android: Formatted markdown changelog** — the in-app changelog dialog now renders `##`/`###` headings and `- ` bullet points instead of showing raw markdown text.
+- **Android: Docs link in Help dialog** — the Help dialog now includes a "View full documentation" button that opens the Android user guide on GitHub.
+- **Android: Category hidden on grocery/wish list** — the category field in the Add Item dialog is only shown for Hardware and Home Goods lists; groceries and wish list items no longer show an irrelevant category picker.
+- **Android: Barcode scan for shopping items** — a scan button in the shopping list app bar opens the barcode scanner; after scanning, the product name is looked up via the server API and pre-filled in the Add Item dialog.
+
 ## [0.17.9] — 2026-05-04
 
 - **Multi-type shopping lists** — the shopping list is now a hub for four list types: **Groceries**, **Hardware**, **Home Goods**, and **Wish List**. A new "Lists" dropdown in the nav lets you switch between them; each type has its own route (`/lists/groceries`, `/lists/hardware`, etc.).

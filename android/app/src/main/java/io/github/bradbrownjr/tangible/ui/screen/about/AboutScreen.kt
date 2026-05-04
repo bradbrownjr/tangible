@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -226,10 +227,7 @@ fun AboutScreen(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    Text(
-                        s.changelogText,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    MarkdownContent(s.changelogText)
                 }
             },
             confirmButton = {
@@ -239,6 +237,7 @@ fun AboutScreen(
     }
 
     if (s.showHelp) {
+        val ctx = LocalContext.current
         AlertDialog(
             onDismissRequest = vm::dismissHelp,
             title = { Text(stringResource(R.string.user_guide)) },
@@ -252,12 +251,76 @@ fun AboutScreen(
                         ANDROID_USER_GUIDE,
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    Spacer(Modifier.height(12.dp))
+                    TextButton(
+                        onClick = {
+                            ctx.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/bradbrownjr/tangible/blob/main/docs/android-user-guide.md"))
+                            )
+                        },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                    ) {
+                        Text(
+                            "View full documentation online",
+                            textDecoration = TextDecoration.Underline,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = vm::dismissHelp) { Text(stringResource(R.string.close)) }
             },
         )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Simple Markdown renderer for the changelog and help text.
+// ---------------------------------------------------------------------------
+
+private enum class MdBlockStyle { H2, H3, BULLET, NORMAL }
+private data class MdBlock(val text: String, val style: MdBlockStyle)
+
+private fun parseMarkdown(text: String): List<MdBlock> = text.lines().mapNotNull { line ->
+    when {
+        line.startsWith("## ")  -> MdBlock(line.removePrefix("## "), MdBlockStyle.H2)
+        line.startsWith("### ") -> MdBlock(line.removePrefix("### "), MdBlockStyle.H3)
+        line.startsWith("- ")   -> MdBlock("\u2022 " + line.removePrefix("- "), MdBlockStyle.BULLET)
+        line.isBlank()          -> null
+        else                    -> MdBlock(line, MdBlockStyle.NORMAL)
+    }
+}
+
+@Composable
+private fun MarkdownContent(text: String) {
+    val blocks = remember(text) { parseMarkdown(text) }
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        blocks.forEach { block ->
+            when (block.style) {
+                MdBlockStyle.H2 -> Text(
+                    block.text,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+                )
+                MdBlockStyle.H3 -> Text(
+                    block.text,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                MdBlockStyle.BULLET -> Text(
+                    block.text,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+                MdBlockStyle.NORMAL -> Text(
+                    block.text,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
     }
 }
 

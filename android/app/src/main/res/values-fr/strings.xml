@@ -41,7 +41,7 @@
 
     <!-- Collections list -->
     <string name="collections">Collections</string>
-    <string name="grocery_list">Liste de courses</string>
+    <string name="grocery_list">Listes</string>
     <string name="maintenance">Maintenance</string>
     <string name="settings">Paramètres</string>
     <string name="about">À propos</string>
