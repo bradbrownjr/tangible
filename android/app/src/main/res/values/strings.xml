@@ -121,6 +121,7 @@
     <string name="add_grocery_item">Add item</string>
     <string name="add_item_for_list">Add %1$s item</string>
     <string name="barcode_looking_up">Looking up product…</string>
+    <string name="wish_list_create_collection_prompt">No collection yet — pick a type to create one:</string>
     <string name="cd_select_store">Select store</string>
     <string name="all_stocked">All stocked! 🎉</string>
     <string name="all_stocked_subtitle">Everything is in good supply.</string>

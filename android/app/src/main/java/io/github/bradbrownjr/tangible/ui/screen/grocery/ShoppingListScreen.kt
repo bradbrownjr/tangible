@@ -1,9 +1,11 @@
 package io.github.bradbrownjr.tangible.ui.screen.grocery
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -67,6 +69,7 @@ data class ShoppingListUi(
     val addDialogPreFillName: String = "",
     val impliedCollectionId: String? = null,
     val barcodeLookupLoading: Boolean = false,
+    val availableCategories: List<CategoryDto> = emptyList(),
 )
 
 @HiltViewModel
@@ -96,11 +99,15 @@ class ShoppingListViewModel @Inject constructor(
                 val collections = collectionRepo.list()
                 val stores = shoppingRepo.listStores()
                 val impliedCollectionId = resolveImpliedCollection(listType, collections)
+                val rootCategories = try {
+                    api.listCategories().filter { it.parent_id == null }
+                } catch (_: Throwable) { emptyList() }
                 _state.value = _state.value.copy(
                     items = items,
                     collections = collections.associateBy { it.id },
                     stores = stores,
                     impliedCollectionId = impliedCollectionId,
+                    availableCategories = rootCategories,
                     loading = false,
                     refreshing = false,
                 )
@@ -172,11 +179,25 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun addItem(name: String, quantity: Int, categorySlug: String?, collectionId: String? = null) {
-        val collId = collectionId ?: _state.value.impliedCollectionId ?: return
+    fun addItem(
+        name: String,
+        quantity: Int,
+        categorySlug: String?,
+        collectionId: String? = null,
+        newCollectionName: String? = null,
+        newCollectionCategorySlug: String? = null,
+    ) {
         _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "")
         viewModelScope.launch {
             try {
+                val collId = when {
+                    collectionId != null -> collectionId
+                    newCollectionName != null -> collectionRepo.create(
+                        name = newCollectionName,
+                        defaultCategorySlug = newCollectionCategorySlug,
+                    ).id
+                    else -> _state.value.impliedCollectionId ?: return@launch
+                }
                 shoppingRepo.addItem(
                     collectionId = collId,
                     name = name,
@@ -475,9 +496,10 @@ fun ShoppingListScreen(
             collections = allCollections,
             initialCollectionId = allCollections.find { it.name.equals("Wish List", ignoreCase = true) }?.id
                 ?: allCollections.firstOrNull()?.id,
+            availableCategories = ui.availableCategories,
             onDismiss = { viewModel.dismissAddDialog() },
-            onAdd = { itemName, qty, catSlug, collId ->
-                viewModel.addItem(itemName, qty, catSlug, collId)
+            onAdd = { itemName, qty, catSlug, collId, newCollName, newCollCatSlug ->
+                viewModel.addItem(itemName, qty, catSlug, collId, newCollName, newCollCatSlug)
             },
         )
     }
@@ -618,17 +640,23 @@ private fun AddShoppingItemDialog(
     preFillName: String = "",
     collections: List<CollectionDto> = emptyList(),
     initialCollectionId: String? = null,
+    availableCategories: List<CategoryDto> = emptyList(),
     onDismiss: () -> Unit,
-    onAdd: (name: String, quantity: Int, categorySlug: String?, collectionId: String?) -> Unit,
+    onAdd: (name: String, quantity: Int, itemCategorySlug: String?, collectionId: String?, newCollectionName: String?, newCollectionCategorySlug: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf(preFillName) }
     var quantityText by remember { mutableStateOf("1") }
     var categorySlug by remember { mutableStateOf("") }
     // Show category picker only for hardware and home_goods.
     val showCategory = listType == "hardware" || listType == "home_goods"
-    // Show collection picker only for wish_list.
-    val showCollectionPicker = listType == "wish_list" && collections.isNotEmpty()
+    // For wish_list: pick from existing collections or create a new one with a category template.
+    val isWishList = listType == "wish_list"
+    val showCollectionPicker = isWishList && collections.isNotEmpty()
+    val showCreateCollection = isWishList && collections.isEmpty()
     var selectedCollectionId by remember { mutableStateOf(initialCollectionId ?: collections.firstOrNull()?.id) }
+    // State for the create-new-collection flow.
+    var newCollectionName by remember { mutableStateOf("Wish List") }
+    var selectedTemplateCategorySlug by remember { mutableStateOf<String?>(null) }
     val categoryPresets = presetsForType(listType)
     val dialogTitle = when (listType) {
         "hardware"   -> stringResource(R.string.list_type_hardware)
@@ -684,6 +712,42 @@ private fun AddShoppingItemDialog(
                         }
                     }
                 }
+                if (showCreateCollection) {
+                    HorizontalDivider()
+                    Text(
+                        stringResource(R.string.wish_list_create_collection_prompt),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // Category template chips (horizontal scroll)
+                    if (availableCategories.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            availableCategories.forEach { cat ->
+                                FilterChip(
+                                    selected = selectedTemplateCategorySlug == cat.slug,
+                                    onClick = {
+                                        selectedTemplateCategorySlug =
+                                            if (selectedTemplateCategorySlug == cat.slug) null else cat.slug
+                                    },
+                                    label = { Text(cat.name) },
+                                )
+                            }
+                        }
+                    }
+                    // Collection name field
+                    OutlinedTextField(
+                        value = newCollectionName,
+                        onValueChange = { newCollectionName = it },
+                        label = { Text(stringResource(R.string.collection_name)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 if (showCategory) {
                     var categoryMenuExpanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -723,12 +787,24 @@ private fun AddShoppingItemDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        onAdd(
-                            name.trim(),
-                            quantityText.toIntOrNull() ?: 1,
-                            categorySlug.takeIf { it.isNotBlank() },
-                            if (showCollectionPicker) selectedCollectionId else null,
-                        )
+                        when {
+                            showCreateCollection -> onAdd(
+                                name.trim(),
+                                quantityText.toIntOrNull() ?: 1,
+                                categorySlug.takeIf { it.isNotBlank() },
+                                null,
+                                newCollectionName.trim().ifBlank { "Wish List" },
+                                selectedTemplateCategorySlug,
+                            )
+                            else -> onAdd(
+                                name.trim(),
+                                quantityText.toIntOrNull() ?: 1,
+                                categorySlug.takeIf { it.isNotBlank() },
+                                if (showCollectionPicker) selectedCollectionId else null,
+                                null,
+                                null,
+                            )
+                        }
                     }
                 },
                 enabled = name.isNotBlank(),
