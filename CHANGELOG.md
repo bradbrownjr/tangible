@@ -4,6 +4,15 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.13] — 2026-05-04
+
+- **Android: Help guide renders markdown** — the Help dialog now uses the same markdown renderer as the What's New changelog (headings, bullets) instead of showing plain text.
+- **Android: Simplified Add Item dialog on shopping lists** — the Collection picker is gone from Groceries, Hardware, and Home Goods. Each list type automatically uses (or creates) its implied collection: Groceries → Pantry, Hardware → Workshop, Home Goods → Home.
+- **Android: Wish List — collection picker** — when adding to the Wish List, a Collection dropdown lets you choose any existing collection. If you have no collections yet, the dialog instead shows a category-template row (Books, Movies, Games, Music, etc.) and a name field so you can create a new collection in the same step.
+- **Android: Barcode scan loading indicator** — scanning a barcode now shows a "Looking up product…" overlay while the server request is in progress, instead of silently opening an empty dialog.
+- **Android: Add Item dialog title reflects the active tab** — the dialog title now reads "Add Groceries item", "Add Hardware item", etc. rather than always saying "Add grocery item".
+- **Admin: Barcode & Metadata Services panel** — the Settings → Admin tab now shows a table of active barcode/metadata adapters and which optional API-key environment variables expand coverage (Google Books, UPCitemdb, Discogs, TMDB, IGDB).
+
 ## [0.17.12] — 2026-05-04
 
 - **Fix: Collections dropdown** — removed duplicate plus sign on "New collection" and opening one nav dropdown now closes the other.
