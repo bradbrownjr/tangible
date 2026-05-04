@@ -7,7 +7,8 @@
     "log_out": "Cerrar sesión",
     "alerts": "Alertas",
     "whats_new": "Novedades",
-    "edit_profile": "Editar perfil"
+    "edit_profile": "Editar perfil",
+    "lists": "Listas"
   },
   "alerts": {
     "no_upcoming": "Sin alertas próximas.",
@@ -655,6 +656,63 @@
     "saving_button": "Guardando…",
     "save_aisle_button": "Guardar pasillo",
     "back_button": "← Atrás",
-    "delete_store_confirm": "¿Eliminar esta tienda y todos sus pasillos?"
+    "delete_store_confirm": "¿Eliminar esta tienda y todos sus pasillos?",
+    "cat_hw_adhesives_tape": "Adhesivos y cinta",
+    "cat_hw_caulk_sealant": "Sellador",
+    "cat_hw_concrete_masonry": "Hormigón y mampostería",
+    "cat_hw_electrical": "Eléctrico",
+    "cat_hw_fasteners": "Sujetadores",
+    "cat_hw_flooring": "Suelos",
+    "cat_hw_hand_tools": "Herramientas manuales",
+    "cat_hw_hardware_hinges": "Herrajes y bisagras",
+    "cat_hw_hvac_filters": "HVAC y filtros",
+    "cat_hw_lumber_sheet_goods": "Madera y tableros",
+    "cat_hw_paint_finishes": "Pintura y acabados",
+    "cat_hw_plumbing": "Fontanería",
+    "cat_hw_power_tool_accessories": "Accesorios de herramientas eléctricas",
+    "cat_hw_safety_ppe": "Seguridad y EPP",
+    "cat_hw_storage_organization": "Almacenamiento",
+    "cat_hg_bathroom": "Baño",
+    "cat_hg_bedding_pillows": "Ropa de cama",
+    "cat_hg_candles_fragrance": "Velas y fragancias",
+    "cat_hg_cleaning_supplies": "Limpieza",
+    "cat_hg_cookware_bakeware": "Utensilios de cocina",
+    "cat_hg_curtains_blinds": "Cortinas y persianas",
+    "cat_hg_decor_accents": "Decoración",
+    "cat_hg_furniture": "Muebles",
+    "cat_hg_kitchen_gadgets": "Gadgets de cocina",
+    "cat_hg_lighting": "Iluminación",
+    "cat_hg_linens_towels": "Ropa de hogar",
+    "cat_hg_outdoor_garden": "Exterior y jardín",
+    "cat_hg_rugs_mats": "Alfombras",
+    "cat_hg_small_appliances": "Electrodomésticos pequeños",
+    "cat_hg_storage": "Almacenamiento"
+  },
+  "lists": {
+    "type": {
+      "groceries": "Comestibles",
+      "hardware": "Ferretera",
+      "home_goods": "Hogar",
+      "wish_list": "Lista de deseos"
+    },
+    "description": {
+      "groceries": "Artículos añadidos por ti, más todo lo marcado como agotado.",
+      "hardware": "Materiales de ferretera y bricolaje necesarios.",
+      "home_goods": "Artículos del hogar necesarios.",
+      "wish_list": "Cosas que deseas — comparte o sigue para regalos."
+    },
+    "item_name_placeholder": "Añadir artículo…",
+    "wish_url_placeholder": "Enlace (opcional)",
+    "wish_priority_any": "Prioridad",
+    "priority": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta"
+    },
+    "mark_received_button": "Marcar como recibido",
+    "col_url": "Enlace",
+    "col_priority": "Prioridad",
+    "view_link": "Ver",
+    "empty": "¡Nada en la lista — todo despejado!"
   }
 }

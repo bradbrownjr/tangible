@@ -7,7 +7,8 @@
     "log_out": "退出登录",
     "alerts": "提醒",
     "whats_new": "最新动态",
-    "edit_profile": "编辑个人资料"
+    "edit_profile": "编辑个人资料",
+    "lists": "列表"
   },
   "alerts": {
     "no_upcoming": "暂无即将到来的提醒。",
@@ -655,6 +656,63 @@
     "saving_button": "保存中…",
     "save_aisle_button": "保存通道",
     "back_button": "← 返回",
-    "delete_store_confirm": "删除此门店及其所有通道？"
+    "delete_store_confirm": "删除此门店及其所有通道？",
+    "cat_hw_adhesives_tape": "粘剥剂和胶带",
+    "cat_hw_caulk_sealant": "密封胶",
+    "cat_hw_concrete_masonry": "混凝土和砖石",
+    "cat_hw_electrical": "电气",
+    "cat_hw_fasteners": "紧固件",
+    "cat_hw_flooring": "地板",
+    "cat_hw_hand_tools": "手工具",
+    "cat_hw_hardware_hinges": "五金和铰链",
+    "cat_hw_hvac_filters": "暑暖空调过滤器",
+    "cat_hw_lumber_sheet_goods": "木料和板材",
+    "cat_hw_paint_finishes": "油漆和面料",
+    "cat_hw_plumbing": "管道",
+    "cat_hw_power_tool_accessories": "电动工具配件",
+    "cat_hw_safety_ppe": "安全和防护装备",
+    "cat_hw_storage_organization": "收纳整理",
+    "cat_hg_bathroom": "浴室",
+    "cat_hg_bedding_pillows": "寝具和枕头",
+    "cat_hg_candles_fragrance": "蜀烛和香气",
+    "cat_hg_cleaning_supplies": "清洁用品",
+    "cat_hg_cookware_bakeware": "烹饪器具",
+    "cat_hg_curtains_blinds": "窗帘和百叶窗",
+    "cat_hg_decor_accents": "装饰",
+    "cat_hg_furniture": "家具",
+    "cat_hg_kitchen_gadgets": "厨房小工具",
+    "cat_hg_lighting": "照明",
+    "cat_hg_linens_towels": "床单和毛巾",
+    "cat_hg_outdoor_garden": "户外和花园",
+    "cat_hg_rugs_mats": "地毯和踏垃",
+    "cat_hg_small_appliances": "小家电",
+    "cat_hg_storage": "收纳"
+  },
+  "lists": {
+    "type": {
+      "groceries": "食材",
+      "hardware": "五金建材",
+      "home_goods": "家居用品",
+      "wish_list": "愃望清单"
+    },
+    "description": {
+      "groceries": "您添加的商品以及已标记耗尽的商品。",
+      "hardware": "所需的五金和自己动手用品。",
+      "home_goods": "所需的家居用品。",
+      "wish_list": "您想要的东西 — 分享或跟踪赠品。"
+    },
+    "item_name_placeholder": "添加商品…",
+    "wish_url_placeholder": "链接（可选）",
+    "wish_priority_any": "优先级",
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高"
+    },
+    "mark_received_button": "标记为已收到",
+    "col_url": "链接",
+    "col_priority": "优先级",
+    "view_link": "查看",
+    "empty": "列表为空 — 一切顺利！"
   }
 }

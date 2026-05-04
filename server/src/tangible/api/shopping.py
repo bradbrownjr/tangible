@@ -87,13 +87,16 @@ def _ad_hoc_to_feed(g: ShoppingItem) -> ShoppingFeedEntry:
         unit=g.unit,
         notes=g.notes,
         category_slug=g.category_slug,
+        list_type=g.list_type,
+        wish_url=g.wish_url,
+        wish_priority=g.wish_priority,
         linked_item_id=g.linked_item_id,
         purchased_at=g.purchased_at,
         created_at=g.created_at,
     )
 
 
-def _depleted_to_feed(item: Item) -> ShoppingFeedEntry:
+def _depleted_to_feed(item: Item, list_type: str = "groceries") -> ShoppingFeedEntry:
     return ShoppingFeedEntry(
         id=f"item:{item.id}",
         source=ShoppingSource(kind="depleted_item", item_id=item.id),
@@ -104,6 +107,7 @@ def _depleted_to_feed(item: Item) -> ShoppingFeedEntry:
         unit=None,
         notes=None,
         category_slug=item.category.slug if item.category else None,
+        list_type=list_type,
         linked_item_id=item.id,
         purchased_at=None,
         created_at=item.updated_at,
@@ -111,8 +115,9 @@ def _depleted_to_feed(item: Item) -> ShoppingFeedEntry:
 
 
 @router.get("", response_model=list[ShoppingFeedEntry])
-def list_grocery_feed(
+def list_shopping_feed(
     include_purchased: bool = Query(default=False),
+    list_type: str | None = Query(default=None, description="Filter by list type: groceries|hardware|home_goods|wish_list"),
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> list[ShoppingFeedEntry]:
@@ -125,11 +130,16 @@ def list_grocery_feed(
     g_stmt = select(ShoppingItem).where(ShoppingItem.collection_id.in_(cids))
     if not include_purchased:
         g_stmt = g_stmt.where(ShoppingItem.purchased_at.is_(None))
+    if list_type is not None:
+        g_stmt = g_stmt.where(ShoppingItem.list_type == list_type)
     g_stmt = g_stmt.order_by(ShoppingItem.created_at.desc())
     ad_hoc = [_ad_hoc_to_feed(g) for g in db.scalars(g_stmt).all()]
 
-    # Depleted items (skip those already linked from an open ad-hoc entry to
-    # avoid double-listing the same restock target).
+    # Depleted items from accessible collections.  When list_type is given,
+    # only show depleted items for that type's backing collection (matched by
+    # the list_type value stored on existing open ad-hoc entries, defaulting
+    # to groceries when no type filter is specified).
+    effective_type = list_type or "groceries"
     open_linked = {
         gid
         for gid in db.scalars(
@@ -149,7 +159,7 @@ def list_grocery_feed(
         .order_by(Item.title)
     )
     depleted = [
-        _depleted_to_feed(it)
+        _depleted_to_feed(it, effective_type)
         for it in db.scalars(d_stmt).all()
         if it.id not in open_linked
     ]
@@ -158,14 +168,14 @@ def list_grocery_feed(
 
 
 @router.get("/count", response_model=ShoppingCount)
-def grocery_count(
+def shopping_count(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> ShoppingCount:
     """Lightweight count for the nav badge / conditional menu visibility."""
     cids = _readable_collection_ids(db, auth)
     if not cids:
-        return ShoppingCount(total=0, ad_hoc=0, depleted_items=0)
+        return ShoppingCount(total=0, ad_hoc=0, depleted_items=0, by_type={})
 
     open_linked = {
         gid
@@ -178,15 +188,18 @@ def grocery_count(
         ).all()
         if gid
     }
-    ad_hoc = int(
-        db.scalar(
-            select(func.count(ShoppingItem.id)).where(
-                ShoppingItem.collection_id.in_(cids),
-                ShoppingItem.purchased_at.is_(None),
-            )
+    # Per-type ad-hoc counts
+    rows = db.execute(
+        select(ShoppingItem.list_type, func.count(ShoppingItem.id))
+        .where(
+            ShoppingItem.collection_id.in_(cids),
+            ShoppingItem.purchased_at.is_(None),
         )
-        or 0
-    )
+        .group_by(ShoppingItem.list_type)
+    ).all()
+    by_type: dict[str, int] = {lt: cnt for lt, cnt in rows}
+    ad_hoc = sum(by_type.values())
+
     depleted_ids = list(
         db.scalars(
             select(Item.id).where(
@@ -197,11 +210,14 @@ def grocery_count(
         ).all()
     )
     depleted = sum(1 for iid in depleted_ids if iid not in open_linked)
-    return ShoppingCount(total=ad_hoc + depleted, ad_hoc=ad_hoc, depleted_items=depleted)
+    # Depleted items count toward groceries type in the by_type breakdown
+    if depleted:
+        by_type["groceries"] = by_type.get("groceries", 0) + depleted
+    return ShoppingCount(total=ad_hoc + depleted, ad_hoc=ad_hoc, depleted_items=depleted, by_type=by_type)
 
 
 @router.post("", response_model=ShoppingItemRead, status_code=status.HTTP_201_CREATED)
-def create_grocery_item(
+def create_shopping_item(
     payload: ShoppingItemCreate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
@@ -221,6 +237,10 @@ def create_grocery_item(
         quantity=payload.quantity,
         unit=payload.unit,
         notes=payload.notes,
+        category_slug=payload.category_slug,
+        list_type=payload.list_type,
+        wish_url=payload.wish_url,
+        wish_priority=payload.wish_priority,
         linked_item_id=payload.linked_item_id,
     )
     db.add(g)
@@ -232,21 +252,21 @@ def create_grocery_item(
         collection_id=g.collection_id,
         target_type="shopping_item",
         target_id=g.id,
-        payload={"name": g.name, "quantity": g.quantity, "linked_item_id": g.linked_item_id},
+        payload={"name": g.name, "quantity": g.quantity, "list_type": g.list_type, "linked_item_id": g.linked_item_id},
     )
     db.commit()
     db.refresh(g)
     return ShoppingItemRead.model_validate(g)
 
 
-@router.patch("/{grocery_id}", response_model=ShoppingItemRead)
-def update_grocery_item(
-    grocery_id: str,
+@router.patch("/{item_id}", response_model=ShoppingItemRead)
+def update_shopping_item(
+    item_id: str,
     payload: ShoppingItemUpdate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> ShoppingItemRead:
-    g = db.get(ShoppingItem, grocery_id)
+    g = db.get(ShoppingItem, item_id)
     if g is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, g.collection_id, _VIEWER_ROLES)
@@ -275,13 +295,13 @@ def update_grocery_item(
     return ShoppingItemRead.model_validate(g)
 
 
-@router.delete("/{grocery_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_grocery_item(
-    grocery_id: str,
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_shopping_item(
+    item_id: str,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> None:
-    g = db.get(ShoppingItem, grocery_id)
+    g = db.get(ShoppingItem, item_id)
     if g is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, g.collection_id, _VIEWER_ROLES)
@@ -298,19 +318,19 @@ def delete_grocery_item(
     db.commit()
 
 
-@router.post("/{grocery_id}/purchase", response_model=ShoppingItemRead)
-def purchase_grocery_item(
-    grocery_id: str,
+@router.post("/{item_id}/purchase", response_model=ShoppingItemRead)
+def purchase_shopping_item(
+    item_id: str,
     payload: ShoppingPurchaseRequest | None = None,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> ShoppingItemRead:
-    """Mark an ad-hoc grocery entry purchased.
+    """Mark a shopping entry purchased (or gifted/received for wish lists).
 
     When ``linked_item_id`` is set, also creates an ``ItemLot`` so the
-    pantry quantity is restocked and ``depleted`` is cleared.
+    backing collection quantity is restocked and ``depleted`` is cleared.
     """
-    g = db.get(ShoppingItem, grocery_id)
+    g = db.get(ShoppingItem, item_id)
     if g is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, g.collection_id, _EDITOR_ROLES)

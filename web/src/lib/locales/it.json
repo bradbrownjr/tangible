@@ -7,7 +7,8 @@
     "log_out": "Esci",
     "alerts": "Avvisi",
     "whats_new": "Novità",
-    "edit_profile": "Modifica profilo"
+    "edit_profile": "Modifica profilo",
+    "lists": "Liste"
   },
   "alerts": {
     "no_upcoming": "Nessun avviso imminente.",
@@ -655,6 +656,63 @@
     "saving_button": "Salvataggio…",
     "save_aisle_button": "Salva corsia",
     "back_button": "← Indietro",
-    "delete_store_confirm": "Eliminare questo negozio e tutte le sue corsie?"
+    "delete_store_confirm": "Eliminare questo negozio e tutte le sue corsie?",
+    "cat_hw_adhesives_tape": "Adesivi e nastro",
+    "cat_hw_caulk_sealant": "Sigillante",
+    "cat_hw_concrete_masonry": "Calcestruzzo e muratura",
+    "cat_hw_electrical": "Elettrico",
+    "cat_hw_fasteners": "Ferramenta",
+    "cat_hw_flooring": "Pavimenti",
+    "cat_hw_hand_tools": "Utensili manuali",
+    "cat_hw_hardware_hinges": "Cerniere e ferramenta",
+    "cat_hw_hvac_filters": "HVAC e filtri",
+    "cat_hw_lumber_sheet_goods": "Legno e pannelli",
+    "cat_hw_paint_finishes": "Vernici e finiture",
+    "cat_hw_plumbing": "Idraulica",
+    "cat_hw_power_tool_accessories": "Accessori utensili",
+    "cat_hw_safety_ppe": "Sicurezza e DPI",
+    "cat_hw_storage_organization": "Contenitori",
+    "cat_hg_bathroom": "Bagno",
+    "cat_hg_bedding_pillows": "Biancheria e cuscini",
+    "cat_hg_candles_fragrance": "Candele e profumi",
+    "cat_hg_cleaning_supplies": "Prodotti per la pulizia",
+    "cat_hg_cookware_bakeware": "Pentole e cottura",
+    "cat_hg_curtains_blinds": "Tende e veneziane",
+    "cat_hg_decor_accents": "Arredamento",
+    "cat_hg_furniture": "Mobili",
+    "cat_hg_kitchen_gadgets": "Gadget cucina",
+    "cat_hg_lighting": "Illuminazione",
+    "cat_hg_linens_towels": "Tessili e asciugamani",
+    "cat_hg_outdoor_garden": "Esterno e giardino",
+    "cat_hg_rugs_mats": "Tappeti",
+    "cat_hg_small_appliances": "Piccoli elettrodomestici",
+    "cat_hg_storage": "Contenitori"
+  },
+  "lists": {
+    "type": {
+      "groceries": "Spesa",
+      "hardware": "Ferramenta",
+      "home_goods": "Casa",
+      "wish_list": "Lista desideri"
+    },
+    "description": {
+      "groceries": "Articoli aggiunti da te, più tutto quello segnato come esaurito.",
+      "hardware": "Materiali di ferramenta e fai-da-te necessari.",
+      "home_goods": "Articoli per la casa necessari.",
+      "wish_list": "Cose che desideri — condividi o tieni traccia per i regali."
+    },
+    "item_name_placeholder": "Aggiungi articolo…",
+    "wish_url_placeholder": "Link (facoltativo)",
+    "wish_priority_any": "Priorità",
+    "priority": {
+      "low": "Bassa",
+      "medium": "Media",
+      "high": "Alta"
+    },
+    "mark_received_button": "Segna come ricevuto",
+    "col_url": "Link",
+    "col_priority": "Priorità",
+    "view_link": "Vedi",
+    "empty": "Niente nella lista — tutto a posto!"
   }
 }

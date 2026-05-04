@@ -7,7 +7,8 @@
     "log_out": "ログアウト",
     "alerts": "アラート",
     "whats_new": "新機能",
-    "edit_profile": "プロフィールを編集"
+    "edit_profile": "プロフィールを編集",
+    "lists": "リスト"
   },
   "alerts": {
     "no_upcoming": "今後のアラートはありません。",
@@ -655,6 +656,63 @@
     "saving_button": "保存中…",
     "save_aisle_button": "通路を保存",
     "back_button": "← 戻る",
-    "delete_store_confirm": "この店舗とすべての通路を削除しますか？"
+    "delete_store_confirm": "この店舗とすべての通路を削除しますか？",
+    "cat_hw_adhesives_tape": "接着剤・テープ",
+    "cat_hw_caulk_sealant": "コーキング",
+    "cat_hw_concrete_masonry": "コンクリート・組積",
+    "cat_hw_electrical": "電気",
+    "cat_hw_fasteners": "第具類",
+    "cat_hw_flooring": "床材",
+    "cat_hw_hand_tools": "手工具",
+    "cat_hw_hardware_hinges": "金具・ヒンジ",
+    "cat_hw_hvac_filters": "空調フィルター",
+    "cat_hw_lumber_sheet_goods": "木材・ボード",
+    "cat_hw_paint_finishes": "塗料・仕上げ",
+    "cat_hw_plumbing": "配管",
+    "cat_hw_power_tool_accessories": "電動工具アクセサリー",
+    "cat_hw_safety_ppe": "安全・PPE",
+    "cat_hw_storage_organization": "收納",
+    "cat_hg_bathroom": "浴室",
+    "cat_hg_bedding_pillows": "寝具・枕",
+    "cat_hg_candles_fragrance": "キャンドル・荷",
+    "cat_hg_cleaning_supplies": "清潔用品",
+    "cat_hg_cookware_bakeware": "調理器具",
+    "cat_hg_curtains_blinds": "カーテン・ブラインド",
+    "cat_hg_decor_accents": "インテリア",
+    "cat_hg_furniture": "家具",
+    "cat_hg_kitchen_gadgets": "キッチン用品",
+    "cat_hg_lighting": "照明",
+    "cat_hg_linens_towels": "リネン・タオル",
+    "cat_hg_outdoor_garden": "屋外・ガーデン",
+    "cat_hg_rugs_mats": "ラグ・マット",
+    "cat_hg_small_appliances": "小型家電",
+    "cat_hg_storage": "收納"
+  },
+  "lists": {
+    "type": {
+      "groceries": "食料品",
+      "hardware": "ホームセンター",
+      "home_goods": "ホーム用品",
+      "wish_list": "欲しいものリスト"
+    },
+    "description": {
+      "groceries": "追加したアイテムと贇库が切れた商品。",
+      "hardware": "必要なホームセンター用品。",
+      "home_goods": "必要なホーム用品。",
+      "wish_list": "欲しいもの — 共有またはギフト用に追跡。"
+    },
+    "item_name_placeholder": "アイテムを追加…",
+    "wish_url_placeholder": "リンク（任意）",
+    "wish_priority_any": "優先度",
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高"
+    },
+    "mark_received_button": "受取済みにする",
+    "col_url": "リンク",
+    "col_priority": "優先度",
+    "view_link": "表示",
+    "empty": "リストに何もありません"
   }
 }

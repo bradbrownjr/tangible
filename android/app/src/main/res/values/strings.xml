@@ -260,4 +260,47 @@
         <item quantity="one">This will permanently delete %d item in this collection. This cannot be undone.</item>
         <item quantity="other">This will permanently delete %d items in this collection. This cannot be undone.</item>
     </plurals>
+    <!-- Hardware categories -->
+    <string name="cat_hw_adhesives_tape">Adhesives &amp; Tape</string>
+    <string name="cat_hw_caulk_sealant">Caulk &amp; Sealant</string>
+    <string name="cat_hw_concrete_masonry">Concrete &amp; Masonry</string>
+    <string name="cat_hw_electrical">Electrical</string>
+    <string name="cat_hw_fasteners">Fasteners</string>
+    <string name="cat_hw_flooring">Flooring</string>
+    <string name="cat_hw_hand_tools">Hand Tools</string>
+    <string name="cat_hw_hardware_hinges">Hardware &amp; Hinges</string>
+    <string name="cat_hw_hvac_filters">HVAC &amp; Filters</string>
+    <string name="cat_hw_lumber_sheet_goods">Lumber &amp; Sheet Goods</string>
+    <string name="cat_hw_paint_finishes">Paint &amp; Finishes</string>
+    <string name="cat_hw_plumbing">Plumbing</string>
+    <string name="cat_hw_power_tool_accessories">Power Tool Accessories</string>
+    <string name="cat_hw_safety_ppe">Safety &amp; PPE</string>
+    <string name="cat_hw_storage_organization">Storage &amp; Organization</string>
+    <!-- Home goods categories -->
+    <string name="cat_hg_bathroom">Bathroom</string>
+    <string name="cat_hg_bedding_pillows">Bedding &amp; Pillows</string>
+    <string name="cat_hg_candles_fragrance">Candles &amp; Fragrance</string>
+    <string name="cat_hg_cleaning_supplies">Cleaning Supplies</string>
+    <string name="cat_hg_cookware_bakeware">Cookware &amp; Bakeware</string>
+    <string name="cat_hg_curtains_blinds">Curtains &amp; Blinds</string>
+    <string name="cat_hg_decor_accents">Decor &amp; Accents</string>
+    <string name="cat_hg_furniture">Furniture</string>
+    <string name="cat_hg_kitchen_gadgets">Kitchen Gadgets</string>
+    <string name="cat_hg_lighting">Lighting</string>
+    <string name="cat_hg_linens_towels">Linens &amp; Towels</string>
+    <string name="cat_hg_outdoor_garden">Outdoor &amp; Garden</string>
+    <string name="cat_hg_rugs_mats">Rugs &amp; Mats</string>
+    <string name="cat_hg_small_appliances">Small Appliances</string>
+    <string name="cat_hg_storage">Storage</string>
+    <!-- List types -->
+    <string name="list_type_groceries">Groceries</string>
+    <string name="list_type_hardware">Hardware</string>
+    <string name="list_type_home_goods">Home Goods</string>
+    <string name="list_type_wish_list">Wish List</string>
+    <string name="mark_received">Mark as received</string>
+    <string name="wish_url_hint">Link (optional)</string>
+    <string name="wish_priority_hint">Priority</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_high">High</string>
 </resources>

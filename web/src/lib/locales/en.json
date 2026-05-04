@@ -7,7 +7,8 @@
     "log_out": "Log out",
     "alerts": "Alerts",
     "whats_new": "What's new",
-    "edit_profile": "Edit your profile"
+    "edit_profile": "Edit your profile",
+    "lists": "Lists"
   },
   "alerts": {
     "no_upcoming": "No upcoming alerts.",
@@ -655,6 +656,63 @@
     "saving_button": "Saving…",
     "save_aisle_button": "Save aisle",
     "back_button": "← Back",
-    "delete_store_confirm": "Delete this store and all its aisles?"
+    "delete_store_confirm": "Delete this store and all its aisles?",
+    "cat_hw_adhesives_tape": "Adhesives & Tape",
+    "cat_hw_caulk_sealant": "Caulk & Sealant",
+    "cat_hw_concrete_masonry": "Concrete & Masonry",
+    "cat_hw_electrical": "Electrical",
+    "cat_hw_fasteners": "Fasteners",
+    "cat_hw_flooring": "Flooring",
+    "cat_hw_hand_tools": "Hand Tools",
+    "cat_hw_hardware_hinges": "Hardware & Hinges",
+    "cat_hw_hvac_filters": "HVAC & Filters",
+    "cat_hw_lumber_sheet_goods": "Lumber & Sheet Goods",
+    "cat_hw_paint_finishes": "Paint & Finishes",
+    "cat_hw_plumbing": "Plumbing",
+    "cat_hw_power_tool_accessories": "Power Tool Accessories",
+    "cat_hw_safety_ppe": "Safety & PPE",
+    "cat_hw_storage_organization": "Storage & Organization",
+    "cat_hg_bathroom": "Bathroom",
+    "cat_hg_bedding_pillows": "Bedding & Pillows",
+    "cat_hg_candles_fragrance": "Candles & Fragrance",
+    "cat_hg_cleaning_supplies": "Cleaning Supplies",
+    "cat_hg_cookware_bakeware": "Cookware & Bakeware",
+    "cat_hg_curtains_blinds": "Curtains & Blinds",
+    "cat_hg_decor_accents": "Decor & Accents",
+    "cat_hg_furniture": "Furniture",
+    "cat_hg_kitchen_gadgets": "Kitchen Gadgets",
+    "cat_hg_lighting": "Lighting",
+    "cat_hg_linens_towels": "Linens & Towels",
+    "cat_hg_outdoor_garden": "Outdoor & Garden",
+    "cat_hg_rugs_mats": "Rugs & Mats",
+    "cat_hg_small_appliances": "Small Appliances",
+    "cat_hg_storage": "Storage"
+  },
+  "lists": {
+    "type": {
+      "groceries": "Groceries",
+      "hardware": "Hardware",
+      "home_goods": "Home Goods",
+      "wish_list": "Wish List"
+    },
+    "description": {
+      "groceries": "Items added by you, plus anything marked depleted across your collections.",
+      "hardware": "Hardware and DIY supplies needed.",
+      "home_goods": "Home furnishings and household items needed.",
+      "wish_list": "Things you want — share or track for gifting."
+    },
+    "item_name_placeholder": "Add item…",
+    "wish_url_placeholder": "Link (optional)",
+    "wish_priority_any": "Priority",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "mark_received_button": "Mark as received",
+    "col_url": "Link",
+    "col_priority": "Priority",
+    "view_link": "View",
+    "empty": "Nothing on the list — all clear!"
   }
 }

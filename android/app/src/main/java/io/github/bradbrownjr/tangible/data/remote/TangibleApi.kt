@@ -110,16 +110,18 @@ interface TangibleApi {
     @GET("items/grocery-list")
     suspend fun getShoppingList(): List<ItemDto>
 
-    @GET("grocery")
-    suspend fun getShoppingFeed(): List<ShoppingFeedEntryDto>
+    @GET("lists")
+    suspend fun getShoppingFeed(
+        @Query("list_type") listType: String? = null
+    ): List<ShoppingFeedEntryDto>
 
-    @POST("grocery")
+    @POST("lists")
     suspend fun createShoppingItem(@Body body: ShoppingItemCreateRequest): ShoppingFeedEntryDto
 
-    @DELETE("grocery/{id}")
+    @DELETE("lists/{id}")
     suspend fun deleteShoppingItem(@Path("id") id: String)
 
-    @POST("grocery/{id}/purchase")
+    @POST("lists/{id}/purchase")
     suspend fun purchaseShoppingItem(@Path("id") id: String)
 
     // Shopping stores

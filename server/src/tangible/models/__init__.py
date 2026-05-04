@@ -30,7 +30,7 @@ from tangible.models.notification import NotificationPreference
 from tangible.models.photo import Photo
 from tangible.models.scraper_registry_pin import ScraperRegistryPin
 from tangible.models.share_link import ShareLink
-from tangible.models.shopping import ShoppingItem, ShoppingStore, ShoppingStoreAisle
+from tangible.models.shopping import ListType, ShoppingItem, ShoppingStore, ShoppingStoreAisle
 from tangible.models.sync_doc import AutomergeChange, AutomergeDoc
 from tangible.models.tag import ItemTag, Tag
 from tangible.models.user import (
@@ -63,6 +63,7 @@ __all__ = [
     "ItemLot",
     "ItemTag",
     "ItemTemplate",
+    "ListType",
     "Loan",
     "Location",
     "MaintenanceCompletion",

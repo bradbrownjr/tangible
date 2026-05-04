@@ -7,7 +7,8 @@
     "log_out": "Abmelden",
     "alerts": "Benachrichtigungen",
     "whats_new": "Neuigkeiten",
-    "edit_profile": "Profil bearbeiten"
+    "edit_profile": "Profil bearbeiten",
+    "lists": "Listen"
   },
   "alerts": {
     "no_upcoming": "Keine bevorstehenden Benachrichtigungen.",
@@ -655,6 +656,63 @@
     "saving_button": "Speichern…",
     "save_aisle_button": "Gang speichern",
     "back_button": "← Zurück",
-    "delete_store_confirm": "Dieses Geschäft und alle seine Gänge löschen?"
+    "delete_store_confirm": "Dieses Geschäft und alle seine Gänge löschen?",
+    "cat_hw_adhesives_tape": "Kleber & Klebeband",
+    "cat_hw_caulk_sealant": "Dichtmasse",
+    "cat_hw_concrete_masonry": "Beton & Mauerwerk",
+    "cat_hw_electrical": "Elektro",
+    "cat_hw_fasteners": "Befestigungsmittel",
+    "cat_hw_flooring": "Bodenbelag",
+    "cat_hw_hand_tools": "Handwerkzeug",
+    "cat_hw_hardware_hinges": "Beschläge & Scharniere",
+    "cat_hw_hvac_filters": "HLK & Filter",
+    "cat_hw_lumber_sheet_goods": "Holz & Platten",
+    "cat_hw_paint_finishes": "Farbe & Oberflächen",
+    "cat_hw_plumbing": "Sanitär",
+    "cat_hw_power_tool_accessories": "Elektrowerkzeug-Zubehör",
+    "cat_hw_safety_ppe": "Sicherheit & PSA",
+    "cat_hw_storage_organization": "Aufbewahrung",
+    "cat_hg_bathroom": "Badezimmer",
+    "cat_hg_bedding_pillows": "Bettwäsche & Kissen",
+    "cat_hg_candles_fragrance": "Kerzen & Duft",
+    "cat_hg_cleaning_supplies": "Reinigungsmittel",
+    "cat_hg_cookware_bakeware": "Koch- & Backgeschirr",
+    "cat_hg_curtains_blinds": "Vorhänge & Jalousien",
+    "cat_hg_decor_accents": "Deko & Akzente",
+    "cat_hg_furniture": "Möbel",
+    "cat_hg_kitchen_gadgets": "Küchengeräte",
+    "cat_hg_lighting": "Beleuchtung",
+    "cat_hg_linens_towels": "Wäsche & Handtücher",
+    "cat_hg_outdoor_garden": "Garten & Außenbereich",
+    "cat_hg_rugs_mats": "Teppiche & Matten",
+    "cat_hg_small_appliances": "Kleingeräte",
+    "cat_hg_storage": "Aufbewahrung"
+  },
+  "lists": {
+    "type": {
+      "groceries": "Lebensmittel",
+      "hardware": "Baumarkt",
+      "home_goods": "Haushalt",
+      "wish_list": "Wunschliste"
+    },
+    "description": {
+      "groceries": "Von Ihnen hinzugefügte Artikel plus alles als aufgebraucht Markierte.",
+      "hardware": "Benötigte Baumarkt- und Heimwerkerbedarf.",
+      "home_goods": "Benötigte Wohnausstattung und Haushaltswaren.",
+      "wish_list": "Dinge, die Sie möchten — teilen oder für Geschenke verfolgen."
+    },
+    "item_name_placeholder": "Artikel hinzufügen…",
+    "wish_url_placeholder": "Link (optional)",
+    "wish_priority_any": "Priorität",
+    "priority": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
+    },
+    "mark_received_button": "Als erhalten markieren",
+    "col_url": "Link",
+    "col_priority": "Priorität",
+    "view_link": "Ansehen",
+    "empty": "Nichts auf der Liste — alles erledigt!"
   }
 }

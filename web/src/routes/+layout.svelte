@@ -20,22 +20,26 @@
 
     interface NotificationPref { kind: string; browser_enabled: boolean; lead_days: number; }
     interface DueAlert { id: string; title: string; details: string | null; due_at: string; kind: string; severity: string; }
-    interface ShoppingCount { total: number; ad_hoc: number; depleted_items: number; }
+    interface ShoppingCount { total: number; ad_hoc: number; depleted_items: number; by_type: Record<string, number>; }
 
     let { children } = $props();
     let ready = $state(false);
     let whatsNewOpen = $state(false);
     let lastSeen = $state<string | null>(null);
     let shoppingCount = $state(0);
+    let shoppingByType = $state<Record<string, number>>({});
+    let listsMenuOpen = $state(false);
     let menuOpen = $state(false);
 
     async function refreshShoppingCount() {
-        if (!$me) { shoppingCount = 0; return; }
+        if (!$me) { shoppingCount = 0; shoppingByType = {}; return; }
         try {
             const c = await api.get<ShoppingCount>("/lists/count");
             shoppingCount = c.total;
+            shoppingByType = c.by_type ?? {};
         } catch {
             shoppingCount = 0;
+            shoppingByType = {};
         }
     }
 
@@ -117,12 +121,16 @@
         await goto('/login');
     }
 
-    function closeMenu() { menuOpen = false; }
+    function closeMenu() { menuOpen = false; listsMenuOpen = false; }
+
+    function handleDocumentClick() { listsMenuOpen = false; }
 
     $effect(() => {
         document.documentElement.lang = $locale ?? 'en';
     });
 </script>
+
+<svelte:document onclick={handleDocumentClick} />
 
 <header>
     <a href="/" class="brand">Tangible</a>
@@ -163,7 +171,35 @@
         {#if $me}
             <a href="/" onclick={closeMenu}>{$_('nav.collections')}</a>
             <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
-            <a href="/grocery-list" onclick={closeMenu}>{$_('nav.grocery_list')}{#if shoppingCount > 0} <span class="badge">{shoppingCount}</span>{/if}</a>
+            <div class="nav-lists-menu" class:open={listsMenuOpen}>
+                <button
+                    class="nav-lists-trigger"
+                    onclick={(e) => { e.stopPropagation(); listsMenuOpen = !listsMenuOpen; }}
+                    aria-haspopup="true"
+                    aria-expanded={listsMenuOpen}
+                >
+                    {$_('nav.lists')}{#if shoppingCount > 0} <span class="badge">{shoppingCount}</span>{/if}
+                    <svg class="chevron" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                        <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+                {#if listsMenuOpen}
+                    <div class="nav-lists-dropdown" role="menu">
+                        <a href="/lists/groceries" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                            {$_('lists.type.groceries')}{#if (shoppingByType['groceries'] ?? 0) > 0} <span class="badge">{shoppingByType['groceries']}</span>{/if}
+                        </a>
+                        <a href="/lists/hardware" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                            {$_('lists.type.hardware')}{#if (shoppingByType['hardware'] ?? 0) > 0} <span class="badge">{shoppingByType['hardware']}</span>{/if}
+                        </a>
+                        <a href="/lists/home_goods" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                            {$_('lists.type.home_goods')}{#if (shoppingByType['home_goods'] ?? 0) > 0} <span class="badge">{shoppingByType['home_goods']}</span>{/if}
+                        </a>
+                        <a href="/lists/wish_list" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                            {$_('lists.type.wish_list')}{#if (shoppingByType['wish_list'] ?? 0) > 0} <span class="badge">{shoppingByType['wish_list']}</span>{/if}
+                        </a>
+                    </div>
+                {/if}
+            </div>
             <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
             <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
@@ -247,6 +283,56 @@
     nav a:hover {
         color: var(--accent);
     }
+    /* Lists dropdown */
+    .nav-lists-menu {
+        position: relative;
+    }
+    .nav-lists-trigger {
+        background: none;
+        border: none;
+        color: var(--text);
+        font-size: 1rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0;
+    }
+    .nav-lists-trigger:hover {
+        color: var(--accent);
+    }
+    .chevron {
+        transition: transform 0.15s;
+    }
+    .nav-lists-menu.open .chevron {
+        transform: rotate(180deg);
+    }
+    .nav-lists-dropdown {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        min-width: 160px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .nav-lists-dropdown a {
+        padding: 0.6rem 1rem;
+        color: var(--text);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .nav-lists-dropdown a:hover {
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+        color: var(--accent);
+    }
     main {
         padding: 1.5rem;
         max-width: 1100px;
@@ -293,6 +379,23 @@
         }
         nav a:hover {
             background: color-mix(in srgb, var(--text) 6%, transparent);
+        }
+        .nav-lists-trigger {
+            width: 100%;
+            padding: 0.65rem 0.5rem;
+            border-radius: 0;
+            text-align: left;
+        }
+        .nav-lists-dropdown {
+            position: static;
+            box-shadow: none;
+            border: none;
+            border-radius: 0;
+            border-left: 2px solid var(--accent);
+            margin-left: 0.75rem;
+        }
+        .nav-lists-dropdown a {
+            padding: 0.5rem 0.75rem;
         }
     }
 </style>

@@ -17,7 +17,7 @@ class ShoppingSource(BaseModel):
 
 
 class ShoppingItemRead(BaseModel):
-    """A user-created grocery list entry."""
+    """A user-created shopping list entry."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -28,6 +28,9 @@ class ShoppingItemRead(BaseModel):
     unit: str | None = None
     notes: str | None = None
     category_slug: str | None = None
+    list_type: str = "groceries"
+    wish_url: str | None = None
+    wish_priority: int | None = None
     linked_item_id: str | None = None
     purchased_at: datetime | None = None
     purchased_by_user_id: str | None = None
@@ -37,15 +40,14 @@ class ShoppingItemRead(BaseModel):
 
 
 class ShoppingFeedEntry(BaseModel):
-    """A single row in the unified grocery feed.
+    """A single row in the unified shopping feed.
 
-    Either an ad-hoc grocery_item or a depleted Item shown as a virtual
-    grocery entry.
+    Either an ad-hoc shopping_item or a depleted Item shown as a virtual entry.
     """
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: str  # grocery_item.id OR item.id (with prefix)
+    id: str  # shopping_item.id OR item.id (with prefix)
     source: ShoppingSource
     collection_id: str
     name: str
@@ -54,6 +56,9 @@ class ShoppingFeedEntry(BaseModel):
     unit: str | None = None
     notes: str | None = None
     category_slug: str | None = None
+    list_type: str = "groceries"
+    wish_url: str | None = None
+    wish_priority: int | None = None
     linked_item_id: str | None = None
     purchased_at: datetime | None = None
     created_at: datetime
@@ -66,6 +71,9 @@ class ShoppingItemCreate(BaseModel):
     unit: str | None = Field(default=None, max_length=32)
     notes: str | None = None
     category_slug: str | None = Field(default=None, max_length=120)
+    list_type: str = Field(default="groceries", max_length=32)
+    wish_url: str | None = Field(default=None, max_length=2048)
+    wish_priority: int | None = Field(default=None, ge=1, le=3)
     linked_item_id: str | None = None
 
 
@@ -75,6 +83,8 @@ class ShoppingItemUpdate(BaseModel):
     unit: str | None = Field(default=None, max_length=32)
     notes: str | None = None
     category_slug: str | None = Field(default=None, max_length=120)
+    wish_url: str | None = Field(default=None, max_length=2048)
+    wish_priority: int | None = Field(default=None, ge=1, le=3)
     linked_item_id: str | None = None
 
 
@@ -134,8 +144,9 @@ class ShoppingStoreUpdate(BaseModel):
 
 
 class ShoppingCount(BaseModel):
-    """Lightweight count for nav badge."""
+    """Lightweight count for nav badge, broken down by list type."""
 
     total: int
     ad_hoc: int
     depleted_items: int
+    by_type: dict[str, int] = Field(default_factory=dict)

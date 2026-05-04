@@ -39,7 +39,10 @@ import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 import io.github.bradbrownjr.tangible.R
 import javax.inject.Inject
 
+private val LIST_TYPES = listOf("groceries", "hardware", "home_goods", "wish_list")
+
 data class ShoppingListUi(
+    val listType: String = "groceries",
     val items: List<ShoppingFeedEntryDto> = emptyList(),
     val collections: Map<String, CollectionDto> = emptyMap(),
     val stores: List<ShoppingStoreDto> = emptyList(),
@@ -66,6 +69,7 @@ class ShoppingListViewModel @Inject constructor(
     fun pullRefresh() = load(isRefresh = true)
 
     private fun load(isRefresh: Boolean) {
+        val listType = _state.value.listType
         if (isRefresh) {
             _state.value = _state.value.copy(refreshing = true, error = null)
         } else {
@@ -73,7 +77,7 @@ class ShoppingListViewModel @Inject constructor(
         }
         viewModelScope.launch {
             try {
-                val items = shoppingRepo.feed()
+                val items = shoppingRepo.feed(listType.takeIf { it.isNotBlank() })
                 val collections = collectionRepo.list()
                 val stores = shoppingRepo.listStores()
                 _state.value = _state.value.copy(
@@ -107,6 +111,12 @@ class ShoppingListViewModel @Inject constructor(
 
     fun dismissAddDialog() {
         _state.value = _state.value.copy(showAddDialog = false)
+    }
+
+    fun setListType(type: String) {
+        if (_state.value.listType == type) return
+        _state.value = _state.value.copy(listType = type, items = emptyList())
+        load(isRefresh = false)
     }
 
     fun addItem(collectionId: String, name: String, quantity: Int, categorySlug: String?) {
@@ -266,7 +276,27 @@ fun ShoppingListScreen(
             }
         },
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
+        Column(modifier = Modifier.padding(innerPadding)) {
+            // List type tabs
+            ScrollableTabRow(
+                selectedTabIndex = LIST_TYPES.indexOf(ui.listType).coerceAtLeast(0),
+                edgePadding = 0.dp,
+            ) {
+                val tabLabels = mapOf(
+                    "groceries"  to stringResource(R.string.list_type_groceries),
+                    "hardware"   to stringResource(R.string.list_type_hardware),
+                    "home_goods" to stringResource(R.string.list_type_home_goods),
+                    "wish_list"  to stringResource(R.string.list_type_wish_list),
+                )
+                LIST_TYPES.forEach { type ->
+                    Tab(
+                        selected = ui.listType == type,
+                        onClick = { viewModel.setListType(type) },
+                        text = { Text(tabLabels[type] ?: type) },
+                    )
+                }
+            }
+        Box(modifier = Modifier.weight(1f)) {
             PullToRefreshBox(
                 isRefreshing = ui.refreshing,
                 onRefresh = { viewModel.pullRefresh() },
@@ -346,7 +376,8 @@ fun ShoppingListScreen(
                     onDismiss = { viewModel.dismissStoreSelector() },
                 )
             }
-        }
+        } // end inner Box
+        } // end Column
     }
 
     if (ui.showAddDialog) {

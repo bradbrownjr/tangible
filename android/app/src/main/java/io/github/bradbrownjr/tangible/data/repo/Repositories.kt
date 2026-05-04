@@ -381,7 +381,7 @@ class BundleRepository @Inject constructor(
 class ShoppingRepository @Inject constructor(
     private val api: TangibleApi,
 ) {
-    suspend fun feed(): List<ShoppingFeedEntryDto> = api.getShoppingFeed()
+    suspend fun feed(listType: String? = null): List<ShoppingFeedEntryDto> = api.getShoppingFeed(listType)
 
     suspend fun addItem(
         collectionId: String,

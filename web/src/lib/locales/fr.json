@@ -7,7 +7,8 @@
     "log_out": "Déconnexion",
     "alerts": "Alertes",
     "whats_new": "Nouveautés",
-    "edit_profile": "Modifier votre profil"
+    "edit_profile": "Modifier votre profil",
+    "lists": "Listes"
   },
   "alerts": {
     "no_upcoming": "Aucune alerte à venir.",
@@ -655,6 +656,63 @@
     "saving_button": "Enregistrement…",
     "save_aisle_button": "Enregistrer l'allée",
     "back_button": "← Retour",
-    "delete_store_confirm": "Supprimer ce magasin et toutes ses allées ?"
+    "delete_store_confirm": "Supprimer ce magasin et toutes ses allées ?",
+    "cat_hw_adhesives_tape": "Adhésifs et ruban",
+    "cat_hw_caulk_sealant": "Mastic et joints",
+    "cat_hw_concrete_masonry": "Béton et maçonnerie",
+    "cat_hw_electrical": "Électricité",
+    "cat_hw_fasteners": "Fixations",
+    "cat_hw_flooring": "Revêtements de sol",
+    "cat_hw_hand_tools": "Outils à main",
+    "cat_hw_hardware_hinges": "Quincaillerie et charnières",
+    "cat_hw_hvac_filters": "CVC et filtres",
+    "cat_hw_lumber_sheet_goods": "Bois et panneaux",
+    "cat_hw_paint_finishes": "Peintures et finitions",
+    "cat_hw_plumbing": "Plomberie",
+    "cat_hw_power_tool_accessories": "Accessoires d’outillage",
+    "cat_hw_safety_ppe": "Sécurité et EPI",
+    "cat_hw_storage_organization": "Rangement",
+    "cat_hg_bathroom": "Salle de bain",
+    "cat_hg_bedding_pillows": "Literie et oreillers",
+    "cat_hg_candles_fragrance": "Bougies et parfums",
+    "cat_hg_cleaning_supplies": "Produits ménagers",
+    "cat_hg_cookware_bakeware": "Ustensiles de cuisine",
+    "cat_hg_curtains_blinds": "Rideaux et stores",
+    "cat_hg_decor_accents": "Décoration",
+    "cat_hg_furniture": "Mobilier",
+    "cat_hg_kitchen_gadgets": "Gadgets cuisine",
+    "cat_hg_lighting": "Éclairage",
+    "cat_hg_linens_towels": "Linge de maison",
+    "cat_hg_outdoor_garden": "Extérieur et jardin",
+    "cat_hg_rugs_mats": "Tapis",
+    "cat_hg_small_appliances": "Petits électroménagers",
+    "cat_hg_storage": "Rangement"
+  },
+  "lists": {
+    "type": {
+      "groceries": "Courses",
+      "hardware": "Quincaillerie",
+      "home_goods": "Maison",
+      "wish_list": "Liste de souhaits"
+    },
+    "description": {
+      "groceries": "Articles ajoutés par vous, plus tout ce marqué dépleté.",
+      "hardware": "Fournitures de quincaillerie et de bricolage nécessaires.",
+      "home_goods": "Articles de maison et d’ameublement nécessaires.",
+      "wish_list": "Choses que vous désirez — partagez ou suivez pour les cadeaux."
+    },
+    "item_name_placeholder": "Ajouter un article…",
+    "wish_url_placeholder": "Lien (facultatif)",
+    "wish_priority_any": "Priorité",
+    "priority": {
+      "low": "Faible",
+      "medium": "Moyenne",
+      "high": "Élevée"
+    },
+    "mark_received_button": "Marquer comme reçu",
+    "col_url": "Lien",
+    "col_priority": "Priorité",
+    "view_link": "Voir",
+    "empty": "Rien sur la liste — tout est bon !"
   }
 }

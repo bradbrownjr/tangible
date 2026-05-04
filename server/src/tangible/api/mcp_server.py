@@ -45,6 +45,7 @@ from tangible.models import (
     Item,
     MaintenanceCompletion,
     MaintenanceTask,
+    ShoppingItem,
 )
 
 # ---------------------------------------------------------------------------
@@ -404,6 +405,52 @@ def build_mcp_server(settings: Settings) -> FastMCP:
                 .order_by(Item.title)
             )
             return [_item_to_dict(i, db) for i in db.scalars(stmt).all()]
+        finally:
+            db.close()
+
+    # ------------------------------------------------------------------
+    # Tool: list_shopping_items
+    # ------------------------------------------------------------------
+
+    @mcp.tool(
+        description=(
+            "Return pending shopping / wish-list items for the user. "
+            "list_type: groceries | hardware | home_goods | wish_list — "
+            "omit to return items from all list types."
+        )
+    )
+    def list_shopping_items(user_id: str, list_type: str = "") -> list[dict]:
+        db = _new_session()
+        try:
+            cids = _readable_collection_ids(db, user_id)
+            if not cids:
+                return []
+            stmt = (
+                select(ShoppingItem)
+                .where(
+                    ShoppingItem.collection_id.in_(cids),
+                    ShoppingItem.purchased_at.is_(None),
+                )
+                .order_by(ShoppingItem.created_at)
+            )
+            if list_type:
+                stmt = stmt.where(ShoppingItem.list_type == list_type)
+            rows = db.scalars(stmt).all()
+            return [
+                {
+                    "id": str(r.id),
+                    "name": r.name,
+                    "quantity": r.quantity,
+                    "unit": r.unit,
+                    "notes": r.notes,
+                    "category_slug": r.category_slug,
+                    "list_type": r.list_type,
+                    "wish_url": r.wish_url,
+                    "wish_priority": r.wish_priority,
+                    "collection_id": str(r.collection_id) if r.collection_id else None,
+                }
+                for r in rows
+            ]
         finally:
             db.close()
 

@@ -1,8 +1,10 @@
 """Shopping list models.
 
-Shared, ad-hoc shopping items per collection. When linked to an existing
-``Item`` (typically a pantry/consumable item), marking it purchased
-calls the restock flow on that item.
+Shared, ad-hoc shopping items per collection.  A ``list_type`` field
+distinguishes groceries, hardware, home-goods, and wish-list entries so
+all four share one table and API.  When linked to an existing ``Item``
+(typically a pantry/consumable item), marking it purchased calls the
+restock flow on that item.
 
 ``ShoppingStore`` and ``ShoppingStoreAisle`` let users map category slugs to
 physical store aisles so the shopping feed can be sorted aisle-by-aisle.
@@ -10,6 +12,7 @@ physical store aisles so the shopping feed can be sorted aisle-by-aisle.
 
 from __future__ import annotations
 
+import enum
 import json
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -24,6 +27,13 @@ if TYPE_CHECKING:
     from tangible.models.collection import Collection
     from tangible.models.item import Item
     from tangible.models.user import User
+
+
+class ListType(enum.StrEnum):
+    groceries = "groceries"
+    hardware = "hardware"
+    home_goods = "home_goods"
+    wish_list = "wish_list"
 
 
 class ShoppingItem(ULIDPrimaryKey, TimestampMixin, Base):
@@ -46,6 +56,12 @@ class ShoppingItem(ULIDPrimaryKey, TimestampMixin, Base):
     unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     category_slug: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    list_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="groceries", server_default="groceries", index=True
+    )
+    # Wish-list only fields
+    wish_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    wish_priority: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1=low,2=med,3=high
 
     # When set, marking this entry purchased restocks the linked item.
     linked_item_id: Mapped[str | None] = mapped_column(
