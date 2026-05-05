@@ -43,4 +43,10 @@ class ItemLot(ULIDPrimaryKey, TimestampMixin, Base):
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disposed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Opaque key supplied by the client (e.g. Android offline queue UUID) to
+    # prevent duplicate lots when a restock is retried after a network failure.
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, unique=True, index=True
+    )
+
     item: Mapped[Item] = relationship(back_populates="lots")

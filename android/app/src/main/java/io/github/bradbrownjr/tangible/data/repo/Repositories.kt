@@ -7,6 +7,8 @@ import io.github.bradbrownjr.tangible.data.local.CategoryDao
 import io.github.bradbrownjr.tangible.data.local.CollectionDao
 import io.github.bradbrownjr.tangible.data.local.ItemDao
 import io.github.bradbrownjr.tangible.data.local.LocationDao
+import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
+import io.github.bradbrownjr.tangible.data.local.PendingMutationEntity
 import io.github.bradbrownjr.tangible.data.local.ShoppingFeedItemDao
 import io.github.bradbrownjr.tangible.data.local.flattenToEntities
 import io.github.bradbrownjr.tangible.data.local.toDto
@@ -45,6 +47,9 @@ import io.github.bradbrownjr.tangible.data.remote.ShoppingAislePatch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -383,6 +388,7 @@ class BundleRepository @Inject constructor(
 class ShoppingRepository @Inject constructor(
     private val api: TangibleApi,
     private val dao: ShoppingFeedItemDao,
+    private val mutationDao: PendingMutationDao,
 ) {
     /**
      * Fetch the shopping feed for [listType]. On success, writes results to
@@ -426,7 +432,25 @@ class ShoppingRepository @Inject constructor(
 
     suspend fun deleteItem(id: String) = api.deleteShoppingItem(id)
 
-    suspend fun purchaseItem(id: String) = api.purchaseShoppingItem(id)
+    /**
+     * Mark a shopping-list entry purchased. Sends the Idempotency-Key so
+     * the server deduplicates replays. If offline, queues the mutation for
+     * later replay by MutationDrainerWorker and returns without throwing.
+     */
+    suspend fun purchaseItem(id: String) {
+        val key = UUID.randomUUID().toString()
+        try {
+            api.purchaseShoppingItem(id, idempotencyKey = key)
+        } catch (e: IOException) {
+            mutationDao.insert(
+                PendingMutationEntity(
+                    id = key,
+                    type = "PURCHASE_SHOPPING_ITEM",
+                    payloadJson = JSONObject().put("entry_id", id).toString(),
+                )
+            )
+        }
+    }
 
     /**
      * Restock an existing depleted Item from a shopping feed entry. Feed
@@ -434,16 +458,34 @@ class ShoppingRepository @Inject constructor(
      * have no backing ShoppingItem row, so they can't be POST'd to /purchase.
      * Instead, call the inventory restock endpoint to add a lot and clear
      * the depleted flag on the underlying Item.
+     *
+     * Idempotency-Key prevents duplicate lots on replay. If offline, queues
+     * the mutation for later replay by MutationDrainerWorker.
      */
     suspend fun restockDepletedItem(itemId: String, quantity: Int) {
-        api.restockItem(
-            itemId,
-            RestockRequest(
-                quantity = quantity,
-                purchased_at = java.time.OffsetDateTime.now().toString(),
-                mark_in_stock = true,
-            ),
-        )
+        val key = UUID.randomUUID().toString()
+        try {
+            api.restockItem(
+                itemId,
+                RestockRequest(
+                    quantity = quantity,
+                    purchased_at = java.time.OffsetDateTime.now().toString(),
+                    mark_in_stock = true,
+                ),
+                idempotencyKey = key,
+            )
+        } catch (e: IOException) {
+            mutationDao.insert(
+                PendingMutationEntity(
+                    id = key,
+                    type = "RESTOCK_DEPLETED_ITEM",
+                    payloadJson = JSONObject()
+                        .put("item_id", itemId)
+                        .put("quantity", quantity)
+                        .toString(),
+                )
+            )
+        }
     }
 
     // Stores

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DBSession
 
@@ -89,6 +89,7 @@ def create_item_lot(
 def restock_item(
     item_id: str,
     payload: RestockRequest,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> ItemLotRead:
@@ -97,9 +98,16 @@ def restock_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
 
+    # Idempotency: return the existing lot if the client is replaying a queued offline mutation.
+    if idempotency_key:
+        existing = db.scalar(select(ItemLot).where(ItemLot.idempotency_key == idempotency_key))
+        if existing is not None:
+            return ItemLotRead.model_validate(existing)
+
     lot = ItemLot(
         item_id=item.id,
         collection_id=item.collection_id,
+        idempotency_key=idempotency_key,
         **payload.model_dump(exclude={"mark_in_stock"}),
     )
     db.add(lot)

@@ -46,7 +46,9 @@ import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
+import io.github.bradbrownjr.tangible.data.sync.NetworkMonitor
 import io.github.bradbrownjr.tangible.R
+import java.io.IOException
 import javax.inject.Inject
 
 private val LIST_TYPES = listOf("groceries", "hardware", "home_goods", "wish_list")
@@ -80,6 +82,7 @@ data class ShoppingListUi(
     val addDialogBarcodeNotFound: Boolean = false,
     val availableCategories: List<CategoryDto> = emptyList(),
     val editingEntry: ShoppingFeedEntryDto? = null,
+    val isOnline: Boolean = true,
 )
 
 @HiltViewModel
@@ -87,11 +90,19 @@ class ShoppingListViewModel @Inject constructor(
     private val shoppingRepo: ShoppingRepository,
     private val collectionRepo: CollectionRepository,
     private val api: TangibleApi,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ShoppingListUi())
     val state: StateFlow<ShoppingListUi> = _state.asStateFlow()
 
-    init { refresh() }
+    init {
+        refresh()
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { online ->
+                _state.value = _state.value.copy(isOnline = online)
+            }
+        }
+    }
 
     fun refresh() = load(isRefresh = false)
     fun pullRefresh() = load(isRefresh = true)
@@ -271,7 +282,8 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     /** Marks the entry purchased on the server immediately (web's "Mark purchased" button).
-     *  Optimistically removes from the visible list; on failure, restores it and shows an error. */
+     *  Optimistically removes from the visible list; on failure, restores it and shows an error.
+     *  If offline, the repository queues the mutation — no rollback, no error banner. */
     fun checkItem(entryId: String) {
         val entry = _state.value.items.find { it.id == entryId } ?: return
         _state.value = _state.value.copy(
@@ -286,8 +298,11 @@ class ShoppingListViewModel @Inject constructor(
                     shoppingRepo.purchaseItem(entryId)
                 }
                 _state.value = _state.value.copy(updating = _state.value.updating - entryId)
+            } catch (t: IOException) {
+                // The repository already queued the mutation; keep the optimistic removal.
+                _state.value = _state.value.copy(updating = _state.value.updating - entryId)
             } catch (t: Throwable) {
-                // Rollback: re-insert the entry and surface the error.
+                // Real error (auth failure, server rejection, etc.): rollback.
                 _state.value = _state.value.copy(
                     items = listOf(entry) + _state.value.items,
                     updating = _state.value.updating - entryId,
@@ -458,6 +473,19 @@ fun ShoppingListScreen(
             }
         }
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // Offline banner
+            if (!ui.isOnline) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.offline_banner),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+            }
             // List type tabs
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,

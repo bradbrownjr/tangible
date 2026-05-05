@@ -4,6 +4,7 @@ import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -125,7 +126,10 @@ interface TangibleApi {
     suspend fun deleteShoppingItem(@Path("id") id: String)
 
     @POST("lists/{id}/purchase")
-    suspend fun purchaseShoppingItem(@Path("id") id: String)
+    suspend fun purchaseShoppingItem(
+        @Path("id") id: String,
+        @Header("Idempotency-Key") idempotencyKey: String? = null,
+    )
 
     // Shopping stores
     @GET("lists/stores")
@@ -164,7 +168,11 @@ interface TangibleApi {
     suspend fun reorderShoppingAisles(@Path("storeId") storeId: String, @Body order: List<String>)
 
     @POST("items/{id}/restock")
-    suspend fun restockItem(@Path("id") id: String, @Body body: RestockRequest): ItemLotDto
+    suspend fun restockItem(
+        @Path("id") id: String,
+        @Body body: RestockRequest,
+        @Header("Idempotency-Key") idempotencyKey: String? = null,
+    ): ItemLotDto
 
     @GET("alerts")
     suspend fun getAlerts(@Query("within_days") withinDays: Int = 14): List<DueAlertDto>

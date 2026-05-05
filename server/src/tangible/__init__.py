@@ -1,3 +1,3 @@
 """Tangible server package."""
 
-__version__ = "0.17.36"
+__version__ = "0.18.0"

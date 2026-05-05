@@ -434,6 +434,7 @@ the affected file column is preserved.**
 | Android pull-to-refresh | `android/.../ui/screen/collection/CollectionDetailScreen.kt` | `PullToRefreshBox`, `pullRefresh()`, `DetailUi.refreshing` |
 | Android barcode scanner | `android/.../ui/screen/scan/ScannerScreen.kt` | CameraX + ML Kit `BarcodeScanning` |
 | Android Room cache (offline reads) | `android/.../data/local/{TangibleDatabase,Mappers}.kt`, `di/DatabaseModule.kt`, `data/repo/Repositories.kt` | `CollectionEntity`, `ItemEntity`, `observe()`, `deleteMissing` |
+| Android offline-first mutations | `android/.../data/local/TangibleDatabase.kt` (`PendingMutationEntity`, `PendingMutationDao`), `data/sync/{NetworkMonitor,MutationDrainerWorker}.kt`, `data/repo/Repositories.kt` (`ShoppingRepository`), `ui/screen/grocery/ShoppingListScreen.kt` | `pending_mutations` Room table (v9), `Idempotency-Key` header, `MutationDrainerWorker` (OneTimeWork KEEP CONNECTED), offline banner in `ShoppingListUi.isOnline`; server: `item_lots.idempotency_key` (migration 0008) |
 | Android sync worker (15-min refresh) | `android/.../data/sync/SyncWorker.kt`, `TangibleApp.kt` | `SyncWorker.schedule`, `UNIQUE_NAME`, `KEEP` policy |
 | Docker image (multi-arch, non-root) | `Dockerfile`, `docker/entrypoint.sh` | `PUID/PGID/UMASK`, `tini`, `gosu`, `TANGIBLE_ALEMBIC_DIR` |
 | Compose examples | `docker/docker-compose.{standard,postgres,unraid}.yml` | — |

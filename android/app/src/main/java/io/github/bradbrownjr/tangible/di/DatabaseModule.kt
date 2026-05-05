@@ -12,6 +12,7 @@ import io.github.bradbrownjr.tangible.data.local.CollectionDao
 import io.github.bradbrownjr.tangible.data.local.TangibleDatabase
 import io.github.bradbrownjr.tangible.data.local.ItemDao
 import io.github.bradbrownjr.tangible.data.local.LocationDao
+import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
 import io.github.bradbrownjr.tangible.data.local.ShoppingFeedItemDao
 import javax.inject.Singleton
 
@@ -30,4 +31,5 @@ object DatabaseModule {
     @Provides fun itemDao(db: TangibleDatabase): ItemDao = db.items()
     @Provides fun locationDao(db: TangibleDatabase): LocationDao = db.locations()
     @Provides fun shoppingFeedItemDao(db: TangibleDatabase): ShoppingFeedItemDao = db.shoppingFeedItems()
+    @Provides fun pendingMutationDao(db: TangibleDatabase): PendingMutationDao = db.pendingMutations()
 }

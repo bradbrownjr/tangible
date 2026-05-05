@@ -10,6 +10,7 @@ import coil.ImageLoaderFactory
 import dagger.hilt.android.HiltAndroidApp
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.data.sync.MaintenanceAlertWorker
+import io.github.bradbrownjr.tangible.data.sync.NetworkMonitor
 import io.github.bradbrownjr.tangible.data.sync.SyncWorker
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
@@ -20,6 +21,7 @@ class TangibleApp : Application(), Configuration.Provider, ImageLoaderFactory {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var imageLoader: ImageLoader
     @Inject lateinit var sessionStore: SessionStore
+    @Inject lateinit var networkMonitor: NetworkMonitor
 
     override fun newImageLoader(): ImageLoader = imageLoader
 
@@ -40,5 +42,9 @@ class TangibleApp : Application(), Configuration.Provider, ImageLoaderFactory {
         // Idempotent: ExistingPeriodicWorkPolicy.KEEP keeps any in-flight schedule.
         SyncWorker.schedule(this)
         MaintenanceAlertWorker.schedule(this)
+        // Force init of the singleton so the ConnectivityManager callback is registered.
+        // The networkMonitor field is unused beyond this — the @Singleton init block does the work.
+        @Suppress("UNUSED_EXPRESSION")
+        networkMonitor
     }
 }

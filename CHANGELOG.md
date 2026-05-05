@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-05-05
+
+### Added
+
+- **Offline-first shopping list** — checking off items (purchase and restock) now works with no cell signal. Actions are written to a local `pending_mutations` queue and replayed automatically by `MutationDrainerWorker` (WorkManager, CONNECTED constraint) the moment the device reconnects. The `Idempotency-Key` header prevents duplicate lots on server-side replay. An offline banner appears at the top of the shopping list when the device has no internet.
+
 ## [0.17.36] — 2026-05-05
 
 ### Fixed
