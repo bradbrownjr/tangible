@@ -4,6 +4,15 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.34] — 2026-05-05
+
+### Fixed
+
+- **Android: Collections pull-to-refresh** — pull-down on the item list now works. `PullToRefreshBox` was previously nested inside `HorizontalPager`, which intercepted the initial touch before direction was known; it is now hoisted above the pager.
+- **Android: Collections title bar** — the top app bar always shows "Collections" instead of the currently selected tab name (the active tab is already highlighted in the tab strip).
+- **Android: Collections title-bar swipe** — swiping the title bar left or right navigates to the next/previous top-level section (Grocery List, Maintenance, etc.), matching the behaviour of the navigation bar.
+- **Server: grocery purchase always creates pantry item** — purchasing an ad-hoc shopping entry now always creates an inventory item in the target collection, even when no category could be resolved from the barcode or collection default. Previously the item was silently discarded in that case. A new migration (`0007`) makes `items.category_id` nullable to allow category-less items.
+
 ## [0.17.33] — 2026-05-05
 
 ### Web UI redesign (Phase 14)
