@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.22] — 2026-05-05
+
+- **Android: Fixed spinner stuck after editing an item** — after saving a name, category, brand, or notes change the item's loading indicator now clears immediately instead of staying until the next full navigation away and back.
+
 ## [0.17.21] — 2026-05-05
 
 - **Android: Category picker in add and edit dialogs** — groceries, hardware, and home-goods items now show a category dropdown when adding or editing. Previously only hardware/home-goods had it in the add dialog, and the edit dialog had no category field at all.

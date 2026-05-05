@@ -256,6 +256,7 @@ class ShoppingListViewModel @Inject constructor(
                         category_slug = categorySlug?.takeIf { it.isNotBlank() },
                     )
                 )
+                _state.value = _state.value.copy(updating = _state.value.updating - entry.id)
                 load(isRefresh = false)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(
