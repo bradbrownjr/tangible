@@ -4,6 +4,20 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.35] — 2026-05-05
+
+### Fixed
+
+- **Android: shopping check now syncs to server** — tapping the checkmark on a shopping list entry now immediately marks it purchased on the server (matches the web's "Mark purchased" button) and the row disappears from every device. The local-only "Checked" section and the separate "Move all to pantry" button have been removed; failures roll the row back and surface the error.
+- **Android: pull-to-refresh on empty Lists and Collections** — the gesture now works even when the list is empty or still loading. The empty/loading placeholders are wrapped in a scrollable container so `PullToRefreshBox` receives the gesture.
+- **Web: Pantry / Items list view declutter** — each row no longer shows a giant empty photo placeholder and a Comments toggle. Photos and comments remain available in the grid/card view and inside item edit.
+- **Web: bulk action toolbar** — the long row of bulk actions is now hidden until you select at least one item, then appears as a sticky bottom bar with sized inputs instead of a vertical tower at the top of the page.
+- **Templates: Open Food Facts Pantry preset uses correct category** — was bound to the non-existent slug `spices.pantry_item`; now bound to `spices.pantry`.
+
+### Added
+
+- **Barcode coverage for non-food household items** — added `OpenProductsFactsBarcodeAdapter` (cleaning supplies, hardware, kitchenware, electronics) and `OpenBeautyFactsBarcodeAdapter` (cosmetics, toiletries) alongside the existing OpenFoodFacts adapter. All three are no-API-key sister projects, so non-food UPCs (Brasso, body wash, etc.) now resolve.
+
 ## [0.17.34] — 2026-05-05
 
 ### Fixed

@@ -394,12 +394,15 @@ class OpenFoodFactsBarcodeAdapter:
                 return slug
         return None
 
+    # Subclasses can point at sibling Open*Facts projects (same API shape).
+    _BASE_URL: ClassVar[str] = "https://world.openfoodfacts.org"
+
     def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]:
         code = re.sub(r"\D", "", barcode)
         if len(code) < 8:
             return []
         resp = client.get(
-            f"https://world.openfoodfacts.org/api/v2/product/{code}.json",
+            f"{self._BASE_URL}/api/v2/product/{code}.json",
             follow_redirects=True,
         )
         if resp.status_code != 200:
@@ -424,7 +427,7 @@ class OpenFoodFactsBarcodeAdapter:
         category = self._category_slug(product.get("categories_tags") or [])
         return [ScrapeResult(
             provider=self.name,
-            url=f"https://world.openfoodfacts.org/product/{code}",
+            url=f"{self._BASE_URL}/product/{code}",
             title=title,
             brand=brand,
             description=None,
@@ -432,6 +435,23 @@ class OpenFoodFactsBarcodeAdapter:
             category=category,
             attrs=attrs,
         )]
+
+
+class OpenProductsFactsBarcodeAdapter(OpenFoodFactsBarcodeAdapter):
+    """Sister project of OpenFoodFacts covering non-food consumer products
+    (cleaning, hardware, kitchenware, electronics, etc.). Same REST contract,
+    no API key required."""
+
+    name = "openproductsfacts"
+    _BASE_URL: ClassVar[str] = "https://world.openproductsfacts.org"
+
+
+class OpenBeautyFactsBarcodeAdapter(OpenFoodFactsBarcodeAdapter):
+    """Sister project of OpenFoodFacts covering cosmetics, toiletries, and
+    personal care. Same REST contract, no API key required."""
+
+    name = "openbeautyfacts"
+    _BASE_URL: ClassVar[str] = "https://world.openbeautyfacts.org"
 
 
 class GoogleBooksAdapter:
@@ -488,6 +508,8 @@ _BARCODE_ADAPTERS: list[BarcodeAdapter] = [
     OpenLibraryBarcodeAdapter(),
     MusicBrainzBarcodeAdapter(),
     OpenFoodFactsBarcodeAdapter(),
+    OpenProductsFactsBarcodeAdapter(),
+    OpenBeautyFactsBarcodeAdapter(),
     GoogleBooksAdapter(),
 ]
 

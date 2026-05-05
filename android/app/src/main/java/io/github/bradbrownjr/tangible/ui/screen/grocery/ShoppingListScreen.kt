@@ -12,12 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -25,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -83,7 +80,6 @@ data class ShoppingListUi(
     val addDialogBarcodeNotFound: Boolean = false,
     val availableCategories: List<CategoryDto> = emptyList(),
     val editingEntry: ShoppingFeedEntryDto? = null,
-    val checkedItems: List<ShoppingFeedEntryDto> = emptyList(),
 )
 
 @HiltViewModel
@@ -116,7 +112,7 @@ class ShoppingListViewModel @Inject constructor(
                 val rootCategories = try {
                     api.listCategories().filter { it.parent_id == null }
                 } catch (_: Throwable) { emptyList() }
-                val checkedIds = _state.value.checkedItems.map { it.id }.toSet()
+                val checkedIds = _state.value.updating
                 _state.value = _state.value.copy(
                     items = items.filter { it.id !in checkedIds },
                     collections = collections.associateBy { it.id },
@@ -274,28 +270,14 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    /** Moves an item into the local "checked" section without calling the server. */
+    /** Marks the entry purchased on the server immediately (web's "Mark purchased" button).
+     *  Optimistically removes from the visible list; on failure, restores it and shows an error. */
     fun checkItem(entryId: String) {
         val entry = _state.value.items.find { it.id == entryId } ?: return
         _state.value = _state.value.copy(
             items = _state.value.items.filter { it.id != entryId },
-            checkedItems = _state.value.checkedItems + entry,
+            updating = _state.value.updating + entryId,
         )
-    }
-
-    /** Moves a checked item back to the active list. */
-    fun uncheckItem(entryId: String) {
-        val entry = _state.value.checkedItems.find { it.id == entryId } ?: return
-        _state.value = _state.value.copy(
-            checkedItems = _state.value.checkedItems.filter { it.id != entryId },
-            items = listOf(entry) + _state.value.items,
-        )
-    }
-
-    /** Commits a single checked item to the pantry (calls the server). */
-    fun moveToPantry(entryId: String) {
-        val entry = _state.value.checkedItems.find { it.id == entryId } ?: return
-        _state.value = _state.value.copy(updating = _state.value.updating + entryId)
         viewModelScope.launch {
             try {
                 if (entryId.startsWith("item:")) {
@@ -303,36 +285,14 @@ class ShoppingListViewModel @Inject constructor(
                 } else {
                     shoppingRepo.purchaseItem(entryId)
                 }
-                _state.value = _state.value.copy(
-                    checkedItems = _state.value.checkedItems.filter { it.id != entryId },
-                    updating = _state.value.updating - entryId,
-                )
+                _state.value = _state.value.copy(updating = _state.value.updating - entryId)
             } catch (t: Throwable) {
-                _state.value = _state.value.copy(error = t.message, updating = _state.value.updating - entryId)
-            }
-        }
-    }
-
-    /** Commits all checked items to the pantry. */
-    fun moveAllToPantry() {
-        val toMove = _state.value.checkedItems.toList()
-        if (toMove.isEmpty()) return
-        _state.value = _state.value.copy(updating = _state.value.updating + toMove.map { it.id }.toSet())
-        viewModelScope.launch {
-            toMove.forEach { entry ->
-                try {
-                    if (entry.id.startsWith("item:")) {
-                        shoppingRepo.restockDepletedItem(entry.id.removePrefix("item:"), entry.quantity)
-                    } else {
-                        shoppingRepo.purchaseItem(entry.id)
-                    }
-                    _state.value = _state.value.copy(
-                        checkedItems = _state.value.checkedItems.filter { it.id != entry.id },
-                        updating = _state.value.updating - entry.id,
-                    )
-                } catch (t: Throwable) {
-                    _state.value = _state.value.copy(error = t.message, updating = _state.value.updating - entry.id)
-                }
+                // Rollback: re-insert the entry and surface the error.
+                _state.value = _state.value.copy(
+                    items = listOf(entry) + _state.value.items,
+                    updating = _state.value.updating - entryId,
+                    error = t.message,
+                )
             }
         }
     }
@@ -527,21 +487,31 @@ fun ShoppingListScreen(
                 onRefresh = { viewModel.pullRefresh() },
                 modifier = Modifier.fillMaxSize(),
             ) {
+                // Empty/loading branches must be inside a LazyColumn so PullToRefreshBox
+                // can receive the nested-scroll pull gesture (a plain Box does not dispatch it).
                 when {
                     ui.loading -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            item {
+                                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
                         }
                     }
                     ui.items.isEmpty() && !ui.loading -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(stringResource(R.string.all_stocked), style = MaterialTheme.typography.headlineSmall)
-                                Text(stringResource(R.string.all_stocked_subtitle), style = MaterialTheme.typography.bodySmall)
-                                TextButton(onClick = { viewModel.showAddDialog() }) { Text(stringResource(R.string.add_an_item)) }
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            item {
+                                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(stringResource(R.string.all_stocked), style = MaterialTheme.typography.headlineSmall)
+                                        Text(stringResource(R.string.all_stocked_subtitle), style = MaterialTheme.typography.bodySmall)
+                                        TextButton(onClick = { viewModel.showAddDialog() }) { Text(stringResource(R.string.add_an_item)) }
+                                    }
+                                }
                             }
                         }
                     }
@@ -581,41 +551,8 @@ fun ShoppingListScreen(
                                     )
                                 }
                             }
-                            // Checked items section
-                            if (ui.checkedItems.isNotEmpty()) {
-                                item(key = "checked-header") {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(
-                                            stringResource(R.string.checked_items),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                        TextButton(onClick = { viewModel.moveAllToPantry() }) {
-                                            Icon(
-                                                Icons.Default.Archive,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(stringResource(R.string.move_all_to_pantry))
-                                        }
-                                    }
-                                    HorizontalDivider()
-                                }
-                                items(ui.checkedItems, key = { "checked-${it.id}" }) { entry ->
-                                    CheckedEntryCard(
-                                        entry = entry,
-                                        isUpdating = entry.id in ui.updating,
-                                        onUncheck = { viewModel.uncheckItem(entry.id) },
-                                        onMoveToPantry = { viewModel.moveToPantry(entry.id) },
-                                    )
-                                }
-                            }
+                            // The legacy "Checked" section is gone: tapping the check now syncs
+                            // straight to the server (web's "Mark purchased") and removes the row.
                         }
                     }
                 }
@@ -789,65 +726,6 @@ private fun ShoppingEntryCard(
                         )
                     } else {
                         Icon(Icons.Default.Check, contentDescription = stringResource(R.string.got_it), Modifier.size(18.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CheckedEntryCard(
-    entry: ShoppingFeedEntryDto,
-    isUpdating: Boolean,
-    onUncheck: () -> Unit,
-    onMoveToPantry: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(
-                    text = if (entry.quantity > 1) "${entry.name} \u00d7${entry.quantity}" else entry.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    textDecoration = TextDecoration.LineThrough,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-                if (!entry.brand.isNullOrBlank()) {
-                    Text(
-                        text = entry.brand!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
-            if (isUpdating) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                    IconButton(onClick = onUncheck) {
-                        Icon(
-                            Icons.Default.Undo,
-                            contentDescription = stringResource(R.string.uncheck),
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                    IconButton(onClick = onMoveToPantry) {
-                        Icon(
-                            Icons.Default.Archive,
-                            contentDescription = stringResource(R.string.move_to_pantry),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp),
-                        )
                     }
                 }
             }

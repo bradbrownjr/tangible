@@ -1035,8 +1035,8 @@
         </div>
     {/if}
 
-    {#if canEdit}
-        <div class="bulk-toolbar">
+    {#if canEdit && selectedItemIds.length > 0}
+        <div class="bulk-toolbar bulk-toolbar-floating">
             <span class="muted">{$_('collection.selected_count', { values: { count: selectedItemIds.length } })}</span>
             <button type="button" class="secondary" onclick={selectVisibleItems} disabled={!items.length || bulkBusy}>{$_('collection.select_visible')}</button>
             <button type="button" class="secondary" onclick={clearSelection} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.clear_selection')}</button>
@@ -1278,8 +1278,6 @@
                                         {/each}
                                     </div>
                                 {/if}
-                                <PhotoGallery itemId={i.id} canEdit={canEdit} compact />
-                                <ItemComments itemId={i.id} currentUserId={$me?.id} canManage={canEdit} />
                             </td>
                             {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                             <td>{i.quantity}</td>
@@ -1519,6 +1517,25 @@
         gap: 0.45rem;
         align-items: center;
         margin-bottom: 0.75rem;
+    }
+    .bulk-toolbar-floating {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+        margin: 0;
+        padding: 0.6rem 1rem;
+        background: var(--surface, #1a1d29);
+        border-top: 1px solid var(--border, #333);
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+    .bulk-toolbar-floating select,
+    .bulk-toolbar-floating input[type="datetime-local"] {
+        max-width: 14rem;
+        flex: 0 1 auto;
     }
     .select-chip {
         display: inline-flex;

@@ -289,19 +289,29 @@ fun CollectionsTabsScreen(
                     val coll = s.collections[page]
                     val items = s.itemsByCollection[coll.id] ?: emptyList()
                     val pageLoading = s.loadingByCollection[coll.id] == true
+                    // Always use a LazyColumn (even for empty/loading) so the outer
+                    // PullToRefreshBox receives the nested-scroll pull gesture.
                     when {
                         pageLoading && items.isEmpty() ->
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
+                            LazyColumn(Modifier.fillMaxSize()) {
+                                item {
+                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
                             }
-                        items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(stringResource(R.string.no_items))
-                                OutlinedButton(onClick = { onOpenCollection(coll.id) }) {
-                                    Text(stringResource(R.string.add_item))
+                        items.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
+                            item {
+                                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(stringResource(R.string.no_items))
+                                        OutlinedButton(onClick = { onOpenCollection(coll.id) }) {
+                                            Text(stringResource(R.string.add_item))
+                                        }
+                                    }
                                 }
                             }
                         }

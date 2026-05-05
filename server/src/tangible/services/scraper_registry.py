@@ -55,7 +55,7 @@ _ENTRIES: list[RegistryEntry] = [
         name="Open Food Facts Pantry",
         provider="openfoodfacts",
         description="Consumable pantry preset aligned to Open Food Facts lookups.",
-        category_slug="spices.pantry_item",
+        category_slug="spices.pantry",
         homepage="https://world.openfoodfacts.org/",
         fields=[
             {"key": "barcode", "label": "Barcode", "type": "text", "required": True},
