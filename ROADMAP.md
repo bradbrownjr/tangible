@@ -90,7 +90,7 @@ bottleneck. This phase is about scaling the UX.
   item hierarchy through CSV without losing relationships.
 - **Webhooks** ✅ — outbound HTTP on item events (created, updated,
   loaned, returned, maintenance-due) for Home Assistant, n8n, Discord.
-- **i18n scaffold** — moved to Phase 14 where translation rollout is
+- **i18n scaffold** — moved to Phase 17 where translation rollout is
   tracked as platform work.
 - **Sold / disposed / donated workflow** ✅ — items can be archived
   with disposition metadata (type/date/amount/buyer/note). Explicit restore
@@ -375,7 +375,422 @@ tools query and react to.
 
 ---
 
-## Phase 14 — Platform & ecosystem (planned)
+## Phase 14 — Web UI redesign (planned, **next**)
+
+The web client works but feels generic and visually undifferentiated:
+two hardcoded slate/sky-blue palettes, ad-hoc inline SVGs and emoji,
+no shared component library, dense pages (`collections/[id]` ≈ 1,800
+lines, `settings` ≈ 1,200), inline edit-in-place that swaps card
+content for inputs, partial mobile responsiveness, and a few systemic
+accessibility gaps. This phase rebuilds the foundation, ships a
+design system, and migrates pages page-by-page so each step is
+independently shippable.
+
+**Guiding principles**
+- Additive first: new components and tokens land before any existing
+  page is rewritten. No page should regress while the migration runs.
+- Each wave below is a **separate commit + push** that passes
+  `npm run check` and `npm run build` cleanly. Mid-migration the app
+  stays mixed-style; that is intentional and expected.
+- Honor the [AGENTS.md](AGENTS.md) Feature Registry — every routed page
+  and component listed there must keep working after each wave.
+
+### Wave 1 — Foundations (icons, theme tokens, palette picker)
+
+**Deliverable:** `lucide-svelte` installed; expanded design tokens in
+`web/src/lib/styles.css`; 10 selectable color palettes; new
+**Tangible** brand palette (indigo-violet on warm off-white / deep navy)
+as the new default.
+
+1. Add dependency in [web/package.json](web/package.json):
+   `"lucide-svelte": "^0.460.0"` (or current). Run `npm install`.
+2. Create `web/src/lib/Icon.svelte` — a thin one-line wrapper that
+   re-exports any `lucide-svelte` icon, accepting `size`, `strokeWidth`,
+   and `aria-label`. The wrapper exists so future icon-library swaps
+   touch one file.
+3. Rewrite [web/src/lib/styles.css](web/src/lib/styles.css):
+   - **Design tokens** at the top of the file:
+     - Spacing: `--space-1`..`--space-8` (4, 8, 12, 16, 24, 32, 48, 64 px).
+     - Radii: `--radius-sm: 4px`, `--radius-md: 8px`, `--radius-lg: 12px`, `--radius-full: 9999px`.
+     - Shadows: `--shadow-sm`, `--shadow-md`, `--shadow-lg` (subtle, theme-agnostic via rgba).
+     - Type scale: `--text-xs: 0.75rem`..`--text-2xl: 1.5rem`.
+     - Tap target: `--tap-min: 44px`.
+   - **Color tokens** (every theme defines): `--bg`, `--surface`,
+     `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`,
+     `--accent-hover`, `--accent-contrast` (text on accent), `--danger`,
+     `--success`, `--warning`, `--info`. Replace existing hardcoded
+     hex like `#22c55e`, `#16a34a`, `rgba(0,0,0,0.45)` with these.
+   - **Theme blocks** keyed by `data-theme` (light variants) and
+     combined `data-theme` + `data-mode` (mode-aware tokens). The full
+     palette set:
+
+     | id | mode | bg | text | accent | accent-hover |
+     |---|---|---|---|---|---|
+     | `tangible-light` (default light) | light | `#FAFAF7` | `#1F1D2B` | `#7C5CFF` | `#6342F5` |
+     | `tangible-dark` (default dark) | dark | `#1A1D29` | `#F0F0F5` | `#A78BFA` | `#8B6FF8` |
+     | `gazette` | light | `#F2F7FF` | `#0A0A0A` | `#3B82F6` | `#2563EB` |
+     | `paper` | light | `#F8F6F1` | `#4C432E` | `#AA9A73` | `#8B7B58` |
+     | `cloud` | light | `#F1F2F0` | `#35342F` | `#37BBE4` | `#1D9BC4` |
+     | `passion` | light | `#F5F5F5` | `#12005E` | `#8E24AA` | `#6A1B89` |
+     | `tron` | dark | `#242B33` | `#EFFBFF` | `#6EE2FF` | `#41C9EB` |
+     | `espresso` | dark | `#21211F` | `#D1B59A` | `#9C7B5A` | `#7A5C40` |
+     | `onedark` | dark | `#282C34` | `#DFD9D6` | `#98C379` | `#7DA85F` |
+     | `blues` | dark | `#2B2C56` | `#EFF1FC` | `#6677EB` | `#4D5DD9` |
+     | `blackboard` | dark | `#1A1A1A` | `#FFFDEA` | `#FFB347` | `#E8923A` |
+
+     Pick `--surface`, `--surface-2`, `--border`, `--text-muted`,
+     `--accent-contrast`, `--danger/success/warning/info` for each
+     theme by adjusting `bg`/`text` ±5–10% in HSL. Use
+     `color-mix(in srgb, ...)` where helpful. Every theme must pass
+     **WCAG AA** for body text (verify with `npx pa11y` or manual
+     contrast check).
+4. Refactor [web/src/lib/theme.ts](web/src/lib/theme.ts):
+   - Persist **two** keys in localStorage: `tangible:theme-mode`
+     (`light | dark | system`, existing) and `tangible:theme-palette`
+     (id from the table above, default `tangible`).
+   - Compute the resolved `data-theme` as `${palette}-${mode}` for
+     palettes that define both (currently only `tangible`); for
+     single-mode palettes (e.g. `paper` is light-only), apply that id
+     directly and lock the mode toggle for that palette.
+   - Expose `palette` writable store and `availablePalettes` constant
+     `[ {id, name, mode, bg, accent}, ... ]` driven from a single
+     source of truth in `theme.ts`.
+   - Remove the hardcoded `META_COLOR` map; read the resolved theme's
+     `--bg` at runtime via `getComputedStyle(document.documentElement)`
+     and update `<meta name="theme-color">` accordingly.
+5. Update the pre-hydration script in
+   [web/src/app.html](web/src/app.html):
+   - Read both keys; resolve to a `data-theme` attribute the same way
+     `theme.ts` does.
+   - Fall back to `tangible-dark` if anything fails.
+6. Update **Settings → Appearance**
+   ([web/src/routes/settings/+page.svelte](web/src/routes/settings/+page.svelte)):
+   - Keep the existing `light / dark / system` toggle.
+   - Add a palette grid below: each card shows the palette name plus a
+     2-swatch preview (background + accent disc). Click selects the
+     palette. Selected palette has an outlined ring.
+   - Group palettes by mode (Light / Dark) with section headings.
+   - Persist selection via the `palette` store.
+
+**Acceptance:** running `npm run dev`, every existing page renders in
+the new default `tangible` palette without regressions; switching
+palettes updates the entire app live; reload preserves the choice;
+no FOUC; `npm run check` and `npm run build` are clean.
+
+### Wave 2 — Shared component library
+
+**Deliverable:** `web/src/lib/components/` directory with the
+components below. None of the existing pages are migrated yet — these
+are added alongside.
+
+Build in this order (each subsequent component can use the earlier ones):
+
+1. `Icon.svelte` (already in Wave 1).
+2. **`Button.svelte`** — props: `variant: 'primary' | 'secondary' | 'danger' | 'ghost'`,
+   `size: 'sm' | 'md' | 'lg'`, `loading: boolean`, `disabled: boolean`,
+   `icon?: string` (lucide name) and `iconPosition: 'left' | 'right'`.
+   Always honors `--tap-min` for `md`/`lg`. Uses an inline spinner SVG
+   when `loading=true`.
+3. **`IconButton.svelte`** — square variant of Button. Requires
+   `aria-label` (TypeScript prop typed as required).
+4. **`Badge.svelte`** — `variant: 'neutral' | 'success' | 'warning' | 'danger' | 'accent' | 'info'`,
+   `size: 'sm' | 'md'`, optional leading icon. Used for status pills
+   and counts.
+5. **`Alert.svelte`** — `variant: 'info' | 'success' | 'warning' | 'danger'`,
+   optional `title`, dismissable, has `role="alert"` and
+   `aria-live="polite"`. Renders an icon by variant.
+6. **`FormField.svelte`** — wraps label + input slot + hint + error
+   slot. Auto-binds `for`/`id` and `aria-describedby` to slotted
+   input. Marks required fields with a red asterisk + `aria-required`.
+7. **`Modal.svelte`** — backdrop + centered panel, `aria-modal="true"`,
+   focus trap (use `focus-trap` or hand-rolled), Escape closes,
+   backdrop click closes (configurable), `aria-labelledby` from
+   `title` prop. Body slot scrolls with `max-height: 85vh`.
+8. **`ConfirmDialog.svelte`** — wraps `Modal` for destructive
+   confirmations. Props: `open`, `title`, `message`, `confirmLabel`,
+   `confirmVariant: 'danger' | 'primary'`, `onConfirm`, `onCancel`.
+   Replaces every `confirm()` native call in the codebase.
+9. **`EmptyState.svelte`** — icon + headline + body + CTA slot.
+10. **`SectionCard.svelte`** — `.card` replacement: header (icon +
+    title + actions slot) + body slot.
+11. **`Tabs.svelte`** — `role="tablist"` with arrow-key keyboard nav
+    and `role="tabpanel"` for slotted content. Accepts an array of
+    `{ id, label, icon? }`.
+12. **`DataTable.svelte`** — generic table:
+    - Props: `columns: Array<{key, label, sortable?, render?}>`,
+      `rows: any[]`, `getRowId`, optional `actions` slot per row,
+      optional `bulkActions` slot when selectable.
+    - Built-in sort (click column header), optional client-side filter
+      input slot.
+    - **Mobile fallback at `max-width: 640px`**: each row renders as a
+      stacked card (label + value pairs). The component owns this — no
+      consumer changes required.
+    - Sticky header on long tables.
+13. **`Toast.svelte`** (upgrade existing) — add optional `action`
+    slot, dismiss button, configurable duration, queue support.
+
+For each component, write a minimal usage example as a
+`<!-- USAGE: ... -->` comment block at top so future contributors can
+copy/paste.
+
+**Acceptance:** importing each component from `$lib/components/` works
+in a scratch route; `npm run check` clean; no existing page changed.
+
+### Wave 3 — Migrate auth, profile, and shared chrome
+
+Lowest-risk pages. Apply new components and lucide icons.
+
+- [web/src/routes/+layout.svelte](web/src/routes/+layout.svelte) —
+  replace inline SVGs (sparkles, hamburger, chevron, bell pictogram)
+  with `<Icon name="...">`. Replace `.icon-btn` with `IconButton`.
+  No structural change.
+- [web/src/routes/login/+page.svelte](web/src/routes/login/+page.svelte) —
+  add `user` and `lock` icons inside inputs (left padding +
+  absolutely-positioned `<Icon>`); password show/hide eye button;
+  loading spinner on submit (via `<Button loading>`); wrap errors in
+  `<Alert variant="danger">`; OIDC providers as styled `<a class="oidc-pill">`
+  with provider name.
+- [web/src/routes/register/+page.svelte](web/src/routes/register/+page.svelte) —
+  same input-icon pattern; persistent password requirement hint
+  ("At least 12 characters") via `FormField` hint slot; loading
+  spinner; wrap form fields in `FormField`.
+- [web/src/routes/profile/+page.svelte](web/src/routes/profile/+page.svelte) —
+  switch username `disabled` → `readonly`; `FormField` everywhere;
+  `<Alert>` for success/error; password strength meter component
+  (simple inline: bar with `weak / fair / strong` based on length +
+  variety).
+- [web/src/routes/invite/[token]/+page.svelte](web/src/routes/invite) —
+  `EmptyState` for error; show inviter and expiration if API exposes;
+  `<Button>` for accept.
+- [web/src/routes/share/[slug]/+page.svelte](web/src/routes/share) —
+  `SectionCard` wrapper; humanize category slugs via existing
+  `categories.ts` helper; show item count + "Shared collection" badge;
+  no copy-link button (out of scope).
+- [web/src/lib/Toast.svelte](web/src/lib/Toast.svelte) — replace
+  unicode `✓ ✕ ⚠ ℹ` with `<Icon name="check|x|alert-triangle|info">`.
+- [web/src/lib/AlertsDropdown.svelte](web/src/lib/AlertsDropdown.svelte) —
+  per-kind icon next to alert title (use a small mapping
+  `{maintenance_due: 'wrench', chore_due: 'sparkles', item_use_by: 'clock', low_stock: 'package-x'}`);
+  "View all alerts" footer link to `/maintenance`; severity icon
+  (`alert-circle` red / `alert-triangle` yellow) instead of dot.
+- [web/src/lib/WhatsNew.svelte](web/src/lib/WhatsNew.svelte) — sticky
+  modal header; close button uses `<Icon name="x">`.
+
+**Acceptance:** all the above pages render, function, and pass
+`npm run check`. Walk through each page in dev to verify no regression.
+
+### Wave 4 — Migrate secondary pages
+
+Same pattern (components + icons + small UX fixes) for the lower-risk
+collection sub-pages.
+
+- **`maintenance/+page.svelte`** — group sort by urgency (overdue
+  first); per-kind alert icon; left-border color by severity
+  (`--danger` / `--warning`); celebratory `EmptyState` ("All caught
+  up!") with `party-popper` icon when no alerts in range.
+- **`collections/[id]/locations/+page.svelte`** — replace
+  `\u00a0\u00a0`-padding for tree depth with CSS `padding-left`
+  proportional to depth; per-kind icon (`home`, `building`, `door-open`,
+  `map-pin`, `package` for home/floor/room/zone/container); proper
+  `<ul role="tree">` semantics; `ConfirmDialog` for delete.
+- **`collections/[id]/chores/+page.svelte`** — bigger overdue
+  indicator (left-border + `alert-circle` icon); "Snooze 1 day"
+  quick-action button; `ConfirmDialog` for delete; `Modal` for "Mark
+  done" form.
+- **`collections/[id]/bundles/+page.svelte`** — replace `confirm()`
+  with `ConfirmDialog`; per-asset-kind icons (`book-open` manual,
+  `image` diagram, `file-cog` firmware, `wrench` service, `nut` parts,
+  `file` other); group `<select>` options with `<optgroup>`; `Modal`
+  for upload.
+- **`collections/[id]/templates/+page.svelte`** — convert 7-column
+  field-builder table into a card-per-field layout (one `SectionCard`
+  per field, fields ordered top-to-bottom with up/down reorder
+  buttons); JSON view becomes a `<details>` collapsible at the bottom
+  for power users; type-dependent fields (source, options) only
+  render when relevant type is selected.
+- **`collections/[id]/members/+page.svelte`** — copy-to-clipboard
+  button beside the one-time invite URL (`<IconButton icon="copy">`
+  with toast feedback); humanize audit log entries (replace raw
+  action codes + UUIDs with rendered sentences using existing actor
+  + target lookup); `ConfirmDialog` for member removal; collapsible
+  sections (members, invitations, share links, audit) with default
+  state members=open, others=closed.
+- **`lists/[type]/+page.svelte`** — replace 🏪 emoji with
+  `<Button icon="store">Manage stores</Button>`; convert two-row add
+  form into single primary row + `<details>` "More options"; use
+  `DataTable` (which gives mobile card fallback for free); per
+  list-type icon in header (`shopping-cart` groceries, `wrench`
+  hardware, `house` home_goods, `star` wish_list).
+- **`import/+page.svelte`** — replace mode `<select>` with 4 radio
+  cards (icon + name + 1-line description: `file-archive` CLZ,
+  `file-spreadsheet` CSV, `list` List, `database-backup` Restore);
+  CSV mapping textarea inside `<details>` with a worked example shown
+  above; result rendered as `<Alert variant="success|danger">` with
+  a `<details>` containing the raw JSON body.
+- **`lib/ItemComments.svelte`** — `ConfirmDialog` for delete;
+  `<time datetime="ISO">` wrapping every timestamp; reply button uses
+  `corner-down-right` icon.
+- **`lib/PhotoGallery.svelte`** — convert thumbnail `<div>`s with
+  `onclick` into `<button>`s; lightbox prev/next icons via
+  `<Icon name="chevron-left|chevron-right|x">`; reposition lightbox
+  nav inside image bounds at `max-width: 640px`; arrow-key
+  navigation between photos.
+- **`lib/ShoppingStoreManager.svelte`** — stack the two-panel layout
+  vertically below `768px` (left panel becomes a top tab strip,
+  right becomes the panel below); aria-labels on ↑/↓ buttons.
+
+**Acceptance:** each page passes `npm run check` after edit; walk
+through manually in dev to confirm no behavior regression. Commit
+each page individually so reverting one is easy.
+
+### Wave 5 — Restructure `settings`
+
+The existing `settings/+page.svelte` (~1,200 lines) becomes 5 routes
+under `web/src/routes/settings/`:
+
+- `/settings` (index) — Appearance (theme mode + palette grid from
+  Wave 1) + Account (export, delete).
+- `/settings/notifications` — the per-kind notification preference
+  table; convert to one `SectionCard` per kind with a toggle switch
+  and a "Lead time" number input + label.
+- `/settings/security` — TOTP setup / disable / regen-backup-codes.
+  Add copy buttons on QR-secret and each backup code; "Download
+  codes as .txt" button.
+- `/settings/tokens` — API token list + create form. Create flow
+  shows the new token in an `<Alert variant="warning">` with
+  copy-to-clipboard and a one-line "This is shown only once" notice.
+- `/settings/admin` (gated by `me.is_admin`) — server settings + barcode
+  adapters + system maintenance. Add a search input above the
+  settings grid that filters rows by key/label/description. Group
+  settings into collapsible sections by category (already grouped in
+  the API response — render each group as a `SectionCard` collapsible
+  with first 3 expanded by default).
+
+A shared `web/src/routes/settings/+layout.svelte` renders a left
+sidebar with `Tabs`-style nav (or top tabs on mobile) so users can
+switch between sections. The "/settings?enroll=1" deep link from the
+layout (used to force TOTP enrollment) redirects to
+`/settings/security?enroll=1` instead.
+
+**Acceptance:** every prior `/settings` capability is reachable from
+the new routes; no admin or user setting is dropped (cross-check the
+existing file before deleting it); URLs like `/settings`,
+`/settings/security`, `/settings/admin` all render; `npm run check`
+and `npm run build` clean.
+
+### Wave 6 — Restructure `collections/[id]/+page.svelte`
+
+The biggest single page (~1,800 lines). Strategy: keep the
+`+page.svelte` route but split into colocated child components:
+
+```
+web/src/routes/collections/[id]/
+  +page.svelte                  (orchestration + state + data fetching)
+  AddItemCard.svelte            (the create form, top of page)
+  FilterBar.svelte              (search + view toggle + sort)
+  AdvancedFilters.svelte        (root cat + tags + status filters; collapsed by default)
+  BulkToolbar.svelte            (sticky when items selected)
+  ItemGrid.svelte               (card view)
+  ItemTable.svelte              (uses DataTable)
+  ItemEditPanel.svelte          (slide-over panel; replaces inline edit)
+  modals/DeleteItemDialog.svelte
+  modals/MarkOwnedDialog.svelte
+  modals/ArchiveItemDialog.svelte
+  modals/FlagItemDialog.svelte
+```
+
+Each child is a Svelte 5 component receiving props and emitting
+events back to `+page.svelte`. Shared item-mutation logic stays in
+`+page.svelte` (or a new `web/src/routes/collections/[id]/state.ts`
+module).
+
+**Specific UX changes (must all land in this wave):**
+
+- **Inline edit-in-place is gone.** Clicking edit on an item opens
+  `ItemEditPanel.svelte` as a right-side slide-over (full-height,
+  `max-width: 480px`, with backdrop). On mobile (`<640px`) the panel
+  becomes a full-screen overlay. Save/Cancel in a sticky footer.
+- **Filter bar** (always visible): search input + view toggle
+  (grid/table) + primary sort.
+- **Advanced filters** (`<details>` collapsed by default on mobile,
+  open on desktop ≥1024px): root category + status filters
+  (depleted/wanted/archived) + tag chips + tag-mode toggle + custom
+  sort attribute.
+- **Bulk toolbar**: sticky to the top of the items area only when
+  ≥1 item selected. Counter + Select-visible / Clear / a single
+  `<DropdownMenu>` containing all bulk actions grouped by category
+  (Status, Organize, Manage). Replaces the current ~15-button row.
+- **Row actions**: in both grid and table, secondary actions
+  collapse into a `<IconButton icon="more-horizontal">` opening a
+  small popover menu. Primary actions (edit, photos) stay visible.
+- **Status badges**: collapse the multi-badge row into one `<Badge>`
+  per non-default state with an icon (`flag` flagged, `circle` wanted,
+  `archive` archived, `x-circle` depleted) plus tooltip on hover.
+- **Consumable date editing** moves into `ItemEditPanel` (it currently
+  uses a `colspan="100"` table row hack).
+- Replace native `confirm()` and ad-hoc delete prompts with
+  `ConfirmDialog`.
+
+**Regression check (per [AGENTS.md](AGENTS.md)):** before and after,
+walk the Feature Registry rows that touch this file:
+*Items CRUD + filtering*, *Tag filter chips (AND/OR)*,
+*Field-suggestions type-ahead*, *Item custom sort order*,
+*Photo drag-to-reorder*, *Item comment threads*. Each must still work.
+Write a short manual checklist into the commit body.
+
+**Acceptance:** all six Feature Registry rows above still work;
+`npm run check` and `npm run build` clean; manual smoke through
+filter/sort/edit/delete/bulk on a dev DB; mobile layout verified at
+375px, 768px, 1024px viewport widths.
+
+### Wave 7 — Mobile polish + accessibility sweep
+
+Final pass across the whole app:
+
+- Audit every `<button>` and clickable element for `--tap-min`. Apply
+  `min-height: var(--tap-min)` on small buttons that fail.
+- For each page, test at 375px, 414px, 768px, 1024px in Chrome
+  devtools. Fix breakages (overflow, wrapping, off-screen modals).
+- Add `axe-core` to the dev dependencies and a `npm run a11y` script
+  that runs `pa11y-ci` against `npm run preview`. Fix any new
+  violations introduced; document remaining ones as known issues.
+- `<time datetime="ISO">` everywhere a date/time is rendered.
+- Verify focus trap correctness on every Modal usage (inspect via
+  keyboard tab navigation).
+- Update [docs/user-guide.md](docs/user-guide.md) with new theme
+  picker and any UX changes that affect documented workflows.
+- Update [CHANGELOG.md](CHANGELOG.md) under the active version with
+  user-facing entries (themes, redesign, etc.). Per AGENTS.md, the
+  CHANGELOG drives the in-app "What's new" modal.
+- Bump `web/package.json` minor version when the work ships under a
+  numbered release.
+
+**Acceptance:** `npm run check`, `npm run build`, `npm run a11y` all
+clean; no obvious mobile breakage at the four viewport widths; user
+guide and changelog updated.
+
+### Out of scope for Phase 14
+
+Tracked separately so they don't bloat this phase:
+
+- **Custom Tangible logo / app icon.** The current SVG is functional
+  but generic. Best produced by a dedicated image-generation model
+  (Midjourney / DALL-E / Stable Diffusion). Once the brand palette is
+  locked in Wave 1, draft a prompt with negative prompts (e.g.
+  "minimalist mark for a self-hosted home inventory app, indigo
+  violet accent #7C5CFF on warm off-white #FAFAF7, geometric stacked
+  cubes or container motif, flat vector, no text, no shadows, no
+  gradients; negative: photorealism, 3d render, busy detail, generic
+  cloud icon, warehouse photo"). Replace
+  `web/static/favicon.svg` and `icon-512.png` once delivered.
+- **Per-collection visual themes** (Bookshelf / Game room / Movie
+  room) — see Phase 17. Requires generated background imagery; same
+  delegation pattern as the logo work above.
+- **Real-time collaboration** — see Phase 17.
+
+---
+
+
 
 Long-term work that makes Tangible a foundation other things build on.
 
@@ -432,7 +847,7 @@ Long-term work that makes Tangible a foundation other things build on.
 
 ---
 
-## Phase 15 — Shopping Lists expansion (planned)
+## Phase 16 — Shopping Lists expansion (planned)
 
 The Grocery List feature becomes a general-purpose shopping and want-tracking
 hub. A new **Lists** menu in the nav replaces the single "Grocery List" link
@@ -559,7 +974,7 @@ behaviour so the codebase stays coherent:
 
 ---
 
-## Phase 16 — Polish, themes & real-time (planned)
+## Phase 17 — Polish, themes & real-time (planned)
 
 Quality-of-life improvements that make existing features shine plus
 the first steps toward live collaboration.
@@ -584,6 +999,15 @@ the first steps toward live collaboration.
   page reads `collection.theme` and applies a `data-collection-theme`
   attribute for per-theme CSS; Android switches background/color tokens.
   Requires photo thumbnails in the items list API response.
+  **Background imagery is delegated to a dedicated image-generation
+  model** (Midjourney / DALL-E / Stable Diffusion). Each theme needs
+  one tileable or stretched background per mode (light + dark). Draft
+  prompts with negative prompts when commissioning, e.g. for Bookshelf:
+  "wood-grain bookshelf texture, seamless tile, warm walnut tone,
+  subtle vertical grain, soft natural light; negative: books, text,
+  reflections, photoreal high-detail, harsh shadows, vignettes". Land
+  the imagery in `web/static/themes/{name}/{mode}.webp` (and
+  `android/app/src/main/res/drawable-nodpi/...`).
 - **Template editing & cloning** — the server already has `ItemTemplate`
   model and CRUD API (`api/item_templates.py`); items have an optional
   `template_id` FK. Remaining work:

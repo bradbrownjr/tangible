@@ -1,5 +1,6 @@
 package io.github.bradbrownjr.tangible.ui
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -61,7 +62,7 @@ fun HomeScreen(
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(windowInsets = WindowInsets(0)) {
                 HOME_SECTIONS.forEachIndexed { index, section ->
                     NavigationBarItem(
                         selected = pagerState.currentPage == index,

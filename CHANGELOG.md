@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.27] — 2026-05-05
+
+- **Android: Remove blank space below nav bar icons** — the gap between the bottom navigation icons and the system navigation bar is eliminated by zeroing the NavigationBar's internal window insets.
+
 ## [0.17.26] — 2026-05-05
 
 - **Android: Restore section titles** — page titles (Collections, Lists, Settings, About) are shown again; only the redundant text labels below the nav bar icons were removed.
