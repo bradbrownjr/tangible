@@ -2,6 +2,7 @@
     import { api, type User } from '$lib/api';
     import { me, refreshMe } from '$lib/session';
     import { _ } from 'svelte-i18n';
+    import { Alert, Button, FormField } from '$lib/components';
 
     let displayName = $state($me ? ($me.display_name ?? '') : '');
     let email = $state($me ? ($me.email ?? '') : '');
@@ -47,22 +48,16 @@
         <p class="muted">{$_('common.loading')}</p>
     {:else}
         <form onsubmit={submit} class="card">
-            <div class="field">
-                <label>{$_('profile.username_label')}</label>
-                <input value={$me.username} disabled />
-                <p class="muted hint">{$_('profile.username_hint')}</p>
-            </div>
-            <div class="field">
-                <label for="n">{$_('profile.full_name_label')}</label>
+            <FormField label={$_('profile.username_label')} hint={$_('profile.username_hint')}>
+                <input value={$me.username} readonly />
+            </FormField>
+            <FormField label={$_('profile.full_name_label')} for="n" hint={$_('profile.full_name_hint')}>
                 <input id="n" bind:value={displayName} autocomplete="name" />
-                <p class="muted hint">{$_('profile.full_name_hint')}</p>
-            </div>
-            <div class="field">
-                <label for="e">{$_('profile.email_label')}</label>
+            </FormField>
+            <FormField label={$_('profile.email_label')} for="e">
                 <input id="e" type="email" bind:value={email} autocomplete="email" />
-            </div>
-            <div class="field">
-                <label for="p">{$_('profile.new_password_label')} <span class="muted">({$_('profile.new_password_hint')})</span></label>
+            </FormField>
+            <FormField label={$_('profile.new_password_label')} for="p" hint={$_('profile.new_password_hint')}>
                 <input
                     id="p"
                     type="password"
@@ -70,10 +65,14 @@
                     minlength="12"
                     autocomplete="new-password"
                 />
-            </div>
-            <button type="submit" disabled={busy}>{busy ? $_('profile.saving') : $_('profile.save')}</button>
-            {#if saved}<p class="ok">{$_('profile.saved')}</p>{/if}
-            {#if error}<p class="error">{error}</p>{/if}
+            </FormField>
+            {#if saved}
+                <Alert variant="success" dismissible onclose={() => (saved = false)}>{$_('profile.saved')}</Alert>
+            {/if}
+            {#if error}
+                <Alert variant="danger" dismissible onclose={() => (error = '')}>{error}</Alert>
+            {/if}
+            <Button type="submit" loading={busy} style="width:100%">{busy ? $_('profile.saving') : $_('profile.save')}</Button>
         </form>
     {/if}
 </div>
@@ -83,12 +82,4 @@
         max-width: 480px;
         margin: 2rem auto;
     }
-    .hint {
-        font-size: 0.8rem;
-        margin: 0.25rem 0 0;
-    }
-    .ok {
-        color: var(--success, #22c55e);
-    }
 </style>
-

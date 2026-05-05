@@ -15,6 +15,7 @@
         disabled?: boolean;
         loading?: boolean;
         class?: string;
+        style?: string;
         onclick?: (e: MouseEvent) => void;
         children: Snippet;
     }
@@ -27,6 +28,7 @@
         disabled = false,
         loading = false,
         class: cls = '',
+        style,
         onclick,
         children,
     }: Props = $props();
@@ -38,13 +40,14 @@
 </script>
 
 {#if href}
-    <a {href} class={classes} aria-disabled={isDisabled || undefined}>
+    <a {href} class={classes} {style} aria-disabled={isDisabled || undefined}>
         {@render children()}
     </a>
 {:else}
     <button
         {type}
         class={classes}
+        {style}
         disabled={isDisabled}
         aria-busy={loading || undefined}
         {onclick}

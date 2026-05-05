@@ -1642,7 +1642,7 @@ wheels = [
 
 [[package]]
 name = "tangible"
-version = "0.17.20"
+version = "0.17.24"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

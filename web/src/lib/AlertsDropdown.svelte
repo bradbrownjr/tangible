@@ -3,6 +3,7 @@
     import { api } from '$lib/api';
     import { me } from '$lib/session';
     import { _ } from 'svelte-i18n';
+    import Icon from './Icon.svelte';
 
     interface DueAlert {
         id: string;
@@ -64,9 +65,7 @@
         aria-expanded={open}
         aria-haspopup="true"
     >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path fill="currentColor" d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-5-5.92V4a1 1 0 0 0-2 0v1.08A6 6 0 0 0 6 11v5l-1.29 1.29A1 1 0 0 0 5 19h14a1 1 0 0 0 .71-1.71L18 16z"/>
-        </svg>
+        <Icon name="bell" size={18} />
         {#if count > 0}
             <span class="badge" aria-label="{count} {$_('nav.alerts')}">{count > 99 ? '99+' : count}</span>
         {/if}
@@ -84,7 +83,7 @@
                 <ul class="alert-list">
                     {#each critical as a (a.id)}
                         <li class="alert-item critical">
-                            <span class="dot-indicator" aria-hidden="true"></span>
+                            <Icon name="circle-alert" size={14} class="severity-icon severity-critical" />
                             <div class="alert-body">
                                 <strong>{a.title}</strong>
                                 {#if a.details}<span class="details">{a.details}</span>{/if}
@@ -94,7 +93,7 @@
                     {/each}
                     {#each warning as a (a.id)}
                         <li class="alert-item warning">
-                            <span class="dot-indicator" aria-hidden="true"></span>
+                            <Icon name="triangle-alert" size={14} class="severity-icon severity-warning" />
                             <div class="alert-body">
                                 <strong>{a.title}</strong>
                                 {#if a.details}<span class="details">{a.details}</span>{/if}
@@ -105,6 +104,7 @@
                 </ul>
             {/if}
             <div class="dropdown-footer">
+                <a href="/maintenance" onclick={() => (open = false)}>{$_('alerts.view_all')}</a>
                 <a href="/settings" onclick={() => (open = false)}>{$_('alerts.preferences_link')}</a>
             </div>
         </div>
@@ -203,15 +203,12 @@
     .alert-item:last-child {
         border-bottom: none;
     }
-    .dot-indicator {
+    .severity-icon {
         flex-shrink: 0;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-top: 0.3rem;
+        margin-top: 0.1rem;
     }
-    .alert-item.critical .dot-indicator { background: #dc2626; }
-    .alert-item.warning .dot-indicator { background: #d97706; }
+    :global(.severity-critical) { color: var(--danger); }
+    :global(.severity-warning) { color: var(--warning); }
     .alert-body {
         display: flex;
         flex-direction: column;
@@ -241,6 +238,9 @@
         border-top: 1px solid var(--border);
         font-size: 0.875rem;
         flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
     }
     .dropdown-footer a {
         color: var(--accent);

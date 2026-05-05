@@ -4,6 +4,7 @@
     import { refreshMe } from '$lib/session';
     import { _ } from 'svelte-i18n';
     import { locale, LOCALES, setLocale } from '$lib/i18n';
+    import { Alert, Button, FormField } from '$lib/components';
 
     let username = $state('');
     let displayName = $state('');
@@ -43,20 +44,16 @@
 <div class="auth">
     <h1>{$_('auth.register')}</h1>
     <form onsubmit={submit} class="card">
-        <div class="field">
-            <label for="u">{$_('auth.username')}</label>
+        <FormField label={$_('auth.username')} for="u" required>
             <input id="u" bind:value={username} required autocomplete="username" />
-        </div>
-        <div class="field">
-            <label for="n">{$_('auth.display_name')} <span class="muted">({$_('auth.optional')})</span></label>
+        </FormField>
+        <FormField label="{$_('auth.display_name')} ({$_('auth.optional')})" for="n">
             <input id="n" bind:value={displayName} autocomplete="name" />
-        </div>
-        <div class="field">
-            <label for="e">{$_('auth.email')} <span class="muted">({$_('auth.optional')})</span></label>
+        </FormField>
+        <FormField label="{$_('auth.email')} ({$_('auth.optional')})" for="e">
             <input id="e" type="email" bind:value={email} autocomplete="email" />
-        </div>
-        <div class="field">
-            <label for="p">{$_('auth.password')}</label>
+        </FormField>
+        <FormField label={$_('auth.password')} for="p" hint="At least 12 characters" required>
             <input
                 id="p"
                 type="password"
@@ -65,17 +62,18 @@
                 minlength="12"
                 autocomplete="new-password"
             />
-        </div>
-        <div class="field">
-            <label for="lang">{$_('lang.label')}</label>
+        </FormField>
+        <FormField label={$_('lang.label')} for="lang">
             <select id="lang" bind:value={selectedLocale} onchange={() => setLocale(selectedLocale)}>
                 {#each LOCALES as loc}
                     <option value={loc.code}>{loc.label}</option>
                 {/each}
             </select>
-        </div>
-        <button type="submit" disabled={busy}>{busy ? $_('auth.registering') : $_('auth.register')}</button>
-        {#if error}<p class="error">{error}</p>{/if}
+        </FormField>
+        {#if error}
+            <Alert variant="danger" dismissible onclose={() => (error = '')}>{error}</Alert>
+        {/if}
+        <Button type="submit" loading={busy} style="width:100%">{busy ? $_('auth.registering') : $_('auth.register')}</Button>
     </form>
     <p class="muted">{$_('auth.already_have_account')} <a href="/login">{$_('auth.sign_in_link')}</a></p>
 </div>

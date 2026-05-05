@@ -13,7 +13,8 @@
   },
   "alerts": {
     "no_upcoming": "Sin alertas próximas.",
-    "preferences_link": "Preferencias de notificación"
+    "preferences_link": "Preferencias de notificación",
+    "view_all": "Ver todas las alertas"
   },
   "common": {
     "save": "Guardar",

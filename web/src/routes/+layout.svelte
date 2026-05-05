@@ -12,6 +12,7 @@
     import WhatsNew from '$lib/WhatsNew.svelte';
     import AlertsDropdown from '$lib/AlertsDropdown.svelte';
     import Toast from '$lib/Toast.svelte';
+    import Icon from '$lib/Icon.svelte';
 
     // Initialise i18n synchronously so strings are ready before first render.
     initI18n();
@@ -153,12 +154,7 @@
         title={$_('nav.whats_new')}
         aria-label={$_('nav.whats_new')}
     >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path
-                fill="currentColor"
-                d="M12 2a1 1 0 0 1 .894.553l1.382 2.764 3.05.443a1 1 0 0 1 .554 1.706l-2.207 2.151.521 3.038a1 1 0 0 1-1.451 1.054L12 12.347l-2.743 1.362a1 1 0 0 1-1.451-1.054l.521-3.038-2.207-2.151a1 1 0 0 1 .554-1.706l3.05-.443 1.382-2.764A1 1 0 0 1 12 2zm6 14a1 1 0 0 1 .894.553l.553 1.106 1.106.553a1 1 0 0 1 0 1.788l-1.106.553-.553 1.106a1 1 0 0 1-1.788 0l-.553-1.106-1.106-.553a1 1 0 0 1 0-1.788l1.106-.553.553-1.106A1 1 0 0 1 18 16zM5 13a1 1 0 0 1 .894.553l.553 1.106 1.106.553a1 1 0 0 1 0 1.788l-1.106.553-.553 1.106a1 1 0 0 1-1.788 0l-.553-1.106-1.106-.553a1 1 0 0 1 0-1.788l1.106-.553.553-1.106A1 1 0 0 1 5 13z"
-            />
-        </svg>
+        <Icon name="sparkles" size={18} />
         {#if hasUnseen}<span class="dot" aria-hidden="true"></span>{/if}
     </button>
     <span class="header-spacer"></span>
@@ -170,13 +166,7 @@
             aria-expanded={menuOpen}
             onclick={() => (menuOpen = !menuOpen)}
         >
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-                {#if menuOpen}
-                    <path fill="currentColor" d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                {:else}
-                    <path fill="currentColor" d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                {/if}
-            </svg>
+            <Icon name={menuOpen ? 'x' : 'menu'} size={22} />
         </button>
     {/if}
     <nav class:open={menuOpen}>

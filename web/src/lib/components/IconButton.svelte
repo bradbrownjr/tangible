@@ -49,8 +49,8 @@
         flex-shrink: 0;
     }
 
-    .icon-btn--sm { width: 32px; height: 32px; }
-    .icon-btn--md { width: var(--tap-min); height: var(--tap-min); }
+    .icon-btn--sm { width: 32px; height: 32px; min-height: 32px; }
+    .icon-btn--md { width: var(--tap-min); height: var(--tap-min); min-height: var(--tap-min); }
 
     .icon-btn--primary   { background: var(--accent); color: var(--accent-contrast); }
     .icon-btn--primary:hover   { background: var(--accent-hover); }

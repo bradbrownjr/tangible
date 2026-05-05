@@ -13,7 +13,8 @@
   },
   "alerts": {
     "no_upcoming": "Keine bevorstehenden Benachrichtigungen.",
-    "preferences_link": "Benachrichtigungseinstellungen"
+    "preferences_link": "Benachrichtigungseinstellungen",
+    "view_all": "Alle Benachrichtigungen"
   },
   "common": {
     "save": "Speichern",

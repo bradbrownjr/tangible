@@ -9,8 +9,8 @@
 
     interface Props {
         label: string;
-        /** Unique id to associate label→input. Auto-generated if omitted. */
-        id?: string;
+        /** The id of the input/select inside so <label for> works correctly. */
+        for?: string;
         error?: string | null;
         hint?: string;
         required?: boolean;
@@ -18,18 +18,17 @@
         children: Snippet;
     }
 
-    let { label, id, error, hint, required = false, class: cls = '', children }: Props = $props();
+    let { label, for: forId, error, hint, required = false, class: cls = '', children }: Props = $props();
 
-    // Auto-id so the label's `for` always points at the right input.
-    const uid = id ?? `ff-${Math.random().toString(36).slice(2, 7)}`;
+    // Use provided id, or auto-generate one. Consumers should pass for={inputId}.
+    const uid = forId ?? `ff-${Math.random().toString(36).slice(2, 7)}`;
 </script>
 
 <div class="form-field {cls}" class:form-field--error={!!error}>
     <label for={uid}>
         {label}{#if required}<span class="form-field__req" aria-hidden="true"> *</span>{/if}
     </label>
-    <!-- Slot wrapper: consumers should put a single input/select/textarea here. -->
-    <div class="form-field__control" id={uid} role="group" aria-labelledby={uid}>
+    <div class="form-field__control">
         {@render children()}
     </div>
     {#if error}

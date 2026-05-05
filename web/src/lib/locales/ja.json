@@ -13,7 +13,8 @@
   },
   "alerts": {
     "no_upcoming": "今後のアラートはありません。",
-    "preferences_link": "通知設定"
+    "preferences_link": "通知設定",
+    "view_all": "すべてのアラートを見る"
   },
   "common": {
     "save": "保存",

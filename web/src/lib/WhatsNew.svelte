@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { _ } from 'svelte-i18n';
+    import Icon from './Icon.svelte';
 
     let { onClose }: { onClose: () => void } = $props();
 
@@ -133,7 +134,9 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
         <header>
             <h2 id="whatsnew-title">{$_('whats_new.title')}</h2>
-            <button class="close" onclick={onClose} aria-label={$_('common.close')}>×</button>
+            <button class="close" onclick={onClose} aria-label={$_('common.close')}>
+                <Icon name="x" size={18} />
+            </button>
         </header>
         <div class="body">
             {#if loading}
@@ -175,6 +178,11 @@
         align-items: center;
         padding: 0.75rem 1.25rem;
         border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 1;
+        border-radius: 0.75rem 0.75rem 0 0;
     }
     header h2 {
         margin: 0;
@@ -184,12 +192,17 @@
     .close {
         background: transparent;
         border: none;
-        color: var(--text);
-        font-size: 1.5rem;
+        color: var(--text-muted);
         line-height: 1;
         cursor: pointer;
-        padding: 0 0.5rem;
+        padding: 0.25rem;
+        min-height: auto;
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-sm);
+        transition: color 0.15s;
     }
+    .close:hover { color: var(--text); }
     .body {
         padding: 1rem 1.5rem 1.5rem;
         overflow: auto;

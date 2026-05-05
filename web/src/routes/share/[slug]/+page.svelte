@@ -3,6 +3,7 @@
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Collection, type Item } from '$lib/api';
+    import { SectionCard, Badge, EmptyState } from '$lib/components';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
@@ -27,42 +28,44 @@
 </script>
 
 {#if loading}
-    <p class="muted">{$_('common.loading')}</p>
+    <EmptyState icon="loader" heading={$_('common.loading')} />
 {:else if error}
-    <h1>{$_('share.not_available')}</h1>
-    <p class="error">{error}</p>
-    <p class="muted">{$_('share.expired_message')}</p>
+    <EmptyState icon="share-2" heading={$_('share.not_available')} body={error}>
+        <p class="muted">{$_('share.expired_message')}</p>
+    </EmptyState>
 {:else if collection}
-    <h1>{collection.name}</h1>
-    {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-    <p class="muted">{$_('share.read_only_note')}</p>
+    <SectionCard title={collection.name} description={collection.description ?? undefined}>
+        {#snippet actions()}
+            <Badge variant="info">{$_('share.read_only_note')}</Badge>
+        {/snippet}
 
-    {#if items.length === 0}
-        <p class="muted">{$_('share.no_items')}</p>
-    {:else}
-        <table>
-            <thead>
-                <tr>
-                    <th>{$_('collection.col_category')}</th>
-                    <th>{$_('collection.col_title')}</th>
-                    <th>{$_('collection.col_qty')}</th>
-                    <th>{$_('collection.col_condition')}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each items as i (i.id)}
+        {#if items.length === 0}
+            <EmptyState icon="package" heading={$_('share.no_items')} />
+        {:else}
+            <table>
+                <thead>
                     <tr>
-                        <td class="muted">{i.category_slug ?? ''}</td>
-                        <td>
-                            {i.title}{#if i.subtitle}
-                                <span class="muted">— {i.subtitle}</span>
-                            {/if}
-                        </td>
-                        <td>{i.quantity}</td>
-                        <td>{i.condition ?? ''}</td>
+                        <th>{$_('collection.col_category')}</th>
+                        <th>{$_('collection.col_title')}</th>
+                        <th>{$_('collection.col_qty')}</th>
+                        <th>{$_('collection.col_condition')}</th>
                     </tr>
-                {/each}
-            </tbody>
-        </table>
-    {/if}
+                </thead>
+                <tbody>
+                    {#each items as i (i.id)}
+                        <tr>
+                            <td class="muted">{i.category_slug ?? ''}</td>
+                            <td>
+                                {i.title}{#if i.subtitle}
+                                    <span class="muted">— {i.subtitle}</span>
+                                {/if}
+                            </td>
+                            <td>{i.quantity}</td>
+                            <td>{i.condition ?? ''}</td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        {/if}
+    </SectionCard>
 {/if}

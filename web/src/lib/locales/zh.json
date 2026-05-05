@@ -13,7 +13,8 @@
   },
   "alerts": {
     "no_upcoming": "暂无即将到来的提醒。",
-    "preferences_link": "通知偏好设置"
+    "preferences_link": "通知偏好设置",
+    "view_all": "查看所有提醒"
   },
   "common": {
     "save": "保存",

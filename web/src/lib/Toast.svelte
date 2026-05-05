@@ -1,18 +1,21 @@
 <script lang="ts">
     import { toasts, type Toast } from './toast';
+    import Icon from './Icon.svelte';
 
-    function kindIcon(kind: Toast['kind']): string {
-        if (kind === 'error') return '✕';
-        if (kind === 'success') return '✓';
-        if (kind === 'warning') return '⚠';
-        return 'ℹ';
-    }
+    const KIND_ICON: Record<Toast['kind'], string> = {
+        error:   'circle-x',
+        success: 'check-circle',
+        warning: 'triangle-alert',
+        info:    'info',
+    };
 </script>
 
 <div class="toast-host" aria-live="polite" aria-atomic="false">
     {#each $toasts as toast (toast.id)}
         <div class="toast toast-{toast.kind}" role="status">
-            <span class="toast-icon">{kindIcon(toast.kind)}</span>
+            <span class="toast-icon">
+                <Icon name={KIND_ICON[toast.kind]} size={15} />
+            </span>
             <span class="toast-message">{toast.message}</span>
         </div>
     {/each}
