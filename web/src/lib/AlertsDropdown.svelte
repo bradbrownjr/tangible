@@ -203,7 +203,7 @@
     .alert-item:last-child {
         border-bottom: none;
     }
-    .severity-icon {
+    :global(.severity-icon) {
         flex-shrink: 0;
         margin-top: 0.1rem;
     }

@@ -28,7 +28,7 @@
     <h1>{collection.name}</h1>
     {#if collection.description}<p class="muted">{collection.description}</p>{/if}
 {:else}
-    <h1 class="skeleton-title">&nbsp;</h1>
+    <h1 class="skeleton-title" aria-label={$_('common.loading')}>&nbsp;</h1>
 {/if}
 
 <nav class="subnav" aria-label="Collection sections">
@@ -94,12 +94,6 @@
         color: var(--accent);
         font-weight: 600;
         background: color-mix(in srgb, var(--accent) 10%, transparent);
-    }
-    .tab-danger {
-        color: var(--danger);
-    }
-    .tab-danger:hover {
-        background: color-mix(in srgb, var(--danger) 8%, transparent);
     }
 
     @media (max-width: 640px) {

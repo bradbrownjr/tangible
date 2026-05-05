@@ -494,6 +494,7 @@
     {:else if templates.length === 0}
         <p class="muted">No templates yet.{canEdit ? ' Create one above.' : ''}</p>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -529,8 +530,8 @@
                             <td colspan="{canEdit ? 4 : 3}" style="padding:0.75rem">
                                 <div class="stack">
                                     <div class="field">
-                                        <label>Template name</label>
-                                        <input bind:value={editName} placeholder="e.g. Vinyl LP" />
+                                        <label for="edit-template-name">Template name</label>
+                                        <input id="edit-template-name" bind:value={editName} placeholder="e.g. Vinyl LP" />
                                     </div>
                                     <div class="field">
                                         <div class="row-head">
@@ -577,6 +578,7 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
 {:else if !loading}
     <p class="error">Collection not found.</p>

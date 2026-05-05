@@ -172,7 +172,7 @@
     {:else}
         <ul class="loc-tree" role="tree">
             {#snippet branch(node: LocationNode, depth: number)}
-                <li style="padding-left: {depth * 1.25}rem" role="treeitem" aria-expanded={node.children.length > 0 || undefined}>
+                <li style="padding-left: {depth * 1.25}rem" role="treeitem" aria-selected="false" aria-expanded={node.children.length > 0 || undefined}>
                     {#if editingId === node.id}
                         <div class="form-row">
                             <input bind:value={editName} required />

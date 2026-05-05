@@ -337,3 +337,16 @@ th { font-size: var(--text-sm); color: var(--text-muted); font-weight: 600; }
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: var(--space-4);
 }
+
+/* Responsive table wrapper — prevents horizontal overflow on mobile */
+.table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile base layout */
+@media (max-width: 640px) {
+    main {
+        padding: 1rem;
+    }
+}

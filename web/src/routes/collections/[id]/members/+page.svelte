@@ -204,6 +204,7 @@
     {#if loading}
         <p class="muted">{$_('common.loading')}</p>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -241,6 +242,7 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
 
     <h2 style="margin-top:2rem">{$_('members.invitations_heading')}</h2>
@@ -274,6 +276,7 @@
     {#if invitations.length === 0}
         <p class="muted">{$_('members.no_invitations')}</p>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -306,6 +309,7 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
 
     <h2 style="margin-top:2rem">{$_('members.share_links_heading')}</h2>
@@ -323,6 +327,7 @@
     {#if shareLinks.length === 0}
         <p class="muted">{$_('members.no_share_links')}</p>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -351,12 +356,14 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
     <h2 style="margin-top:2rem">{$_('members.activity_heading')}</h2>
     <p class="muted">{$_('members.activity_description')}</p>
     {#if auditLog.length === 0}
         <p class="muted">{$_('members.no_activity')}</p>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -377,6 +384,7 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
 {:else if !loading}
     <p class="error">{$_('collection.not_found')}</p>

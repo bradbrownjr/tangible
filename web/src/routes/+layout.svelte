@@ -278,7 +278,10 @@
         border-radius: 0.375rem;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         cursor: pointer;
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
     }
     .icon-btn:hover {
         background: color-mix(in srgb, var(--text) 8%, transparent);

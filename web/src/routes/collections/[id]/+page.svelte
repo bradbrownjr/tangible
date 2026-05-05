@@ -1193,6 +1193,7 @@
             {/each}
         </div>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -1320,6 +1321,7 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
 
     {#if collection.my_role === 'owner'}
@@ -1427,6 +1429,10 @@
 </datalist>
 
 <style>
+    .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
     .danger-zone {
         margin-top: 3rem;
         padding-top: 1rem;
@@ -1497,9 +1503,6 @@
     .subtitle-field {
         flex: 2 1 180px;
         min-width: 140px;
-    }
-    .creator-tag {
-        font-weight: 500;
     }
     .filters {
         display: flex;

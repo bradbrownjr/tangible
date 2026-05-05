@@ -161,6 +161,7 @@
     {#if tokens.length === 0}
         <p class="muted">{$_('settings.no_tokens')}</p>
     {:else}
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -183,6 +184,7 @@
                 {/each}
             </tbody>
         </table>
+        </div>
     {/if}
 </div>
 

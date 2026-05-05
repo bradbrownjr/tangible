@@ -356,6 +356,7 @@
 {:else if feed.length === 0}
     <p class="muted">{$_('lists.empty')}</p>
 {:else}
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -425,6 +426,7 @@
             {/each}
         </tbody>
     </table>
+    </div>
 {/if}
 
 <dialog bind:this={editDialog} class="edit-dialog">

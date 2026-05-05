@@ -42,6 +42,7 @@
         {#if items.length === 0}
             <EmptyState icon="package" heading={$_('share.no_items')} />
         {:else}
+            <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -66,6 +67,7 @@
                     {/each}
                 </tbody>
             </table>
+            </div>
         {/if}
     </SectionCard>
 {/if}

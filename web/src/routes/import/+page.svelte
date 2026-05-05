@@ -168,9 +168,9 @@
     <button class="secondary" onclick={downloadBackup}>{$_('import_page.download_backup_button')}</button>
     {#if collections.length}
         <div class="field" style="margin-top: .75rem">
-            <label>{$_('import_page.collection_csv_export_label')}</label>
+            <label for="csv-export-collection">{$_('import_page.collection_csv_export_label')}</label>
             <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center">
-                <select bind:value={collectionId}>
+                <select id="csv-export-collection" bind:value={collectionId}>
                     {#each collections as c}
                         <option value={c.id}>{c.name}</option>
                     {/each}
@@ -187,7 +187,6 @@
 
 <div class="card">
     <div class="field">
-        <label>{$_('import_page.mode_label')}</label>
         <div class="mode-cards" role="radiogroup" aria-label={$_('import_page.mode_label')}>
             <label class="mode-card" class:active={mode === 'clz'}>
                 <input type="radio" bind:group={mode} value="clz" class="sr-only" />
@@ -219,8 +218,8 @@
     <form onsubmit={submit}>
         {#if mode !== 'restore'}
             <div class="field">
-                <label>{$_('import_page.target_collection_label')}</label>
-                <select bind:value={collectionId} required>
+                <label for="import-collection">{$_('import_page.target_collection_label')}</label>
+                <select id="import-collection" bind:value={collectionId} required>
                     {#each collections as c}
                         <option value={c.id}>{c.name}</option>
                     {/each}
@@ -230,8 +229,8 @@
 
         {#if mode === 'clz'}
             <div class="field">
-                <label>{$_('import_page.clz_product_label')}</label>
-                <select bind:value={clzFlavor}>
+                <label for="clz-flavor">{$_('import_page.clz_product_label')}</label>
+                <select id="clz-flavor" bind:value={clzFlavor}>
                     <option value="clz-movie">{$_('import_page.clz_movie')}</option>
                     <option value="clz-music">{$_('import_page.clz_music')}</option>
                     <option value="clz-book">{$_('import_page.clz_book')}</option>
@@ -240,14 +239,14 @@
                 </select>
             </div>
             <div class="field">
-                <label>{$_('import_page.clz_file_label')}</label>
-                <input type="file" accept=".xml,application/xml" bind:files={clzFile} />
+                <label for="clz-file">{$_('import_page.clz_file_label')}</label>
+                <input id="clz-file" type="file" accept=".xml,application/xml" bind:files={clzFile} />
             </div>
         {:else if mode === 'csv'}
             <div class="field">
-                <label>{$_('import_page.csv_category_label')}</label>
+                <label for="csv-category">{$_('import_page.csv_category_label')}</label>
                 <div class="select-pair">
-                    <select bind:value={csvRoot}>
+                    <select id="csv-category" bind:value={csvRoot}>
                         {#each roots as r (r.id)}
                             <option value={r.slug}>{r.name}</option>
                         {/each}
@@ -268,12 +267,12 @@
                 </p>
             </div>
             <div class="field">
-                <label>{$_('import_page.csv_file_label')}</label>
-                <input type="file" accept=".csv,text/csv" bind:files={csvFile} />
+                <label for="csv-file">{$_('import_page.csv_file_label')}</label>
+                <input id="csv-file" type="file" accept=".csv,text/csv" bind:files={csvFile} />
             </div>
             <div class="field">
-                <label>{$_('import_page.csv_mapping_label')}</label>
-                <textarea rows="8" bind:value={csvMapping}></textarea>
+                <label for="csv-mapping">{$_('import_page.csv_mapping_label')}</label>
+                <textarea id="csv-mapping" rows="8" bind:value={csvMapping}></textarea>
                 <p class="muted">
                     Targets: <code>title</code>, <code>subtitle</code>, <code>notes</code>,
                     <code>quantity</code>, <code>condition</code>, <code>currency</code>,
