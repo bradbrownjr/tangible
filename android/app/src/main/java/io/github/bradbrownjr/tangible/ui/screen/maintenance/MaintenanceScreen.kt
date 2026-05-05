@@ -98,6 +98,7 @@ class MaintenanceViewModel @Inject constructor(
 @Composable
 fun MaintenanceScreen(
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     vm: MaintenanceViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
@@ -115,8 +116,10 @@ fun MaintenanceScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.maintenance_alerts_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                        }
                     }
                 },
                 actions = {

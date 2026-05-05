@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -116,47 +115,14 @@ class CollectionListViewModel @Inject constructor(
 @Composable
 fun CollectionListScreen(
     onOpen: (String) -> Unit,
-    onShoppingList: () -> Unit,
-    onMaintenance: () -> Unit,
-    onSettings: () -> Unit,
-    onAbout: () -> Unit,
     vm: CollectionListViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
-    var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.collections)) },
-                actions = {
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.cd_menu))
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.grocery_list)) },
-                                onClick = { menuExpanded = false; onShoppingList() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.maintenance)) },
-                                onClick = { menuExpanded = false; onMaintenance() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings)) },
-                                onClick = { menuExpanded = false; onSettings() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.about)) },
-                                onClick = { menuExpanded = false; onAbout() },
-                            )
-                        }
-                    }
-                },
             )
         },
         floatingActionButton = {

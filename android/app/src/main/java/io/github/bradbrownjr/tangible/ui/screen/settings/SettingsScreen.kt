@@ -189,6 +189,7 @@ class SettingsViewModel @Inject constructor(
 fun SettingsScreen(
     onSignOut: () -> Unit,
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
@@ -197,8 +198,10 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                        }
                     }
                 },
             )

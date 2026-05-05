@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.24] — 2026-05-05
+
+- **Android: Swipe to navigate between sections** — Collections, Lists, Maintenance, Settings, and About are now connected in a swipeable pager with a bottom navigation bar. Swipe left/right or tap the nav bar to move between sections instantly.
+- **Android: Checked items list** — tapping the check button on a list item moves it to a "Checked" section at the bottom instead of immediately removing it. Each checked item shows an Uncheck button (move back to the active list) and a Move-to-Pantry button (commits it to the server). A "Move all to pantry" action commits all checked items at once.
+- **Android: Scan button moved next to Add button** — the barcode scan button (camera icon) is now a small floating button directly above the main Add (+) FAB, keeping both actions together in the corner.
+
 ## [0.17.23] — 2026-05-06
 
 - **Android: Barcode not-found feedback** — when a barcode scan returns no product match, the add-item dialog now shows a "Product not found — fill in the details below" hint so it is clear the form is blank intentionally.

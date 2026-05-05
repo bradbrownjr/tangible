@@ -14,31 +14,24 @@ import androidx.navigation.compose.rememberNavController
 import io.github.bradbrownjr.tangible.nfc.NfcManager
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.tangible.ui.screen.collection.CollectionDetailScreen
-import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionListScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingAisleEditorScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingStoreListScreen
 import io.github.bradbrownjr.tangible.ui.screen.item.ItemDetailScreen
 import io.github.bradbrownjr.tangible.ui.screen.login.LoginScreen
-import io.github.bradbrownjr.tangible.ui.screen.maintenance.MaintenanceScreen
 import io.github.bradbrownjr.tangible.ui.screen.scan.ScannerScreen
-import io.github.bradbrownjr.tangible.ui.screen.settings.SettingsScreen
 
 object Routes {
     const val LOGIN = "login"
-    const val COLLECTIONS = "collections"
-    const val GROCERY_LIST = "grocery-list"
+    const val HOME = "home"
     const val GROCERY_STORES = "grocery-stores"
     const val GROCERY_STORE_AISLES = "grocery-stores/{storeId}"
     fun groceryStoreAisles(storeId: String) = "grocery-stores/$storeId"
-    const val MAINTENANCE = "maintenance"
     const val COLLECTION_DETAIL = "collection/{id}"
     fun collectionDetail(id: String) = "collection/$id"
     const val ITEM_DETAIL = "item/{itemId}"
     fun itemDetail(id: String) = "item/$id"
     const val SCANNER = "scanner"
-    const val SETTINGS = "settings"
-    const val ABOUT = "about"
 }
 
 @Composable
@@ -60,7 +53,7 @@ fun TangibleApp() {
             navController = nav,
             // Wait until we know whether the user has a token before picking a start dest.
             startDestination = when (loggedIn) {
-                true  -> Routes.COLLECTIONS
+                true  -> Routes.HOME
                 false -> Routes.LOGIN
                 null  -> Routes.LOGIN
             },
@@ -68,29 +61,25 @@ fun TangibleApp() {
         ) {
             composable(Routes.LOGIN) {
                 LoginScreen(onLoggedIn = {
-                    nav.navigate(Routes.COLLECTIONS) {
+                    nav.navigate(Routes.HOME) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 })
             }
-            composable(Routes.COLLECTIONS) {
-                CollectionListScreen(
-                    onOpen = { nav.navigate(Routes.collectionDetail(it)) },
-                    onShoppingList = { nav.navigate(Routes.GROCERY_LIST) },
-                    onMaintenance = { nav.navigate(Routes.MAINTENANCE) },
-                    onSettings = { nav.navigate(Routes.SETTINGS) },
-                    onAbout = { nav.navigate(Routes.ABOUT) },
-                )
-            }
-            composable(Routes.GROCERY_LIST) { backStack ->
+            composable(Routes.HOME) { backStack ->
                 val scannedBarcode by backStack.savedStateHandle
                     .getStateFlow<String?>("barcode", null)
                     .collectAsState()
-                ShoppingListScreen(
-                    onBack = { nav.popBackStack() },
-                    onNavigateToCollection = { collectionId -> nav.navigate(Routes.collectionDetail(collectionId)) },
+                HomeScreen(
+                    onOpenCollection = { nav.navigate(Routes.collectionDetail(it)) },
+                    onNavigateToCollection = { nav.navigate(Routes.collectionDetail(it)) },
                     onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
                     onNavigateToScanner = { nav.navigate(Routes.SCANNER) },
+                    onSignOut = {
+                        nav.navigate(Routes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
                     scannedBarcode = scannedBarcode,
                 )
             }
@@ -102,9 +91,6 @@ fun TangibleApp() {
             }
             composable(Routes.GROCERY_STORE_AISLES) {
                 ShoppingAisleEditorScreen(onBack = { nav.popBackStack() })
-            }
-            composable(Routes.MAINTENANCE) {
-                MaintenanceScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.COLLECTION_DETAIL) { backStack ->
                 val id = backStack.arguments?.getString("id").orEmpty()
@@ -137,19 +123,6 @@ fun TangibleApp() {
                     nav.previousBackStackEntry?.savedStateHandle?.set("barcode", code)
                     nav.popBackStack()
                 })
-            }
-            composable(Routes.SETTINGS) {
-                SettingsScreen(
-                    onSignOut = {
-                        nav.navigate(Routes.LOGIN) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable(Routes.ABOUT) {
-                AboutScreen(onBack = { nav.popBackStack() })
             }
         }
     }

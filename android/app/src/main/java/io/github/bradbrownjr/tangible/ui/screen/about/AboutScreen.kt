@@ -123,6 +123,7 @@ class AboutViewModel @Inject constructor(
 @Composable
 fun AboutScreen(
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     vm: AboutViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
@@ -143,8 +144,10 @@ fun AboutScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.about)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                        }
                     }
                 },
             )

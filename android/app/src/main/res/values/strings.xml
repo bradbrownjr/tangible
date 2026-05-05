@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- App -->
     <string name="app_name">Tangible</string>
 
@@ -143,6 +143,10 @@
     <string name="remove">Remove</string>
     <string name="cd_got_it">Got it</string>
     <string name="got_it">Got it</string>
+    <string name="checked_items" tools:ignore="MissingTranslation">Checked</string>
+    <string name="move_to_pantry" tools:ignore="MissingTranslation">Move to pantry</string>
+    <string name="move_all_to_pantry" tools:ignore="MissingTranslation">Move all to pantry</string>
+    <string name="uncheck" tools:ignore="MissingTranslation">Uncheck</string>
     <string name="aisle_group_other">Other</string>
     <string name="other">Other</string>
     <string name="cd_add_grocery_item">Add grocery item</string>
