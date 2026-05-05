@@ -516,6 +516,7 @@
     "theme_light": "Hell",
     "theme_dark": "Dunkel",
     "theme_system": "System",
+    "palette_label": "Color theme",
     "notifications_heading": "Benachrichtigungen",
     "notifications_description": "Legen Sie fest, wie Sie pro Warnungstyp benachrichtigt werden.",
     "notif_col_type": "Warnungstyp",

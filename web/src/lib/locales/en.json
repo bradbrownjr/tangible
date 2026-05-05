@@ -516,6 +516,7 @@
     "theme_light": "Light",
     "theme_dark": "Dark",
     "theme_system": "System",
+    "palette_label": "Color theme",
     "notifications_heading": "Notifications",
     "notifications_description": "Choose how you're notified per alert type. Email requires SMTP configured on the server. Browser notifications require permission. App notifications appear daily on your Android device.",
     "notif_col_type": "Alert type",

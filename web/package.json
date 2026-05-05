@@ -1,6 +1,6 @@
 {
     "name": "tangible-web",
-    "version": "0.17.24",
+    "version": "0.17.28",
     "private": true,
     "type": "module",
     "scripts": {
@@ -22,6 +22,7 @@
     "dependencies": {
         "@zxing/browser": "^0.1.5",
         "@zxing/library": "^0.21.3",
+        "lucide-svelte": "^1.0.1",
         "svelte-i18n": "^4.0.1"
     }
 }

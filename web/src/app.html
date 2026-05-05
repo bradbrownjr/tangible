@@ -3,27 +3,26 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#0f172a" />
+        <meta name="theme-color" content="#1A1D29" />
         <link rel="icon" type="image/svg+xml" href="%sveltekit.assets%/favicon.svg" />
         <link rel="alternate icon" type="image/png" sizes="512x512" href="%sveltekit.assets%/icon-512.png" />
         <title>Tangible</title>
         <script>
-            // Pre-hydration theme bootstrap (no FOUC).
+            // Pre-hydration theme bootstrap — mirrors theme.ts resolveDataTheme() to avoid FOUC.
+            // Reads: tangible:theme-mode ('light'|'dark'|'system')
+            //        tangible:theme-palette (palette id, default 'tangible')
+            // Single-mode palettes (gazette, paper, cloud, passion, tron, espresso, onedark, blues, blackboard)
+            // are applied as-is. The 'tangible' palette appends '-light' or '-dark'.
             (function () {
+                var BOTH_MODE = { tangible: true };
                 try {
-                    var m = localStorage.getItem('tangible:theme') || 'system';
-                    var resolved =
-                        m === 'light' || m === 'dark'
-                            ? m
-                            : matchMedia('(prefers-color-scheme: dark)').matches
-                              ? 'dark'
-                              : 'light';
-                    document.documentElement.dataset.theme = resolved;
-                    var meta = document.querySelector('meta[name="theme-color"]');
-                    if (meta)
-                        meta.setAttribute('content', resolved === 'dark' ? '#0f172a' : '#f8fafc');
+                    var mode = localStorage.getItem('tangible:theme-mode') || 'system';
+                    var pal  = localStorage.getItem('tangible:theme-palette') || 'tangible';
+                    var dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+                    var dt = BOTH_MODE[pal] ? pal + (dark ? '-dark' : '-light') : pal;
+                    document.documentElement.dataset.theme = dt;
                 } catch (_) {
-                    document.documentElement.dataset.theme = 'dark';
+                    document.documentElement.dataset.theme = 'tangible-dark';
                 }
             })();
         </script>

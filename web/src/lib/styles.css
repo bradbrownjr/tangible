@@ -1,148 +1,339 @@
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+
+:root {
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 9999px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 32px rgba(0,0,0,0.16), 0 4px 8px rgba(0,0,0,0.10);
+    --text-xs:   0.75rem;
+    --text-sm:   0.875rem;
+    --text-base: 1rem;
+    --text-lg:   1.125rem;
+    --text-xl:   1.25rem;
+    --text-2xl:  1.5rem;
+    --tap-min: 44px;
+}
+
+/* --- DEFAULT: tangible-dark (deep indigo-navy / violet) --- */
 :root,
-:root[data-theme='dark'] {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface-2: #334155;
-    --border: #475569;
-    --text: #f8fafc;
-    --text-muted: #cbd5e1;
-    --accent: #38bdf8;
-    --accent-hover: #0ea5e9;
-    --danger: #f87171;
-    --success: #4ade80;
+:root[data-theme='tangible-dark'] {
+    --bg:              #1A1D29;
+    --surface:         #23273A;
+    --surface-2:       #2E3349;
+    --border:          #3D4463;
+    --text:            #F0F0F5;
+    --text-muted:      #9094B0;
+    --accent:          #A78BFA;
+    --accent-hover:    #8B6FF8;
+    --accent-contrast: #1A1D29;
+    --danger:          #F87171;
+    --success:         #4ADE80;
+    --warning:         #FBBF24;
+    --info:            #60A5FA;
     color-scheme: dark;
 }
 
-:root[data-theme='light'] {
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --surface-2: #e2e8f0;
-    --border: #cbd5e1;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --accent: #0284c7;
-    --accent-hover: #0369a1;
-    --danger: #dc2626;
-    --success: #16a34a;
+/* --- tangible-light (warm off-white / violet) --- */
+:root[data-theme='tangible-light'] {
+    --bg:              #FAFAF7;
+    --surface:         #FFFFFF;
+    --surface-2:       #EDEDEA;
+    --border:          #DDDDD8;
+    --text:            #1F1D2B;
+    --text-muted:      #6B6880;
+    --accent:          #7C5CFF;
+    --accent-hover:    #6342F5;
+    --accent-contrast: #FFFFFF;
+    --danger:          #DC2626;
+    --success:         #16A34A;
+    --warning:         #D97706;
+    --info:            #0369A1;
     color-scheme: light;
 }
 
-* {
-    box-sizing: border-box;
+/* --- gazette (light, cool blue) --- */
+:root[data-theme='gazette'] {
+    --bg:              #F2F7FF;
+    --surface:         #FFFFFF;
+    --surface-2:       #E4EEFF;
+    --border:          #C8D8F0;
+    --text:            #0A0A0A;
+    --text-muted:      #4A5568;
+    --accent:          #3B82F6;
+    --accent-hover:    #2563EB;
+    --accent-contrast: #FFFFFF;
+    --danger:          #DC2626;
+    --success:         #16A34A;
+    --warning:         #D97706;
+    --info:            #0284C7;
+    color-scheme: light;
 }
 
-html,
-body {
+/* --- paper (light, warm parchment) --- */
+:root[data-theme='paper'] {
+    --bg:              #F8F6F1;
+    --surface:         #FFFFF8;
+    --surface-2:       #EDE9DF;
+    --border:          #D6CDB8;
+    --text:            #4C432E;
+    --text-muted:      #7A6E58;
+    --accent:          #AA9A73;
+    --accent-hover:    #8B7B58;
+    --accent-contrast: #FFFFFF;
+    --danger:          #B45309;
+    --success:         #4D7C0F;
+    --warning:         #92400E;
+    --info:            #1E40AF;
+    color-scheme: light;
+}
+
+/* --- cloud (light, airy cyan) --- */
+:root[data-theme='cloud'] {
+    --bg:              #F1F2F0;
+    --surface:         #FFFFFF;
+    --surface-2:       #E3E8E6;
+    --border:          #CAD5D0;
+    --text:            #35342F;
+    --text-muted:      #5E6660;
+    --accent:          #37BBE4;
+    --accent-hover:    #1D9BC4;
+    --accent-contrast: #FFFFFF;
+    --danger:          #DC2626;
+    --success:         #16A34A;
+    --warning:         #D97706;
+    --info:            #0284C7;
+    color-scheme: light;
+}
+
+/* --- passion (light, deep purple) --- */
+:root[data-theme='passion'] {
+    --bg:              #F5F5F5;
+    --surface:         #FFFFFF;
+    --surface-2:       #EDE7F6;
+    --border:          #D1C4E9;
+    --text:            #12005E;
+    --text-muted:      #4527A0;
+    --accent:          #8E24AA;
+    --accent-hover:    #6A1B89;
+    --accent-contrast: #FFFFFF;
+    --danger:          #C62828;
+    --success:         #2E7D32;
+    --warning:         #E65100;
+    --info:            #0277BD;
+    color-scheme: light;
+}
+
+/* --- tron (dark, electric cyan) --- */
+:root[data-theme='tron'] {
+    --bg:              #242B33;
+    --surface:         #2E3742;
+    --surface-2:       #3A4554;
+    --border:          #4A5A6A;
+    --text:            #EFFBFF;
+    --text-muted:      #8DBDCC;
+    --accent:          #6EE2FF;
+    --accent-hover:    #41C9EB;
+    --accent-contrast: #1A2530;
+    --danger:          #FF6B6B;
+    --success:         #51FA7B;
+    --warning:         #FFD166;
+    --info:            #6EE2FF;
+    color-scheme: dark;
+}
+
+/* --- espresso (dark, warm coffee) --- */
+:root[data-theme='espresso'] {
+    --bg:              #21211F;
+    --surface:         #2D2C29;
+    --surface-2:       #3A3935;
+    --border:          #524E48;
+    --text:            #D1B59A;
+    --text-muted:      #937B65;
+    --accent:          #C49A6C;
+    --accent-hover:    #A67C52;
+    --accent-contrast: #21211F;
+    --danger:          #E05252;
+    --success:         #7EC86C;
+    --warning:         #E8B84B;
+    --info:            #76B8D4;
+    color-scheme: dark;
+}
+
+/* --- onedark (dark, green accent) --- */
+:root[data-theme='onedark'] {
+    --bg:              #282C34;
+    --surface:         #31363F;
+    --surface-2:       #3E4452;
+    --border:          #4B5263;
+    --text:            #DFD9D6;
+    --text-muted:      #9DA5B4;
+    --accent:          #98C379;
+    --accent-hover:    #7DA85F;
+    --accent-contrast: #1E2227;
+    --danger:          #E06C75;
+    --success:         #98C379;
+    --warning:         #E5C07B;
+    --info:            #61AFEF;
+    color-scheme: dark;
+}
+
+/* --- blues (dark, indigo) --- */
+:root[data-theme='blues'] {
+    --bg:              #2B2C56;
+    --surface:         #35367A;
+    --surface-2:       #3F4090;
+    --border:          #5558A8;
+    --text:            #EFF1FC;
+    --text-muted:      #A0A5CC;
+    --accent:          #6677EB;
+    --accent-hover:    #4D5DD9;
+    --accent-contrast: #FFFFFF;
+    --danger:          #F06292;
+    --success:         #81C784;
+    --warning:         #FFD54F;
+    --info:            #64B5F6;
+    color-scheme: dark;
+}
+
+/* --- blackboard (dark, cream on black) --- */
+:root[data-theme='blackboard'] {
+    --bg:              #1A1A1A;
+    --surface:         #252525;
+    --surface-2:       #303030;
+    --border:          #444444;
+    --text:            #FFFDEA;
+    --text-muted:      #AAAA90;
+    --accent:          #FFB347;
+    --accent-hover:    #E8923A;
+    --accent-contrast: #1A1A1A;
+    --danger:          #FF6B6B;
+    --success:         #90EE90;
+    --warning:         #FFD166;
+    --info:            #87CEEB;
+    color-scheme: dark;
+}
+
+/* ============================================================
+   GLOBAL RESET & BASE
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html, body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: var(--text-base);
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
-a {
-    color: var(--accent);
-    text-decoration: none;
-}
-a:hover {
-    color: var(--accent-hover);
-    text-decoration: underline;
-}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); text-decoration: underline; }
 
-button,
-input,
-select,
-textarea {
-    font: inherit;
-    color: inherit;
-}
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 
 button {
     background: var(--accent);
-    color: var(--bg);
+    color: var(--accent-contrast);
     border: none;
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-weight: 600;
+    min-height: var(--tap-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    transition: background 0.15s;
 }
-button:hover {
-    background: var(--accent-hover);
-}
-button.secondary {
-    background: var(--surface-2);
-    color: var(--text);
-}
-button.danger {
-    background: var(--danger);
-    color: var(--bg);
-}
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+button:hover { background: var(--accent-hover); }
+button.secondary { background: var(--surface-2); color: var(--text); }
+button.secondary:hover { background: color-mix(in srgb, var(--surface-2) 80%, var(--text) 20%); }
+button.danger { background: var(--danger); color: #fff; }
+button.danger:hover { background: color-mix(in srgb, var(--danger) 85%, #000 15%); }
+button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+button.ghost:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-input,
-select,
-textarea {
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+
+input, select, textarea {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     padding: 0.5rem 0.75rem;
     width: 100%;
+    transition: border-color 0.15s;
 }
-input:focus,
-select:focus,
-textarea:focus {
+input:focus, select:focus, textarea:focus {
     outline: 2px solid var(--accent);
     outline-offset: -1px;
+    border-color: var(--accent);
 }
-
 label {
     display: block;
-    margin-bottom: 0.25rem;
+    margin-bottom: var(--space-1);
     color: var(--text-muted);
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
 }
+.field { margin-bottom: var(--space-4); }
 
-.field {
-    margin-bottom: 1rem;
-}
+/* ============================================================
+   CARDS
+   ============================================================ */
 
 .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-sm);
 }
 
-.error {
-    color: var(--danger);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-}
-.success {
-    color: var(--success);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-}
-.muted {
-    color: var(--text-muted);
-}
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th,
-td {
-    text-align: left;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-}
+.error { color: var(--danger); font-size: var(--text-sm); margin-top: var(--space-2); }
+.success, .ok { color: var(--success); font-size: var(--text-sm); margin-top: var(--space-2); }
+.muted { color: var(--text-muted); }
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+th { font-size: var(--text-sm); color: var(--text-muted); font-weight: 600; }
+
+/* ============================================================
+   GRID LAYOUT
+   ============================================================ */
 
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
+    gap: var(--space-4);
 }
