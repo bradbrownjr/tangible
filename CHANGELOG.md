@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.30] — 2026-05-05
+
+- **Android: scan and add buttons moved to the top app bar** — the floating barcode scan and add (+) buttons no longer overlap the per-row check/edit/delete buttons on the right side of each list item. Both actions are now icon buttons in the top app bar next to the store sort icon.
+
 ## [0.17.29] — 2026-05-05
 
 - **Android: shopping list rows show brand instead of collection name** — the second-line label on each list row now shows the brand when present (the collection is implied by the list type, so it was redundant). Depleted-item entries still fall back to the collection name when no brand is set so the navigation hint is preserved.

@@ -448,6 +448,18 @@ fun ShoppingListScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToScanner) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = stringResource(R.string.cd_scan_barcode),
+                        )
+                    }
+                    IconButton(onClick = { viewModel.showAddDialog() }) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.cd_add_grocery_item),
+                        )
+                    }
                     IconButton(onClick = { viewModel.toggleStoreSelector() }) {
                         Icon(
                             Icons.Default.Store,
@@ -460,23 +472,6 @@ fun ShoppingListScreen(
                     }
                 },
             )
-        },
-        floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FloatingActionButton(
-                    onClick = onNavigateToScanner,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ) {
-                    Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.cd_scan_barcode))
-                }
-                FloatingActionButton(onClick = { viewModel.showAddDialog() }) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_grocery_item))
-                }
-            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
