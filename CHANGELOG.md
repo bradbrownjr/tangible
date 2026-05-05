@@ -4,6 +4,29 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.33] — 2026-05-05
+
+### Web UI redesign (Phase 14)
+
+- **New design system** — 11 colour palettes (pick in Settings > Appearance), a unified token set (`--bg`, `--surface`, `--accent`, etc.) used across every page, and a Lucide icon library replacing emoji and inline SVGs throughout.
+- **Shared component library** — Button, IconButton, FormField, Alert, Badge, Card, EmptyState, Modal, ConfirmDialog, Spinner, and PageHeader components replace ad-hoc duplicated markup across all pages.
+- **Settings redesigned** — settings are now split into a sidebar-nav layout with five sub-routes: Account, Appearance, Security (API tokens + sessions + 2FA), Notifications, and About.
+- **Collection sub-route layout** — collections/[id] pages (Items, Locations, Maintenance, Chores, Bundles, Templates, Members) share a single tab-nav layout; the collection header and breadcrumbs appear once and scroll away together.
+- **Maintenance** — urgency sort (Critical first), per-severity icons, and an EmptyState "all-clear" banner when nothing needs attention.
+- **Locations** — per-kind icons (home / building / door / pin / box), tree role for accessibility, ConfirmDialog for deletes.
+- **Chores** — overdue left-border highlight and circle-alert icon; snooze uses a Modal; ConfirmDialog for deletes.
+- **Bundles** — per-asset-kind icons (book / image / config / wrench / nut / file), Modal for editing, ConfirmDialog for deletes.
+- **Templates** — ConfirmDialog replaces inline modal; label-for wired to name input.
+- **Members** — ConfirmDialog replaces three inline modals; audit log, share links, and invitations tables all scroll horizontally on mobile.
+- **Lists (shopping)** — per-type icon in the heading; store selector uses lucide icon instead of emoji.
+- **Import** — radio-card mode selector; Alert component for results and errors.
+- **Comments** — ConfirmDialog for delete; `<time>` elements for timestamps; reply icon.
+- **Photo gallery** — lucide icons for lightbox nav / close; nav repositioned for mobile.
+- **Shopping store manager** — lucide close icon; aria-labels on move buttons; stacked layout on mobile.
+- **Mobile polish** — all tables wrapped in horizontal-scroll containers; `main` padding reduced on narrow viewports; header icon-buttons meet the 44 px touch-target minimum.
+- **Accessibility sweep** — `aria-selected` on treeitem nodes; `for`/`id` wired for all labels in the import and templates pages; skeleton `<h1>` has `aria-label`; `svelte-check` 0 errors.
+- **i18n** — all 7 locales updated; `settings.palette_label` backfilled in es/fr/it/ja/zh.
+
 ## [0.17.32] — 2026-05-05
 
 - **Fixed: marking a shopping item purchased now creates the pantry item** — previously, checking off an ad-hoc shopping entry (one not tied to an existing item) only marked the entry purchased; nothing was added to the destination collection, so groceries effectively disappeared. Now an item is created in the entry's collection with the name, quantity, notes, and brand from the shopping list, using the entry's category (or the collection's default category) for placement.
