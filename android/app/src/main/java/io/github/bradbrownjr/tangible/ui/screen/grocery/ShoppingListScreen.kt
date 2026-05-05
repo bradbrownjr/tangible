@@ -448,6 +448,16 @@ fun ShoppingListScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.toggleStoreSelector() }) {
+                        Icon(
+                            Icons.Default.Store,
+                            contentDescription = stringResource(R.string.cd_select_store),
+                            tint = if (ui.selectedStoreId != null)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                LocalContentColor.current,
+                        )
+                    }
                     IconButton(onClick = onNavigateToScanner) {
                         Icon(
                             Icons.Default.QrCodeScanner,
@@ -458,16 +468,6 @@ fun ShoppingListScreen(
                         Icon(
                             Icons.Default.Add,
                             contentDescription = stringResource(R.string.cd_add_grocery_item),
-                        )
-                    }
-                    IconButton(onClick = { viewModel.toggleStoreSelector() }) {
-                        Icon(
-                            Icons.Default.Store,
-                            contentDescription = stringResource(R.string.cd_select_store),
-                            tint = if (ui.selectedStoreId != null)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                LocalContentColor.current,
                         )
                     }
                 },

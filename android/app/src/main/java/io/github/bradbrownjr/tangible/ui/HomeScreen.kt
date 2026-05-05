@@ -1,6 +1,8 @@
 package io.github.bradbrownjr.tangible.ui
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -15,11 +17,17 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionListScreen
@@ -56,13 +64,42 @@ fun HomeScreen(
         pageCount = { HOME_SECTIONS.size },
     )
     val scope = rememberCoroutineScope()
-
-    // Sync pager page to nav bar selection and vice versa
-    LaunchedEffect(pagerState.targetPage) { /* pager drives nav bar highlight via currentPage */ }
+    // 80dp of accumulated drag triggers a section change on the nav bar.
+    val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
+    var navDragAccum by remember { mutableFloatStateOf(0f) }
 
     Scaffold(
         bottomBar = {
-            NavigationBar(windowInsets = WindowInsets(0)) {
+            NavigationBar(
+                windowInsets = WindowInsets(0),
+                modifier = Modifier.pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = { navDragAccum = 0f },
+                        onDragCancel = { navDragAccum = 0f },
+                        onHorizontalDrag = { _, dragAmount ->
+                            navDragAccum += dragAmount
+                            when {
+                                navDragAccum < -dragThresholdPx -> {
+                                    navDragAccum = 0f
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(
+                                            (pagerState.currentPage + 1).coerceAtMost(HOME_SECTIONS.size - 1)
+                                        )
+                                    }
+                                }
+                                navDragAccum > dragThresholdPx -> {
+                                    navDragAccum = 0f
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(
+                                            (pagerState.currentPage - 1).coerceAtLeast(0)
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                    )
+                },
+            ) {
                 HOME_SECTIONS.forEachIndexed { index, section ->
                     NavigationBarItem(
                         selected = pagerState.currentPage == index,
@@ -73,9 +110,15 @@ fun HomeScreen(
             }
         },
     ) { innerPadding ->
+        // userScrollEnabled = false: the outer pager no longer intercepts content-area swipes.
+        // Sections with inner tabs (e.g. Lists) let their own HorizontalPager handle the gesture.
+        // Section navigation from the content area is done by swiping the nav bar below.
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+            userScrollEnabled = false,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = innerPadding.calculateBottomPadding()),
             beyondViewportPageCount = 1,
         ) { page ->
             when (page) {
@@ -99,3 +142,4 @@ fun HomeScreen(
         }
     }
 }
+

@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.31] — 2026-05-05
+
+- **Android: swipe the nav bar to change sections** — dragging left or right on the bottom navigation icons now slides between sections (Collections, Lists, Maintenance, Settings, About), in addition to tapping a specific icon.
+- **Android: inner tab swipe no longer hijacked by outer pager** — the outer section pager no longer intercepts horizontal swipes in the content area. In the Lists section, swiping left/right now moves between Groceries, Hardware, Home Goods, and Wish List tabs as expected; section changes happen via the nav bar.
+- **Android: store sort icon moved left of scan icon** — top-bar icon order is now Store, Scan, Add (+) from left to right.
+
 ## [0.17.30] — 2026-05-05
 
 - **Android: scan and add buttons moved to the top app bar** — the floating barcode scan and add (+) buttons no longer overlap the per-row check/edit/delete buttons on the right side of each list item. Both actions are now icon buttons in the top app bar next to the store sort icon.
