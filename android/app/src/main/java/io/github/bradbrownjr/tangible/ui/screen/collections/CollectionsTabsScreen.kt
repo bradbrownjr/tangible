@@ -223,6 +223,8 @@ fun CollectionsTabsScreen(
     }
 
     val pagerState = rememberPagerState(pageCount = { s.collections.size })
+    val currentColl = s.collections.getOrNull(pagerState.currentPage)
+    val currentPageLoading = currentColl?.let { s.loadingByCollection[it.id] == true } ?: false
 
     // Lazily load items for the current tab.
     LaunchedEffect(pagerState.currentPage, s.collections) {
@@ -269,33 +271,38 @@ fun CollectionsTabsScreen(
                     )
                 }
             }
-            HorizontalPager(
-                state = pagerState,
+            // PullToRefreshBox wraps the pager (not the other way around) so that the
+            // vertical pull gesture is captured before HorizontalPager can intercept it.
+            PullToRefreshBox(
+                isRefreshing = s.refreshing || currentPageLoading,
+                onRefresh = {
+                    vm.pullRefresh()
+                    currentColl?.let { vm.loadItems(it.id, force = true) }
+                },
                 modifier = Modifier.weight(1f),
-                beyondViewportPageCount = 0,
-            ) { page ->
-                val coll = s.collections[page]
-                val items = s.itemsByCollection[coll.id] ?: emptyList()
-                val pageLoading = s.loadingByCollection[coll.id] == true
-                PullToRefreshBox(
-                    isRefreshing = s.refreshing || pageLoading,
-                    onRefresh = {
-                        vm.pullRefresh()
-                        vm.loadItems(coll.id, force = true)
-                    },
+            ) {
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                ) {
+                    beyondViewportPageCount = 0,
+                ) { page ->
+                    val coll = s.collections[page]
+                    val items = s.itemsByCollection[coll.id] ?: emptyList()
+                    val pageLoading = s.loadingByCollection[coll.id] == true
                     when {
                         pageLoading && items.isEmpty() ->
-                            CircularProgressIndicator(Modifier.align(Alignment.Center))
-                        items.isEmpty() -> Column(
-                            Modifier.align(Alignment.Center).padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(stringResource(R.string.no_items))
-                            OutlinedButton(onClick = { onOpenCollection(coll.id) }) {
-                                Text(stringResource(R.string.add_item))
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(stringResource(R.string.no_items))
+                                OutlinedButton(onClick = { onOpenCollection(coll.id) }) {
+                                    Text(stringResource(R.string.add_item))
+                                }
                             }
                         }
                         else -> LazyColumn(Modifier.fillMaxSize()) {
