@@ -979,6 +979,32 @@ behaviour so the codebase stays coherent:
 Quality-of-life improvements that make existing features shine plus
 the first steps toward live collaboration.
 
+- **Android: unified item-row design language** — the Collections tabs item
+  rows and the Shopping List rows use different visual styles today (Collections
+  rows are plain `ListItem` with title + supporting text; Shopping rows show
+  brand, category chip, quantity, and action buttons in a richer card style).
+  Unify them: both surfaces should show the same secondary-line fields (brand,
+  subtitle/notes, quantity badge, category slug) and the same trailing action
+  icons, using a shared `ItemRowCard` composable. Acceptance: side-by-side
+  comparison of Collections tab and Shopping List rows looks intentionally
+  consistent, not accidentally different.
+
+- **Android: "Copy or Move to shopping list" dialog** — the shopping-cart
+  action on a Collections tab item row currently copies the item directly
+  without giving the user a choice. Replace the single-action confirmation
+  with a three-button dialog:
+  - **Cancel** — dismisses without any change.
+  - **Copy** — adds the item to the shopping list (current behavior), item
+    stays in the collection untouched.
+  - **Move** — adds the item to the shopping list AND marks the collection
+    item as `depleted`, indicating it has been used up and needs restocking.
+    Useful for body wash in a Pantry collection, disposable batteries in a
+    Batteries collection, cleaning supplies, etc.
+  The full item metadata (title, brand, `category_slug`, quantity) must be
+  passed to `ShoppingRepository.addItem()` on both paths — brand was silently
+  dropped before this fix. Applies to every collection type (the action is
+  already present on every Collections tab row).
+
 - **Real-time / live updates** — the app currently polls (15-min Android
   SyncWorker, manual web refresh). Add a `GET /collections/{id}/events`
   SSE (Server-Sent Events) stream that pushes `item-added`,
