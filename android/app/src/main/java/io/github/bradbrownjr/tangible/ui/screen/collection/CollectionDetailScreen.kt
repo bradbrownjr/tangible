@@ -1,5 +1,6 @@
 package io.github.bradbrownjr.tangible.ui.screen.collection
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -656,6 +657,12 @@ fun CollectionDetailScreen(
     // Navigate back when the collection is successfully deleted.
     LaunchedEffect(s.deleted) {
         if (s.deleted) onBack()
+    }
+
+    // Dismiss open dialogs on back press before navigating away.
+    BackHandler(enabled = s.showCreate || s.showCandidatePicker) {
+        if (s.showCandidatePicker) vm.dismissCandidatePicker()
+        else vm.showCreate(false)
     }
 
     // When a barcode arrives from the scanner, trigger the lookup flow.

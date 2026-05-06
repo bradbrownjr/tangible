@@ -75,6 +75,7 @@ fun TangibleApp() {
                     .collectAsState()
                 HomeScreen(
                     onOpenCollection = { nav.navigate(Routes.collectionDetail(it)) },
+                    onOpenItem = { nav.navigate(Routes.itemDetail(it)) },
                     onNavigateToCollection = { nav.navigate(Routes.collectionDetail(it)) },
                     onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
                     onNavigateToScanner = { nav.navigate(Routes.SCANNER) },

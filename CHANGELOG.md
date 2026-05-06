@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.3] — 2026-05-06
+
+### Fixed
+
+- **Android: Tapping an item in the Collections tab now opens the item** — previously tapping any item row navigated to the collection detail screen instead of the item detail screen, making the tap appear to do nothing. System back then skipped the item entirely.
+- **Android: Back press dismisses dialogs before navigating away** — on gesture navigation, pressing back while the "Add item" or barcode candidate dialog is open now dismisses the dialog rather than popping the screen. This prevents the "new item dialog appears twice" issue.
+
 ## [0.18.2] — 2026-05-06
 
 ### Fixed

@@ -165,6 +165,7 @@ class CollectionsTabsViewModel @Inject constructor(
 @Composable
 fun CollectionsTabsScreen(
     onOpenCollection: (String) -> Unit,
+    onOpenItem: (String) -> Unit = {},
     onSwipeLeft: () -> Unit = {},
     onSwipeRight: () -> Unit = {},
     vm: CollectionsTabsViewModel = hiltViewModel(),
@@ -319,7 +320,7 @@ fun CollectionsTabsScreen(
                         }
                         else -> LazyColumn(Modifier.fillMaxSize()) {
                             items(items, key = { it.id }) { item ->
-                                ItemRow(item = item, onClick = { onOpenCollection(coll.id) })
+                                ItemRow(item = item, onClick = { onOpenItem(item.id) })
                                 HorizontalDivider()
                             }
                         }
