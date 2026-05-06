@@ -375,17 +375,13 @@ tools query and react to.
 
 ---
 
-## Phase 14 — Web UI redesign (in progress)
+## Phase 14 — Web UI redesign ✅ COMPLETE
 
-**Status snapshot (v0.18.15):** Waves 1, 2, 3, and 5 are fully shipped.
-Wave 4 is fully shipped (maintenance, locations, chores, bundles,
-templates, members, import, ItemComments, PhotoGallery, AlertsDropdown,
-WhatsNew, Toast, ShoppingStoreManager, and `lists/[type]/+page.svelte`
-all migrated to the component library — DataTable, Modal, ConfirmDialog,
-Button, EmptyState, FormField — with mobile card fallback and proper
-`<details>` more-options add form). Waves 6 (collections/[id] 1,800-line
-split), 7 (a11y sweep + `npm run a11y`), and 8 (tabbed swipeable
-Collections/Lists) remain.
+**Status snapshot (v0.18.16+):** All 8 waves shipped. Wave 1 (tokens +
+palette), Wave 2 (component library), Wave 3 (auth/chrome), Wave 4
+(secondary pages), Wave 5 (server/API), Wave 6 (collections/[id] split
+into 11 child components), Wave 7 (a11y sweep + `npm run a11y`), and
+Wave 8 (tabbed swipeable Collections/Lists) are all committed to main.
 
 The web client works but feels generic and visually undifferentiated:
 two hardcoded slate/sky-blue palettes, ad-hoc inline SVGs and emoji,
