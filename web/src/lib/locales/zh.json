@@ -90,7 +90,8 @@
     "form_creating": "创建中…",
     "form_create": "创建",
     "form_category_hint": "此收藏夹中的新条目默认分类为 {slug}；您可以为每个条目选择不同的分类。",
-    "empty": "暂无收藏。点击\"新建收藏\"开始吧。"
+    "empty": "暂无收藏。点击\"新建收藏\"开始吧。",
+    "tab_all": "全部"
   },
   "collection": {
     "tab_items": "物品",

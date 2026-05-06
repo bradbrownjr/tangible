@@ -10,6 +10,8 @@ All notable changes to **Tangible** are documented here.
 - **Collection page split into components:** the collections detail page is now composed from focused child components (AddItemCard, FilterBar, AdvancedFilters, BulkToolbar, ItemGrid, ItemTable, ItemEditPanel, and modal dialogs). All behavior is preserved.
 - **Accessibility improvements (Wave 7):** touch targets raised to 44px minimum everywhere (IconButton sm variant, view-toggle buttons, bulk-toolbar compact buttons, slide-over close button); date/time values are now wrapped in `<time datetime="ISO">` elements in item badges, chores last-completed, maintenance due-dates, and audit-log timestamps; modal footers stack vertically on narrow viewports (≤ 480 px) so buttons never clip off-screen.
 - **Accessibility tooling:** `npm run a11y` script added to the web package — runs `pa11y-ci` in WCAG2AA mode against the preview server; config lives in `web/.pa11yci.json`.
+- **Tabbed collections view:** `/collections` now has a horizontally scrollable tab strip — an "All" tab for the overview grid and one tab per collection. Swiping left/right (or pressing arrow keys) navigates between tabs. The last-visited tab is persisted in `localStorage`; direct `/collections/{id}` links still work as deep links.
+- **Tabbed lists view:** `/lists` now shows a tab strip for Groceries, Hardware, Home Goods, and Wish List. Navigating to `/lists` automatically redirects to the last-viewed list type. Swipe and arrow-key navigation work the same as the collections tabs. Deep links (`/lists/{type}`) remain valid.
 
 ## [0.18.16] — 2026-05-06
 

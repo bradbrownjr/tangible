@@ -90,7 +90,8 @@
     "form_creating": "Creando…",
     "form_create": "Crear",
     "form_category_hint": "Los nuevos artículos de esta colección usan {slug} por defecto; puede elegir una categoría diferente por artículo.",
-    "empty": "Sin colecciones. Haga clic en Nueva colección para comenzar."
+    "empty": "Sin colecciones. Haga clic en Nueva colección para comenzar.",
+    "tab_all": "Todas"
   },
   "collection": {
     "tab_items": "Artículos",

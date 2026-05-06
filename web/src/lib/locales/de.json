@@ -90,7 +90,8 @@
     "form_creating": "Erstelle…",
     "form_create": "Erstellen",
     "form_category_hint": "Neue Artikel in dieser Sammlung werden standardmäßig als {slug} kategorisiert; Sie können pro Artikel eine andere Kategorie wählen.",
-    "empty": "Noch keine Sammlungen. Klicken Sie auf Neue Sammlung, um zu beginnen."
+    "empty": "Noch keine Sammlungen. Klicken Sie auf Neue Sammlung, um zu beginnen.",
+    "tab_all": "Alle"
   },
   "collection": {
     "tab_items": "Artikel",
