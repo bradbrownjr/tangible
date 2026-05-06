@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.15] — 2026-05-06
+
+### Changed
+
+- **Web lists pages: Wave 4 component migration complete.** Each list type (Groceries, Hardware, Home Goods, Wish List) now uses the shared component library: the add form shows only name and category in the primary row with brand, notes, quantity, unit, URL, and priority in a collapsible "More options" section; the item table uses the reusable DataTable with a mobile card fallback; the edit form opens in a Modal; and the delete action requires confirmation via ConfirmDialog instead of a browser-native `confirm()` dialog. The store manager's delete-store action likewise uses ConfirmDialog.
+
 ## [0.18.14] — 2026-05-06
 
 ### Changed

@@ -69,7 +69,8 @@
     "loading": "Loading…",
     "error": "Error",
     "confirm": "Are you sure?",
-    "never": "never"
+    "never": "never",
+    "more_options": "More options"
   },
   "auth": {
     "sign_in": "Sign in",
@@ -470,6 +471,7 @@
     "source_linked": "linked",
     "mark_purchased_button": "Mark purchased",
     "remove_button": "Remove",
+    "remove_confirm": "This item will be removed from the list.",
     "no_pantry": "No Pantry collection yet.",
     "create_pantry_button": "Create Pantry collection",
     "creating_button": "Creating…",

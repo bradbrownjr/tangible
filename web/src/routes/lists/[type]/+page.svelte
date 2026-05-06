@@ -4,16 +4,23 @@
     import { goto } from '$app/navigation';
     import { api, type Collection } from '$lib/api';
     import ShoppingStoreManager from '$lib/ShoppingStoreManager.svelte';
-    import { categoriesForType, GROCERY_CATEGORIES } from '$lib/shoppingCategories';
+    import { categoriesForType } from '$lib/shoppingCategories';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
+    import DataTable from '$lib/components/DataTable.svelte';
+    import type { Column } from '$lib/components/data-table-types.js';
+    import Modal from '$lib/components/Modal.svelte';
+    import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+    import Button from '$lib/components/Button.svelte';
+    import EmptyState from '$lib/components/EmptyState.svelte';
+    import FormField from '$lib/components/FormField.svelte';
 
     const VALID_TYPES = ['groceries', 'hardware', 'home_goods', 'wish_list'] as const;
     type ListType = typeof VALID_TYPES[number];
 
     const BACKING_COLLECTION: Record<string, string> = {
-        groceries:  'Pantry',
-        hardware:   'Hardware',
+        groceries: 'Pantry',
+        hardware: 'Hardware',
         home_goods: 'Home Goods',
     };
 
@@ -34,26 +41,27 @@
         linked_item_id: string | null;
         purchased_at: string | null;
         created_at: string;
+        [key: string]: unknown;
     }
 
     let listType = $derived((page.params.type ?? 'groceries') as ListType);
 
     const LIST_ICON: Record<string, string> = {
-        groceries:  'shopping-cart',
-        hardware:   'wrench',
+        groceries: 'shopping-cart',
+        hardware: 'wrench',
         home_goods: 'house',
-        wish_list:  'star',
+        wish_list: 'star',
     };
 
     let categories = $derived(categoriesForType(listType));
 
     function typeTitle(t: string): string {
         switch (t) {
-            case 'groceries':  return $_('lists.type.groceries');
-            case 'hardware':   return $_('lists.type.hardware');
+            case 'groceries': return $_('lists.type.groceries');
+            case 'hardware':  return $_('lists.type.hardware');
             case 'home_goods': return $_('lists.type.home_goods');
-            case 'wish_list':  return $_('lists.type.wish_list');
-            default:           return t;
+            case 'wish_list': return $_('lists.type.wish_list');
+            default:          return t;
         }
     }
 
@@ -88,12 +96,11 @@
     let newWishUrl = $state('');
     let newWishPriority = $state<number | ''>('');
     let adding = $state(false);
-
     let showStoreManager = $state(false);
 
-    // ---- edit state ----
+    // Edit state
+    let editOpen = $state(false);
     let editEntry = $state<FeedEntry | null>(null);
-    let editDialog = $state<HTMLDialogElement | null>(null);
     let editName = $state('');
     let editBrand = $state('');
     let editCategorySlug = $state('');
@@ -104,6 +111,10 @@
     let editWishUrl = $state('');
     let editWishPriority = $state<number | ''>('');
     let saving = $state(false);
+
+    // Delete confirm state
+    let confirmDeleteEntry = $state<FeedEntry | null>(null);
+    let confirmDeleteOpen = $state(false);
 
     function startEdit(entry: FeedEntry) {
         editEntry = entry;
@@ -122,11 +133,11 @@
             editCategorySlug = entry.category_slug ?? '';
             editCustomCategory = '';
         }
-        editDialog?.showModal();
+        editOpen = true;
     }
 
     function cancelEdit() {
-        editDialog?.close();
+        editOpen = false;
         editEntry = null;
     }
 
@@ -152,8 +163,7 @@
                 body.wish_priority = editWishPriority || null;
             }
             await api.patch(`/lists/${editEntry.id}`, body);
-            editDialog?.close();
-            editEntry = null;
+            cancelEdit();
             await load();
         } catch (err) {
             error = (err as Error).message;
@@ -235,6 +245,8 @@
             newNotes = '';
             newWishUrl = '';
             newWishPriority = '';
+            newCategorySlug = '';
+            customCategory = '';
             await load();
         } catch (err) {
             error = (err as Error).message;
@@ -271,7 +283,11 @@
         }
     }
 
-    // Reload when the route type param changes (user clicks another list in nav)
+    function openDelete(entry: FeedEntry) {
+        confirmDeleteEntry = entry;
+        confirmDeleteOpen = true;
+    }
+
     $effect(() => {
         const _ = listType;
         newCollectionId = '';
@@ -292,10 +308,9 @@
         {typeTitle(listType)}
     </h1>
     {#if listType === 'groceries'}
-        <button type="button" class="store-mgr-btn" title={$_('grocery.manage_stores_title')} onclick={() => { showStoreManager = true; }}>
-            <Icon name="store" size={16} />
+        <Button variant="secondary" icon="store" onclick={() => { showStoreManager = true; }}>
             {$_('grocery.manage_stores_title')}
-        </button>
+        </Button>
     {/if}
 </div>
 <p class="muted">{$_(`lists.description.${listType}`)}</p>
@@ -306,7 +321,13 @@
 
 <form class="add-form" onsubmit={addItem}>
     <div class="add-row-main">
-        <input class="name-input" type="text" bind:value={newName} placeholder={$_('lists.item_name_placeholder')} required />
+        <input
+            class="name-input"
+            type="text"
+            bind:value={newName}
+            placeholder={$_('lists.item_name_placeholder')}
+            required
+        />
         {#if listType !== 'wish_list'}
             <select class="category-select" bind:value={newCategorySlug}>
                 <option value="">{$_('grocery.no_category')}</option>
@@ -315,134 +336,142 @@
                 {/each}
                 <option value="custom">{$_('grocery.custom_option')}</option>
             </select>
+        {/if}
+        <Button type="submit" loading={adding} disabled={adding || !newName.trim()}>
+            {$_('grocery.add_button')}
+        </Button>
+    </div>
+
+    <details class="more-options">
+        <summary>{$_('common.more_options')}</summary>
+        <div class="add-details-grid">
+            <input type="text" bind:value={newBrand} placeholder={$_('grocery.brand_placeholder')} />
+            <input type="text" bind:value={newNotes} placeholder={$_('grocery.notes_placeholder')} />
             {#if newCategorySlug === 'custom'}
-                <input type="text" bind:value={customCategory} placeholder={$_('grocery.custom_placeholder')} class="custom-cat" />
+                <input type="text" bind:value={customCategory} placeholder={$_('grocery.custom_placeholder')} />
             {/if}
-        {/if}
-    </div>
-    <div class="add-row-details">
-        <input type="text" bind:value={newBrand} placeholder={$_('grocery.brand_placeholder')} class="brand" />
-        <input type="text" bind:value={newNotes} placeholder={$_('grocery.notes_placeholder')} class="notes" />
-        {#if listType !== 'wish_list'}
-            <input type="number" min="1" bind:value={newQuantity} class="qty" />
-            <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
-        {/if}
-        {#if listType === 'wish_list'}
-            <input type="url" bind:value={newWishUrl} placeholder={$_('lists.wish_url_placeholder')} class="wish-url" />
-            <select bind:value={newWishPriority} class="wish-priority">
-                <option value="">{$_('lists.wish_priority_any')}</option>
-                <option value={1}>{$_('lists.priority.low')}</option>
-                <option value={2}>{$_('lists.priority.medium')}</option>
-                <option value={3}>{$_('lists.priority.high')}</option>
-            </select>
-        {/if}
-        {#if collections.size > 1 && listType !== 'wish_list'}
-            <select bind:value={newCollectionId} class="collection-select">
-                {#each [...collections.values()] as c (c.id)}
-                    <option value={c.id}>{c.name}</option>
-                {/each}
-            </select>
-        {/if}
-        <button type="submit" disabled={adding || !newName.trim()}>
-            {adding ? $_('grocery.adding_button') : $_('grocery.add_button')}
-        </button>
-    </div>
+            {#if listType !== 'wish_list'}
+                <div class="qty-row">
+                    <input type="number" min="1" bind:value={newQuantity} class="qty" aria-label={$_('grocery.col_qty')} />
+                    <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
+                </div>
+                {#if collections.size > 1}
+                    <select bind:value={newCollectionId} aria-label={$_('grocery.col_collection')}>
+                        {#each [...collections.values()] as c (c.id)}
+                            <option value={c.id}>{c.name}</option>
+                        {/each}
+                    </select>
+                {/if}
+            {/if}
+            {#if listType === 'wish_list'}
+                <input type="url" bind:value={newWishUrl} placeholder={$_('lists.wish_url_placeholder')} />
+                <select bind:value={newWishPriority}>
+                    <option value="">{$_('lists.wish_priority_any')}</option>
+                    <option value={1}>{$_('lists.priority.low')}</option>
+                    <option value={2}>{$_('lists.priority.medium')}</option>
+                    <option value={3}>{$_('lists.priority.high')}</option>
+                </select>
+            {/if}
+        </div>
+    </details>
 </form>
+
+{#if error}
+    <p class="error">{error}</p>
+{/if}
 
 {#if loading}
     <p class="muted">{$_('common.loading')}</p>
-{:else if error}
-    <p class="error">{error}</p>
 {:else if feed.length === 0}
-    <p class="muted">{$_('lists.empty')}</p>
+    <EmptyState icon={LIST_ICON[listType] ?? 'inbox'} heading={$_('lists.empty')} />
 {:else}
-    <div class="table-wrap">
-    <table>
-        <thead>
-            <tr>
-                <th>{$_('grocery.col_item')}</th>
-                {#if listType !== 'wish_list'}
-                    <th>{$_('grocery.col_category')}</th>
-                    <th>{$_('grocery.col_qty')}</th>
-                {:else}
-                    <th>{$_('lists.col_url')}</th>
-                    <th>{$_('lists.col_priority')}</th>
-                {/if}
-                <th>{$_('grocery.col_collection')}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {#each feed as entry (entry.id)}
-                <tr>
-                    <td>
-                        <strong>{entry.name}</strong>
-                        {#if entry.subtitle}<span class="muted"> · {entry.subtitle}</span>{/if}
-                        {#if entry.notes}<div class="muted small">{entry.notes}</div>{/if}
-                        {#if entry.source.kind === 'depleted_item'}
-                            <span class="badge-depleted">{$_('grocery.source_depleted')}</span>
-                        {/if}
-                    </td>
-                    {#if listType !== 'wish_list'}
-                        <td>
-                            {#if entry.category_slug}
-                                <span class="cat-chip">{categoryLabel(entry.category_slug)}</span>
-                            {/if}
-                        </td>
-                        <td>{entry.quantity}{entry.unit ? '\u00a0' + entry.unit : ''}</td>
-                    {:else}
-                        <td>
-                            {#if entry.wish_url}
-                                <a href={entry.wish_url} target="_blank" rel="noopener noreferrer" class="wish-link">{$_('lists.view_link')}</a>
-                            {/if}
-                        </td>
-                        <td>
-                            {#if entry.wish_priority}
-                                <span class="priority-chip priority-{entry.wish_priority}">{priorityLabel(entry.wish_priority)}</span>
-                            {/if}
-                        </td>
-                    {/if}
-                    <td>
-                        {#if entry.collection_id}
-                            <a href="/collections/{entry.collection_id}">
-                                {collections.get(entry.collection_id)?.name ?? entry.collection_id}
-                            </a>
-                        {/if}
-                    </td>
-                    <td class="actions">
-                        <button type="button" onclick={() => markPurchased(entry)}>
-                            {listType === 'wish_list' ? $_('lists.mark_received_button') : $_('grocery.mark_purchased_button')}
-                        </button>
-                        {#if entry.source.kind === 'ad_hoc'}
-                            <button type="button" class="secondary" onclick={() => startEdit(entry)}>
-                                {$_('grocery.edit_button')}
-                            </button>
-                            <button type="button" class="secondary" onclick={() => removeItem(entry)}>
-                                {$_('grocery.remove_button')}
-                            </button>
-                        {/if}
-                    </td>
-                </tr>
-            {/each}
-        </tbody>
-    </table>
-    </div>
+    {#snippet nameCell(entry: FeedEntry)}
+        <strong>{entry.name}</strong>
+        {#if entry.subtitle}<span class="muted"> · {entry.subtitle}</span>{/if}
+        {#if entry.notes}<div class="muted small">{entry.notes}</div>{/if}
+        {#if entry.source.kind === 'depleted_item'}
+            <span class="badge-depleted">{$_('grocery.source_depleted')}</span>
+        {/if}
+    {/snippet}
+
+    {#snippet categoryCell(entry: FeedEntry)}
+        {#if entry.category_slug}
+            <span class="cat-chip">{categoryLabel(entry.category_slug)}</span>
+        {/if}
+    {/snippet}
+
+    {#snippet qtyCell(entry: FeedEntry)}
+        {entry.quantity}{entry.unit ? '\u00a0' + entry.unit : ''}
+    {/snippet}
+
+    {#snippet urlCell(entry: FeedEntry)}
+        {#if entry.wish_url}
+            <a href={entry.wish_url} target="_blank" rel="noopener noreferrer" class="wish-link">
+                {$_('lists.view_link')}
+            </a>
+        {/if}
+    {/snippet}
+
+    {#snippet priorityCell(entry: FeedEntry)}
+        {#if entry.wish_priority}
+            <span class="priority-chip priority-{entry.wish_priority}">{priorityLabel(entry.wish_priority)}</span>
+        {/if}
+    {/snippet}
+
+    {#snippet collectionCell(entry: FeedEntry)}
+        {#if entry.collection_id}
+            <a href="/collections/{entry.collection_id}">
+                {collections.get(entry.collection_id)?.name ?? entry.collection_id}
+            </a>
+        {/if}
+    {/snippet}
+
+    {#snippet rowActions(entry: FeedEntry)}
+        <div class="row-actions">
+            <Button variant="primary" onclick={() => markPurchased(entry)}>
+                {listType === 'wish_list' ? $_('lists.mark_received_button') : $_('grocery.mark_purchased_button')}
+            </Button>
+            {#if entry.source.kind === 'ad_hoc'}
+                <Button variant="secondary" icon="pencil" onclick={() => startEdit(entry)}>
+                    {$_('grocery.edit_button')}
+                </Button>
+                <Button variant="danger" icon="trash-2" onclick={() => openDelete(entry)}>
+                    {$_('grocery.remove_button')}
+                </Button>
+            {/if}
+        </div>
+    {/snippet}
+
+    <DataTable
+        cols={listType !== 'wish_list'
+            ? ([
+                { key: 'name',          label: $_('grocery.col_item'),       cell: nameCell },
+                { key: 'category_slug', label: $_('grocery.col_category'),   cell: categoryCell },
+                { key: 'quantity',      label: $_('grocery.col_qty'),        cell: qtyCell, align: 'right' },
+                { key: 'collection_id', label: $_('grocery.col_collection'), cell: collectionCell },
+              ] satisfies Column<FeedEntry>[])
+            : ([
+                { key: 'name',          label: $_('grocery.col_item'),       cell: nameCell },
+                { key: 'wish_url',      label: $_('lists.col_url'),          cell: urlCell },
+                { key: 'wish_priority', label: $_('lists.col_priority'),     cell: priorityCell },
+                { key: 'collection_id', label: $_('grocery.col_collection'), cell: collectionCell },
+              ] satisfies Column<FeedEntry>[])}
+        rows={feed}
+        rowKey="id"
+        actions={rowActions}
+    />
 {/if}
 
-<dialog bind:this={editDialog} class="edit-dialog">
-    <form onsubmit={saveEdit}>
-        <h2 class="dialog-title">{$_('grocery.edit_item_title')}</h2>
-        <div class="dialog-field">
-            <label>{$_('grocery.brand_placeholder')}</label>
+<Modal bind:open={editOpen} title={$_('grocery.edit_item_title')} onclose={cancelEdit}>
+    <form id="edit-list-item-form" onsubmit={saveEdit} class="edit-form-body">
+        <FormField label={$_('grocery.brand_placeholder')}>
             <input type="text" bind:value={editBrand} />
-        </div>
-        <div class="dialog-field">
-            <label>{$_('lists.item_name_placeholder')}</label>
+        </FormField>
+        <FormField label={$_('lists.item_name_placeholder')} required>
             <input type="text" bind:value={editName} required />
-        </div>
+        </FormField>
         {#if listType !== 'wish_list'}
-            <div class="dialog-field">
-                <label>{$_('grocery.col_category')}</label>
+            <FormField label={$_('grocery.col_category')}>
                 <select bind:value={editCategorySlug}>
                     <option value="">{$_('grocery.no_category')}</option>
                     {#each categories as cat (cat.slug)}
@@ -450,83 +479,136 @@
                     {/each}
                     <option value="custom">{$_('grocery.custom_option')}</option>
                 </select>
-                {#if editCategorySlug === 'custom'}
-                    <input type="text" bind:value={editCustomCategory} placeholder={$_('grocery.custom_placeholder')} class="custom-cat" />
-                {/if}
-            </div>
+            </FormField>
+            {#if editCategorySlug === 'custom'}
+                <FormField label={$_('grocery.custom_placeholder')}>
+                    <input type="text" bind:value={editCustomCategory} />
+                </FormField>
+            {/if}
         {/if}
-        <div class="dialog-field">
-            <label>{$_('grocery.notes_placeholder')}</label>
+        <FormField label={$_('grocery.notes_placeholder')}>
             <input type="text" bind:value={editNotes} />
-        </div>
+        </FormField>
         {#if listType !== 'wish_list'}
-            <div class="dialog-row">
-                <div class="dialog-field">
-                    <label>{$_('grocery.col_qty')}</label>
-                    <input type="number" min="1" bind:value={editQuantity} class="qty" />
-                </div>
-                <div class="dialog-field">
-                    <label>{$_('grocery.unit_placeholder')}</label>
+            <div class="edit-row">
+                <FormField label={$_('grocery.col_qty')}>
+                    <input type="number" min="1" bind:value={editQuantity} />
+                </FormField>
+                <FormField label={$_('grocery.unit_placeholder')}>
                     <input type="text" bind:value={editUnit} />
-                </div>
+                </FormField>
             </div>
         {/if}
         {#if listType === 'wish_list'}
-            <div class="dialog-field">
-                <label>{$_('lists.wish_url_placeholder')}</label>
+            <FormField label={$_('lists.wish_url_placeholder')}>
                 <input type="url" bind:value={editWishUrl} />
-            </div>
-            <div class="dialog-field">
-                <label>{$_('lists.col_priority')}</label>
+            </FormField>
+            <FormField label={$_('lists.col_priority')}>
                 <select bind:value={editWishPriority}>
                     <option value="">{$_('lists.wish_priority_any')}</option>
                     <option value={1}>{$_('lists.priority.low')}</option>
                     <option value={2}>{$_('lists.priority.medium')}</option>
                     <option value={3}>{$_('lists.priority.high')}</option>
                 </select>
-            </div>
+            </FormField>
         {/if}
-        <div class="dialog-actions">
-            <button type="submit" disabled={saving || !editName.trim()}>
-                {saving ? $_('common.saving') : $_('common.save')}
-            </button>
-            <button type="button" class="secondary" onclick={cancelEdit}>{$_('common.cancel')}</button>
-        </div>
     </form>
-</dialog>
+    {#snippet footer()}
+        <Button type="submit" form="edit-list-item-form" loading={saving} disabled={saving || !editName.trim()}>
+            {$_('common.save')}
+        </Button>
+        <Button variant="secondary" onclick={cancelEdit}>{$_('common.cancel')}</Button>
+    {/snippet}
+</Modal>
+
+<ConfirmDialog
+    open={confirmDeleteOpen}
+    title="{$_('grocery.remove_button')} — {confirmDeleteEntry?.name ?? ''}"
+    message={$_('grocery.remove_confirm')}
+    confirmLabel={$_('grocery.remove_button')}
+    variant="danger"
+    onconfirm={async () => {
+        if (confirmDeleteEntry) await removeItem(confirmDeleteEntry);
+        confirmDeleteOpen = false;
+        confirmDeleteEntry = null;
+    }}
+    oncancel={() => { confirmDeleteOpen = false; confirmDeleteEntry = null; }}
+/>
 
 <style>
-    .page-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
-    .page-heading h1 { margin: 0; }
-    .type-head { display: flex; align-items: center; gap: 0.4rem; }
-    .store-mgr-btn {
-        background: none; border: 1px solid var(--border, #d1d5db); border-radius: 6px;
-        padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text, #111);
+    .page-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
-    .store-mgr-btn:hover { border-color: var(--accent, #3b82f6); color: var(--accent, #3b82f6); }
-    .add-form { margin: 1rem 0 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .add-row-main { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .add-row-details { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-    .name-input { flex: 2; min-width: 12rem; }
-    .category-select { flex: 1; min-width: 10rem; }
-    .custom-cat { flex: 1; min-width: 9rem; }
-    .collection-select { min-width: 9rem; }
-    .wish-url { flex: 2; min-width: 14rem; }
-    .wish-priority { min-width: 9rem; }
-    input.qty { width: 4rem; }
-    input.unit { width: 6rem; }
-    input.notes { flex: 1; min-width: 12rem; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 0.5rem; border-bottom: 1px solid var(--border, #e5e7eb); text-align: left; }
-    .small { font-size: 0.85rem; }
-    .actions { white-space: nowrap; display: flex; gap: 0.4rem; }
+    .type-head {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0;
+    }
+    .add-form {
+        margin: 1rem 0 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .add-row-main {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .name-input {
+        flex: 2;
+        min-width: 12rem;
+    }
+    .category-select {
+        flex: 1;
+        min-width: 10rem;
+    }
+    .more-options {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 8px);
+        background: var(--surface);
+    }
+    .more-options summary {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        list-style: none;
+        user-select: none;
+    }
+    .more-options summary::-webkit-details-marker { display: none; }
+    .more-options summary::before { content: '+ '; }
+    .more-options[open] summary::before { content: '- '; }
+    .add-details-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border-top: 1px solid var(--border);
+    }
+    .add-details-grid input,
+    .add-details-grid select {
+        flex: 1;
+        min-width: 9rem;
+    }
+    .qty-row { display: flex; gap: 0.4rem; }
+    .qty { width: 4.5rem !important; flex: none !important; }
+    .unit { width: 6rem !important; flex: none !important; }
+    .row-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .cat-chip {
         display: inline-block;
         font-size: 0.75rem;
         padding: 0.15rem 0.5rem;
         border-radius: 99px;
-        background: color-mix(in srgb, var(--accent, #3b82f6) 12%, var(--surface));
-        border: 1px solid color-mix(in srgb, var(--accent, #3b82f6) 30%, transparent);
+        background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+        border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
         color: var(--text);
         white-space: nowrap;
     }
@@ -544,19 +626,9 @@
     [data-theme='dark'] .priority-1 { background: #064e3b; color: #6ee7b7; }
     [data-theme='dark'] .priority-2 { background: #451a03; color: #fde68a; }
     [data-theme='dark'] .priority-3 { background: #450a0a; color: #fca5a5; }
-    .wish-link { color: var(--accent); font-size: 0.85rem; }
-    .edit-dialog {
-        border: 1px solid var(--border, #e5e7eb); border-radius: 10px;
-        padding: 1.5rem; min-width: 22rem; max-width: 95vw;
-        background: var(--surface, #fff); color: var(--text, #111);
-        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-    }
-    .edit-dialog::backdrop { background: rgba(0,0,0,0.35); }
-    .dialog-title { margin: 0 0 1rem; font-size: 1.1rem; }
-    .dialog-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; }
-    .dialog-field label { font-size: 0.82rem; color: var(--muted, #6b7280); }
-    .dialog-field input, .dialog-field select { width: 100%; }
-    .dialog-row { display: flex; gap: 0.75rem; }
-    .dialog-row .dialog-field { flex: 1; }
-    .dialog-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
+    .wish-link { color: var(--accent); font-size: 0.875rem; }
+    .small { font-size: 0.85rem; }
+    .edit-form-body { display: flex; flex-direction: column; gap: 0.75rem; }
+    .edit-row { display: flex; gap: 0.75rem; }
+    .edit-row > :global(.form-field) { flex: 1; }
 </style>

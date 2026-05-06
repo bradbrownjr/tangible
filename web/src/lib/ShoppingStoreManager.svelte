@@ -4,6 +4,7 @@
     import { GROCERY_CATEGORIES } from '$lib/shoppingCategories';
     import type { ShoppingCategory } from '$lib/shoppingCategories';
     import Icon from '$lib/Icon.svelte';
+    import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 
     const PRESET_SLUGS = new Set(GROCERY_CATEGORIES.map((c) => c.slug));
 
@@ -72,8 +73,10 @@
         }
     }
 
+    let deleteStoreId = $state<string | null>(null);
+    let deleteStoreOpen = $state(false);
+
     async function deleteStore(id: string) {
-        if (!confirm($_('grocery_store.delete_store_confirm'))) return;
         try {
             await api.delete(`/grocery/stores/${id}`);
             stores = stores.filter((s) => s.id !== id);
@@ -227,7 +230,7 @@
                                     type="button"
                                     class="del-btn"
                                     title="Delete store"
-                                    onclick={() => deleteStore(store.id)}
+                                    onclick={() => { deleteStoreId = store.id; deleteStoreOpen = true; }}
                                 >✕</button>
                             </li>
                         {/each}
@@ -351,6 +354,20 @@
         {/if}
     </div>
 </div>
+
+<ConfirmDialog
+    open={deleteStoreOpen}
+    title={$_('grocery_store.delete_store_confirm')}
+    message=""
+    confirmLabel={$_('common.delete')}
+    variant="danger"
+    onconfirm={async () => {
+        if (deleteStoreId) await deleteStore(deleteStoreId);
+        deleteStoreOpen = false;
+        deleteStoreId = null;
+    }}
+    oncancel={() => { deleteStoreOpen = false; deleteStoreId = null; }}
+/>
 
 <style>
     .overlay {

@@ -377,16 +377,15 @@ tools query and react to.
 
 ## Phase 14 — Web UI redesign (in progress)
 
-**Status snapshot (v0.18.14):** Waves 1, 2, 3, and 5 are shipped.
-Wave 4 is largely shipped (auth/profile/import/maintenance migrated;
-PhotoGallery thumbnails are real `<button>`s with arrow-key lightbox
-nav; Toast / WhatsNew / AlertsDropdown use lucide icons; AlertsDropdown
-shows per-kind icons with `<time datetime>`; ShoppingStoreManager
-stacks vertically below 640px). Still pending in Wave 4: the
-`lists/[type]/+page.svelte` rewrite (562 lines — radio-card mode
-picker, `<details>` more-options, DataTable). Waves 6 (collections/[id]
-1,800-line split), 7 (a11y sweep + `npm run a11y`), and 8 (tabbed
-swipeable Collections/Lists) remain.
+**Status snapshot (v0.18.15):** Waves 1, 2, 3, and 5 are fully shipped.
+Wave 4 is fully shipped (maintenance, locations, chores, bundles,
+templates, members, import, ItemComments, PhotoGallery, AlertsDropdown,
+WhatsNew, Toast, ShoppingStoreManager, and `lists/[type]/+page.svelte`
+all migrated to the component library — DataTable, Modal, ConfirmDialog,
+Button, EmptyState, FormField — with mobile card fallback and proper
+`<details>` more-options add form). Waves 6 (collections/[id] 1,800-line
+split), 7 (a11y sweep + `npm run a11y`), and 8 (tabbed swipeable
+Collections/Lists) remain.
 
 The web client works but feels generic and visually undifferentiated:
 two hardcoded slate/sky-blue palettes, ad-hoc inline SVGs and emoji,
