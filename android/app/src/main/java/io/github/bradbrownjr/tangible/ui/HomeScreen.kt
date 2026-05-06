@@ -53,6 +53,7 @@ private val HOME_SECTIONS = listOf(
 fun HomeScreen(
     onOpenCollection: (String) -> Unit,
     onOpenItem: (String) -> Unit,
+    onItemEdit: (String) -> Unit = {},
     onNavigateToCollection: (String) -> Unit,
     onManageStores: () -> Unit,
     onNavigateToScanner: () -> Unit,
@@ -126,6 +127,7 @@ fun HomeScreen(
                 0 -> CollectionsTabsScreen(
                     onOpenCollection = onOpenCollection,
                     onOpenItem = onOpenItem,
+                    onItemEdit = onItemEdit,
                     onSwipeLeft = {
                         scope.launch {
                             pagerState.animateScrollToPage(

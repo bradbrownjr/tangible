@@ -316,4 +316,8 @@
     <string name="priority_high">High</string>
     <string name="offline_banner" tools:ignore="MissingTranslation">Offline — changes will sync when you reconnect</string>
     <string name="brand" tools:ignore="MissingTranslation">Brand</string>
+    <string name="cd_add_to_list" tools:ignore="MissingTranslation">Add to shopping list</string>
+    <string name="add_to_list_confirm" tools:ignore="MissingTranslation">Add \"%s\" to the shopping list?</string>
+    <string name="delete_item_confirm" tools:ignore="MissingTranslation">Delete \"%s\"? This cannot be undone.</string>
+    <string name="no_search_results" tools:ignore="MissingTranslation">No items match your search.</string>
 </resources>

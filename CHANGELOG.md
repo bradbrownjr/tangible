@@ -4,6 +4,16 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.4] — 2026-05-06
+
+### Added
+
+- **Android: Search bar on each Collections tab** — an inline `OutlinedTextField` above the item list filters items by title as you type, with an ✕ clear button.
+- **Android: Per-row action icons on item rows** — each item in the Collections tabs now shows a pencil (edit), shopping-cart (add to shopping list), and trash (delete) icon on the right.
+- **Android: Long-press item to edit directly** — long-pressing any item row opens the item detail screen in edit mode, skipping the view-only screen.
+- **Android: Confirm before deleting an item** — tapping the trash icon shows an `AlertDialog` asking for confirmation before the item is permanently removed.
+- **Android: Confirm before adding an item to the shopping list** — tapping the shopping-cart icon shows an `AlertDialog` before the item is added.
+
 ## [0.18.3] — 2026-05-06
 
 ### Fixed

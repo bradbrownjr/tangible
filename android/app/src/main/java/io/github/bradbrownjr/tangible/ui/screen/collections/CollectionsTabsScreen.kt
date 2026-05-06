@@ -2,7 +2,6 @@ package io.github.bradbrownjr.tangible.ui.screen.collections
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +34,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ShoppingCart
+import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 
 /**
  * Lightweight "Collections as swipeable tabs" home view.
@@ -49,6 +54,7 @@ data class CollectionsTabsUi(
     val collections: List<CollectionDto> = emptyList(),
     val itemsByCollection: Map<String, List<ItemDto>> = emptyMap(),
     val loadingByCollection: Map<String, Boolean> = emptyMap(),
+    val searchByCollection: Map<String, String> = emptyMap(),
     val loading: Boolean = false,
     val refreshing: Boolean = false,
     val error: String? = null,
@@ -57,6 +63,8 @@ data class CollectionsTabsUi(
     val selectedPreset: CategoryDto? = null,
     val newName: String = "",
     val newDescription: String = "",
+    val pendingDeleteItem: ItemDto? = null,
+    val pendingShoppingItem: ItemDto? = null,
 )
 
 @HiltViewModel
@@ -64,6 +72,7 @@ class CollectionsTabsViewModel @Inject constructor(
     private val collectionsRepo: CollectionRepository,
     private val itemsRepo: ItemRepository,
     private val categoryRepo: CategoryRepository,
+    private val shoppingRepo: ShoppingRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CollectionsTabsUi())
     val state: StateFlow<CollectionsTabsUi> = _state.asStateFlow()
@@ -159,6 +168,55 @@ class CollectionsTabsViewModel @Inject constructor(
             }
         }
     }
+
+    fun setSearch(collectionId: String, query: String) {
+        _state.value = _state.value.copy(
+            searchByCollection = _state.value.searchByCollection + (collectionId to query),
+        )
+    }
+
+    fun confirmDelete(item: ItemDto) {
+        _state.value = _state.value.copy(pendingDeleteItem = item)
+    }
+
+    fun cancelDelete() {
+        _state.value = _state.value.copy(pendingDeleteItem = null)
+    }
+
+    fun executeDelete(item: ItemDto) {
+        _state.value = _state.value.copy(pendingDeleteItem = null)
+        viewModelScope.launch {
+            try {
+                itemsRepo.delete(item.id)
+                loadItems(item.collection_id, force = true)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun confirmAddToList(item: ItemDto) {
+        _state.value = _state.value.copy(pendingShoppingItem = item)
+    }
+
+    fun cancelAddToList() {
+        _state.value = _state.value.copy(pendingShoppingItem = null)
+    }
+
+    fun executeAddToList(item: ItemDto) {
+        _state.value = _state.value.copy(pendingShoppingItem = null)
+        viewModelScope.launch {
+            try {
+                shoppingRepo.addItem(
+                    collectionId = item.collection_id,
+                    name = item.title,
+                    categorySlug = item.category_slug,
+                )
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -166,6 +224,7 @@ class CollectionsTabsViewModel @Inject constructor(
 fun CollectionsTabsScreen(
     onOpenCollection: (String) -> Unit,
     onOpenItem: (String) -> Unit = {},
+    onItemEdit: (String) -> Unit = {},
     onSwipeLeft: () -> Unit = {},
     onSwipeRight: () -> Unit = {},
     vm: CollectionsTabsViewModel = hiltViewModel(),
@@ -221,6 +280,8 @@ fun CollectionsTabsScreen(
                 }
             }
             WizardDialogs(s, vm)
+            ConfirmDeleteDialog(s, vm)
+            ConfirmAddToListDialog(s, vm)
         }
         return
     }
@@ -318,10 +379,53 @@ fun CollectionsTabsScreen(
                                 }
                             }
                         }
-                        else -> LazyColumn(Modifier.fillMaxSize()) {
-                            items(items, key = { it.id }) { item ->
-                                ItemRow(item = item, onClick = { onOpenItem(item.id) })
-                                HorizontalDivider()
+                        else -> {
+                            val searchQuery = s.searchByCollection[coll.id].orEmpty()
+                            val displayItems = remember(items, searchQuery) {
+                                if (searchQuery.isBlank()) items
+                                else items.filter { it.title.contains(searchQuery, ignoreCase = true) }
+                            }
+                            LazyColumn(Modifier.fillMaxSize()) {
+                                item(key = "search") {
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { vm.setSearch(coll.id, it) },
+                                        placeholder = { Text(stringResource(R.string.search_items)) },
+                                        singleLine = true,
+                                        trailingIcon = {
+                                            if (searchQuery.isNotEmpty()) {
+                                                IconButton(onClick = { vm.setSearch(coll.id, "") }) {
+                                                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.cd_clear_search))
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    )
+                                }
+                                if (displayItems.isEmpty()) {
+                                    item(key = "no_results") {
+                                        Box(
+                                            Modifier.fillMaxWidth().padding(32.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text(stringResource(R.string.no_search_results))
+                                        }
+                                    }
+                                } else {
+                                    items(displayItems, key = { it.id }) { item ->
+                                        ItemRow(
+                                            item = item,
+                                            onClick = { onOpenItem(item.id) },
+                                            onLongClick = { onItemEdit(item.id) },
+                                            onEdit = { onItemEdit(item.id) },
+                                            onAddToList = { vm.confirmAddToList(item) },
+                                            onDelete = { vm.confirmDelete(item) },
+                                        )
+                                        HorizontalDivider()
+                                    }
+                                }
                             }
                         }
                     }
@@ -329,25 +433,62 @@ fun CollectionsTabsScreen(
             }
         }
         WizardDialogs(s, vm)
+        ConfirmDeleteDialog(s, vm)
+        ConfirmAddToListDialog(s, vm)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun ItemRow(item: ItemDto, onClick: () -> Unit) {
+private fun ItemRow(
+    item: ItemDto,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onAddToList: () -> Unit = {},
+    onDelete: () -> Unit = {},
+) {
     val supporting: (@Composable () -> Unit)? = when {
         !item.subtitle.isNullOrBlank() -> ({ Text(item.subtitle!!) })
         !item.notes.isNullOrBlank() -> ({ Text(item.notes!!, maxLines = 1) })
         else -> null
     }
-    val trailing: (@Composable () -> Unit)? = if (item.quantity > 1) {
-        ({ Text("\u00D7${item.quantity}") })
-    } else null
     ListItem(
         headlineContent = { Text(item.title) },
         supportingContent = supporting,
-        trailingContent = trailing,
-        modifier = Modifier.clickable { onClick() },
+        trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (item.quantity > 1) {
+                    Text("\u00D7${item.quantity}", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.width(4.dp))
+                }
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                IconButton(onClick = onAddToList) {
+                    Icon(
+                        Icons.Default.ShoppingCart,
+                        contentDescription = stringResource(R.string.cd_add_to_list),
+                        tint = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.cd_delete),
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        modifier = Modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick,
+        ),
     )
 }
 
@@ -411,4 +552,36 @@ private fun WizardDialogs(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
             dismissButton = { TextButton(onClick = vm::closeWizard) { Text(stringResource(R.string.cancel)) } },
         )
     }
+}
+
+@Composable
+private fun ConfirmDeleteDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
+    val item = s.pendingDeleteItem ?: return
+    AlertDialog(
+        onDismissRequest = vm::cancelDelete,
+        title = { Text(stringResource(R.string.delete)) },
+        text = { Text(stringResource(R.string.delete_item_confirm, item.title)) },
+        confirmButton = {
+            TextButton(onClick = { vm.executeDelete(item) }) {
+                Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = vm::cancelDelete) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun ConfirmAddToListDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
+    val item = s.pendingShoppingItem ?: return
+    AlertDialog(
+        onDismissRequest = vm::cancelAddToList,
+        title = { Text(stringResource(R.string.cd_add_to_list)) },
+        text = { Text(stringResource(R.string.add_to_list_confirm, item.title)) },
+        confirmButton = {
+            TextButton(onClick = { vm.executeAddToList(item) }) {
+                Text(stringResource(R.string.add))
+            }
+        },
+        dismissButton = { TextButton(onClick = vm::cancelAddToList) { Text(stringResource(R.string.cancel)) } },
+    )
 }
