@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.10] — 2026-05-06
+
+### Fixed
+
+- **Brand icons no longer ship with a white background around the shield.** The previous v0.18.9 assets were trimmed but the source PNG had an opaque white surround, which showed as a white square halo behind the shield silhouette in the web favicon, the PWA icon, and the Android launcher / adaptive icon. The white is now flood-filled to transparent in all derived assets (web favicons, `icon-192/512.png`, all five mipmap densities of `ic_launcher`, `ic_launcher_round`, `ic_launcher_foreground`, and `ic_launcher_monochrome`).
+
 ## [0.18.9] — 2026-05-06
 
 ### Changed
