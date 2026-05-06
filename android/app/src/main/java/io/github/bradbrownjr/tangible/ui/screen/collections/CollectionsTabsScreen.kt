@@ -727,11 +727,17 @@ private fun ItemRow(
     onAddToList: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
-    val supporting: (@Composable () -> Unit)? = when {
-        !item.subtitle.isNullOrBlank() -> ({ Text(item.subtitle!!) })
-        !item.notes.isNullOrBlank() -> ({ Text(item.notes!!, maxLines = 1) })
-        else -> null
+    val brand = (item.attrs["brand"] as? String)?.takeIf { it.isNotBlank() }
+    val category = item.category_slug?.takeIf { it.isNotBlank() }?.substringAfterLast('.')
+    val secondaryParts = buildList {
+        brand?.let { add(it) }
+        category?.let { add(it) }
+        item.subtitle?.takeIf { it.isNotBlank() }?.let { add(it) }
+            ?: item.notes?.takeIf { it.isNotBlank() }?.let { add(it) }
     }
+    val supporting: (@Composable () -> Unit)? = if (secondaryParts.isNotEmpty()) {
+        { Text(secondaryParts.joinToString(" \u00b7 "), maxLines = 1) }
+    } else null
     ListItem(
         headlineContent = { Text(item.title) },
         supportingContent = supporting,
@@ -963,11 +969,19 @@ private fun ItemCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(Modifier.padding(8.dp)) {
-            item.category_slug?.let { slug ->
+            val brand = (item.attrs["brand"] as? String)?.takeIf { it.isNotBlank() }
+            val category = item.category_slug?.takeIf { it.isNotBlank() }?.substringAfterLast('.')
+            val secondaryParts = buildList {
+                brand?.let { add(it) }
+                category?.let { add(it) }
+            }
+            if (secondaryParts.isNotEmpty()) {
                 Text(
-                    slug.substringAfterLast('.'),
+                    secondaryParts.joinToString(" \u00b7 "),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(

@@ -572,6 +572,13 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
             OutlinedTextField(
+                value = s.brand,
+                onValueChange = { vm.update { copy(brand = it) } },
+                label = { Text(stringResource(R.string.brand)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
                 value = s.title,
                 onValueChange = { vm.update { copy(title = it) } },
                 label = { Text(stringResource(R.string.title_required)) },
@@ -587,10 +594,11 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
-                value = s.brand,
-                onValueChange = { vm.update { copy(brand = it) } },
-                label = { Text(stringResource(R.string.brand)) },
-                singleLine = true,
+                value = s.notes,
+                onValueChange = { vm.update { copy(notes = it) } },
+                label = { Text(stringResource(R.string.notes)) },
+                minLines = 3,
+                maxLines = 6,
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -674,14 +682,6 @@ private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifie
                 onValueChange = { vm.update { copy(currency = it.take(3).uppercase()) } },
                 label = { Text(stringResource(R.string.currency_hint)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = s.notes,
-                onValueChange = { vm.update { copy(notes = it) } },
-                label = { Text(stringResource(R.string.notes)) },
-                minLines = 3,
-                maxLines = 6,
                 modifier = Modifier.fillMaxWidth(),
             )
 

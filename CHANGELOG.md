@@ -4,6 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.11] — 2026-05-06
+
+### Changed
+
+- **Android: Pantry / Collections rows now show brand and category, matching the shopping list.** Both the list and grid views display "Brand · Category" as a colored subtitle (or just brand, or just category, or the item subtitle / first line of notes if neither is set), so the same item reads the same way in either screen.
+- **Android: Item editor field order now mirrors the shopping list editor.** Brand, Title, Subtitle, Notes, then Quantity (paired with Condition), then Location, Purchase price, Current value, and Currency. Editing the same item from either surface now starts with the same field on top.
+- **Android: Lists toolbar gained the same Image and Tile/List icons as Collections.** Tap the picture icon to pick a photo from your gallery and have the barcode decoded and looked up; tap the grid icon to switch the list to a 2-column card view (and back). Aisle group headers span the full width in grid mode.
+
 ## [0.18.10] — 2026-05-06
 
 ### Fixed

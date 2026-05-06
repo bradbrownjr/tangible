@@ -4,14 +4,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
@@ -19,17 +27,26 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewModelScope
+import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -85,7 +102,10 @@ data class ShoppingListUi(
     val availableCategories: List<CategoryDto> = emptyList(),
     val editingEntry: ShoppingFeedEntryDto? = null,
     val isOnline: Boolean = true,
+    val viewMode: ShoppingViewMode = ShoppingViewMode.LIST,
 )
+
+enum class ShoppingViewMode { LIST, GRID }
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
@@ -156,6 +176,13 @@ class ShoppingListViewModel @Inject constructor(
 
     fun showAddDialog() {
         _state.value = _state.value.copy(showAddDialog = true)
+    }
+
+    fun toggleViewMode() {
+        val cur = _state.value.viewMode
+        _state.value = _state.value.copy(
+            viewMode = if (cur == ShoppingViewMode.LIST) ShoppingViewMode.GRID else ShoppingViewMode.LIST,
+        )
     }
 
     fun dismissAddDialog() {
@@ -427,6 +454,40 @@ fun ShoppingListScreen(
         if (!scannedBarcode.isNullOrBlank()) viewModel.onBarcode(scannedBarcode)
     }
 
+    // ML Kit barcode decoder for the photo-as-barcode picker. Mirrors the
+    // implementation in CollectionsTabsScreen so both surfaces feel the same.
+    val context = LocalContext.current
+    val imageScanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_EAN_13,
+                    Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_UPC_E,
+                    Barcode.FORMAT_CODE_128,
+                    Barcode.FORMAT_QR_CODE,
+                )
+                .build(),
+        )
+    }
+    DisposableEffect(Unit) { onDispose { imageScanner.close() } }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        try {
+            val image = InputImage.fromFilePath(context, uri)
+            imageScanner.process(image)
+                .addOnSuccessListener { results ->
+                    val code = results.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
+                    if (!code.isNullOrBlank()) viewModel.onBarcode(code)
+                    else viewModel.showAddDialog()
+                }
+                .addOnFailureListener { viewModel.showAddDialog() }
+        } catch (_: Throwable) {
+            viewModel.showAddDialog()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -460,10 +521,26 @@ fun ShoppingListScreen(
                                 LocalContentColor.current,
                         )
                     }
+                    IconButton(onClick = viewModel::toggleViewMode) {
+                        Icon(
+                            if (ui.viewMode == ShoppingViewMode.LIST) Icons.Default.GridView
+                            else Icons.AutoMirrored.Filled.ViewList,
+                            contentDescription = stringResource(
+                                if (ui.viewMode == ShoppingViewMode.LIST) R.string.cd_grid_view
+                                else R.string.cd_list_view,
+                            ),
+                        )
+                    }
                     IconButton(onClick = onNavigateToScanner) {
                         Icon(
                             Icons.Default.QrCodeScanner,
                             contentDescription = stringResource(R.string.cd_scan_barcode),
+                        )
+                    }
+                    IconButton(onClick = { imagePicker.launch("image/*") }) {
+                        Icon(
+                            Icons.Default.Image,
+                            contentDescription = stringResource(R.string.cd_scan_barcode_image),
                         )
                     }
                     IconButton(onClick = { viewModel.showAddDialog() }) {
@@ -563,7 +640,42 @@ fun ShoppingListScreen(
                         }
                     }
                     else -> {
-                        LazyColumn(
+                        if (ui.viewMode == ShoppingViewMode.GRID) {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                if (aisleGroups != null) {
+                                    aisleGroups.forEach { group ->
+                                        item(key = "header-${group.name}", span = { GridItemSpan(maxLineSpan) }) {
+                                            AisleHeader(group.name)
+                                        }
+                                        items(group.items, key = { it.id }) { entry ->
+                                            ShoppingEntryCard(
+                                                entry = entry,
+                                                isUpdating = entry.id in ui.updating,
+                                                onCheck = { viewModel.checkItem(entry.id) },
+                                                onDelete = { viewModel.deleteItem(entry.id) },
+                                                onEdit = { viewModel.startEdit(entry) },
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    items(ui.items, key = { it.id }) { entry ->
+                                        ShoppingEntryCard(
+                                            entry = entry,
+                                            isUpdating = entry.id in ui.updating,
+                                            onCheck = { viewModel.checkItem(entry.id) },
+                                            onDelete = { viewModel.deleteItem(entry.id) },
+                                            onEdit = { viewModel.startEdit(entry) },
+                                        )
+                                    }
+                                }
+                            }
+                        } else LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(vertical = 8.dp),
                         ) {
@@ -738,6 +850,69 @@ private fun ShoppingEntryRow(
         },
         modifier = Modifier.clickable(onClick = onEdit),
     )
+}
+
+@Composable
+private fun ShoppingEntryCard(
+    entry: ShoppingFeedEntryDto,
+    isUpdating: Boolean,
+    onCheck: () -> Unit,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+) {
+    val brand = entry.brand?.takeIf { it.isNotBlank() }
+    val category = entry.category_slug?.takeIf { it.isNotBlank() }?.substringAfterLast('.')
+    val secondaryParts = buildList {
+        brand?.let { add(it) }
+        category?.let { add(it) }
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(8.dp)) {
+            if (secondaryParts.isNotEmpty()) {
+                Text(
+                    secondaryParts.joinToString(" \u00b7 "),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                entry.name,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (entry.quantity > 1) {
+                Text(
+                    "\u00d7${entry.quantity}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit), tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = onDelete, enabled = !isUpdating) {
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.remove), tint = MaterialTheme.colorScheme.error)
+                }
+                IconButton(onClick = onCheck, enabled = !isUpdating) {
+                    if (isUpdating) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
+                    } else {
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.got_it), tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
