@@ -51,6 +51,16 @@
     const warning = $derived(alerts.filter(a => a.severity !== 'critical'));
     const count = $derived(alerts.length);
 
+    const KIND_ICON: Record<string, string> = {
+        maintenance_due: 'wrench',
+        chore_due: 'sparkles',
+        item_use_by: 'clock',
+        low_stock: 'package-x',
+    };
+    function kindIcon(kind: string): string {
+        return KIND_ICON[kind] ?? 'bell';
+    }
+
     function formatDue(iso: string) {
         return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
@@ -85,9 +95,9 @@
                         <li class="alert-item critical">
                             <Icon name="circle-alert" size={14} class="severity-icon severity-critical" />
                             <div class="alert-body">
-                                <strong>{a.title}</strong>
+                                <strong><Icon name={kindIcon(a.kind)} size={13} class="kind-icon" /> {a.title}</strong>
                                 {#if a.details}<span class="details">{a.details}</span>{/if}
-                                <span class="due">{formatDue(a.due_at)}</span>
+                                <time class="due" datetime={a.due_at}>{formatDue(a.due_at)}</time>
                             </div>
                         </li>
                     {/each}
@@ -95,9 +105,9 @@
                         <li class="alert-item warning">
                             <Icon name="triangle-alert" size={14} class="severity-icon severity-warning" />
                             <div class="alert-body">
-                                <strong>{a.title}</strong>
+                                <strong><Icon name={kindIcon(a.kind)} size={13} class="kind-icon" /> {a.title}</strong>
                                 {#if a.details}<span class="details">{a.details}</span>{/if}
-                                <span class="due">{formatDue(a.due_at)}</span>
+                                <time class="due" datetime={a.due_at}>{formatDue(a.due_at)}</time>
                             </div>
                         </li>
                     {/each}
@@ -209,6 +219,11 @@
     }
     :global(.severity-critical) { color: var(--danger); }
     :global(.severity-warning) { color: var(--warning); }
+    :global(.kind-icon) {
+        margin-right: 0.25rem;
+        vertical-align: -2px;
+        opacity: 0.75;
+    }
     .alert-body {
         display: flex;
         flex-direction: column;

@@ -4,6 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.14] — 2026-05-06
+
+### Changed
+
+- **Web nav: profile name now leads with a person icon** so every entry in the top bar carries an icon (Home, Collections, Lists, Maintenance, Settings, Profile).
+- **Web alerts dropdown:** every alert now shows a per-kind leading icon next to the title (wrench for maintenance, sparkles for chores, clock for use-by, package-x for low-stock) and the due date is wrapped in a real `<time datetime>` element so screen-readers and copy-paste work correctly.
+- **Roadmap Phase 14 status snapshot** updated to reflect what is actually shipped (Waves 1, 2, 3, 5 done; Wave 4 mostly done; Waves 6, 7, 8 still pending).
+
 ## [0.18.13] — 2026-05-06
 
 ### Changed

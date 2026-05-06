@@ -248,7 +248,10 @@
                 <Icon name="settings" size={16} />
                 <span>{$_('nav.settings')}</span>
             </a>
-            <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
+            <a href="/profile" class="user nav-link" onclick={closeMenu} title={$_('nav.edit_profile')}>
+                <Icon name="user" size={16} />
+                <span>{userLabel($me)}</span>
+            </a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
         {/if}
     </nav>
