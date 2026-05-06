@@ -22,11 +22,34 @@ re-enter it.
 
 ## Collections list
 
-After signing in you land on the **Collections** screen.
+After signing in you land on the **Collections** screen. Collections are
+shown as swipeable tabs across the top; the current tab's items are listed
+beneath.
 
-- **Pull down** to refresh the list from the server.
-- Tap the **hamburger menu** (top-right) to access Grocery List, Maintenance, Settings, About, and Help.
-- Tap the **+** button (bottom-right) to create a new collection.
+- **Pull down** to refresh the current tab's items from the server.
+- Tap the **+** icon (top-right) to create a new collection.
+- Swipe between tabs or tap a tab name to switch collections.
+
+### Searching items in a tab
+
+Each tab has an **inline search bar** above the item list. Tap it and type
+to filter items by title. The filter is applied instantly in the current
+tab's loaded items. Tap the **✕** (clear) button to reset the search.
+
+### Item row actions
+
+Every item row in the Collections tabs shows three icon buttons on the
+right:
+
+| Icon | Action |
+|---|---|
+| **Pencil** | Open the item in **edit mode** directly |
+| **Shopping cart** | Add the item to the shopping list (asks for confirmation) |
+| **Trash** | Delete the item permanently (asks for confirmation) |
+
+Tapping the item's **title / text area** (short tap) opens the item in
+**view mode** first. **Long-pressing** anywhere on the row opens it
+directly in **edit mode**, the same as tapping the pencil icon.
 
 ### Creating a collection
 
