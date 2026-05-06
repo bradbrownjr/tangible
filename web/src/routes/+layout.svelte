@@ -188,7 +188,7 @@
                     </button>
                     {#if collectionsMenuOpen}
                         <div class="nav-lists-dropdown" role="menu">
-                            <a href="/" role="menuitem" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
+                            <a href="/collections" role="menuitem" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
                                 {$_('nav.all_collections')}
                             </a>
                             {#each navCollections as col}
@@ -196,7 +196,7 @@
                                     {col.name}
                                 </a>
                             {/each}
-                            <a href="/?new=1" role="menuitem" class="add-collection-link" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
+                            <a href="/collections?new=1" role="menuitem" class="add-collection-link" onclick={() => { collectionsMenuOpen = false; closeMenu(); }}>
                                 {$_('collections.add_button')}
                             </a>
                         </div>

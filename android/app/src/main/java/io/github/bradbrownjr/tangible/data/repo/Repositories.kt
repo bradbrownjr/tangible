@@ -204,6 +204,18 @@ class ItemRepository @Inject constructor(
         return api.getShoppingList()
     }
 
+    suspend fun search(
+        q: String,
+        field: String? = null,
+        includeArchived: Boolean? = null,
+        limit: Int? = null,
+    ): List<ItemDto> = api.searchItems(
+        q = q,
+        field = field,
+        includeArchived = includeArchived,
+        limit = limit,
+    )
+
     suspend fun restock(itemId: String, quantity: Int = 1, useByDate: String? = null) {
         api.restockItem(
             itemId,

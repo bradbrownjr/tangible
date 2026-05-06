@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -32,6 +33,7 @@ import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionsTabsScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
+import io.github.bradbrownjr.tangible.ui.screen.home.HomeTabScreen
 import io.github.bradbrownjr.tangible.ui.screen.maintenance.MaintenanceScreen
 import io.github.bradbrownjr.tangible.ui.screen.settings.SettingsScreen
 import kotlinx.coroutines.launch
@@ -42,6 +44,7 @@ private data class NavSection(
 )
 
 private val HOME_SECTIONS = listOf(
+    NavSection(R.string.home_tab, Icons.Default.Home),
     NavSection(R.string.collections, Icons.Default.Folder),
     NavSection(R.string.grocery_list, Icons.AutoMirrored.Filled.List),
     NavSection(R.string.maintenance, Icons.Default.Build),
@@ -122,7 +125,8 @@ fun HomeScreen(
             beyondViewportPageCount = 1,
         ) { page ->
             when (page) {
-                0 -> CollectionsTabsScreen(
+                0 -> HomeTabScreen(onOpenItem = onOpenItem)
+                1 -> CollectionsTabsScreen(
                     onOpenItem = onOpenItem,
                     onItemEdit = onItemEdit,
                     onNavigateToScanner = onNavigateToScanner,
@@ -141,20 +145,20 @@ fun HomeScreen(
                         }
                     },
                 )
-                1 -> ShoppingListScreen(
+                2 -> ShoppingListScreen(
                     onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
                     showBackButton = false,
                     onManageStores = onManageStores,
                     onNavigateToScanner = onNavigateToScanner,
                     scannedBarcode = scannedBarcode,
                 )
-                2 -> MaintenanceScreen(onBack = {}, showBackButton = false)
-                3 -> SettingsScreen(
+                3 -> MaintenanceScreen(onBack = {}, showBackButton = false)
+                4 -> SettingsScreen(
                     onSignOut = onSignOut,
                     onBack = {},
                     showBackButton = false,
                 )
-                4 -> AboutScreen(onBack = {}, showBackButton = false)
+                5 -> AboutScreen(onBack = {}, showBackButton = false)
             }
         }
     }

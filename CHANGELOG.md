@@ -4,6 +4,19 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.12] — 2026-05-06
+
+### Added
+
+- **Home page with universal search** (web `/`, Android Home tab). One search box hits every accessible collection at once with a "Search in" dropdown (All / Title / Brand / Category / Notes / Barcode / Serial). Result rows show whether the item is Owned, Wishlist, Depleted, or Archived so a flea-market lookup instantly answers "do I already have one?". Includes archived/disposed items by default so previously-sold items still surface.
+- **Empty-state quick add**: when nothing matches, a button opens a small dialog to drop the search term into a chosen collection (optionally as a wishlist item) without leaving Home.
+- **Server: `POST /items` falls back to the collection's `default_category_slug`** when no `category` or `category_id` is supplied, so quick-add flows don't have to know the category up front.
+
+### Changed
+
+- **Web: collections list moved from `/` to `/collections`.** The header brand link and the Collections menu now route there; the new Home page lives at `/`. Existing `/collections/{id}` deep-links and "Add Collection" links still work.
+- **Android: bottom nav gains a Home tab** as the leftmost section. Existing tabs (Collections, Lists, Maintenance, Settings, About) shift one position to the right.
+
 ## [0.18.11] — 2026-05-06
 
 ### Changed

@@ -1058,6 +1058,40 @@ the first steps toward live collaboration.
 
 ---
 
+## Phase 18 — Universal search & discovery (in progress)
+
+The Home page (web `/`, Android Home tab) now exposes a single search box
+backed by `GET /items/search` with a "Search in" dropdown
+(All / Title / Brand / Category / Notes / Barcode / Serial). Result list
+shows status (Owned, Wishlist, Depleted, Archived) so a flea-market lookup
+on a phone instantly answers "do I already have one?" and offers a
+quick-add path when the answer is no.
+
+Remaining work:
+
+- **Search by tag** — extend the "Search in" dropdown with a `Tag` option.
+  Server: when `field=tag`, match `Tag.name` (case-insensitive substring)
+  via the existing `ItemTag` join and return items carrying that tag. UI:
+  in the Home empty-state result panel, when results carry tags, render
+  the tags as chips that re-run the search with `field=tag&q=<tag>`.
+- **Collector value lookup for "not found" results** — when the universal
+  search returns zero matches and the user is at a flea market, surface
+  an inline "Look up market value" action. Adapter plug-ins per source,
+  reusing the `tangible.scraper_adapter` entry-point pattern from the
+  metadata scraper:
+  - PriceCharting (video games, comics, trading cards, sealed media)
+  - Discogs (music: vinyl, CDs)
+  - eBay sold-listings / Terapeak (general second-hand)
+  - IGDB (game metadata + cover art, no prices but useful for prefill)
+  - Heritage Auctions (collectibles, coins)
+  - Worthpoint (general antiques)
+  - Numista (coins / banknotes)
+  Result panel renders a price range + source links; user can one-click
+  "Add to Wishlist" or "Add to a collection" pre-filled with the looked-up
+  metadata. Cache lookups for 24h to be polite to upstream APIs.
+
+---
+
 ## Done
 
 See [CHANGELOG.md](CHANGELOG.md) for what has shipped (auth, items,

@@ -44,6 +44,32 @@
     <string name="maintenance">Maintenance</string>
     <string name="settings">Settings</string>
     <string name="about">About</string>
+
+    <!-- Home / universal search -->
+    <string name="home_tab" tools:ignore="MissingTranslation">Home</string>
+    <string name="home_search_placeholder" tools:ignore="MissingTranslation">Search by name, brand, barcode, serial</string>
+    <string name="home_search_field_label" tools:ignore="MissingTranslation">Search in</string>
+    <string name="home_search_field_all" tools:ignore="MissingTranslation">All fields</string>
+    <string name="home_search_field_title" tools:ignore="MissingTranslation">Title</string>
+    <string name="home_search_field_brand" tools:ignore="MissingTranslation">Brand</string>
+    <string name="home_search_field_category" tools:ignore="MissingTranslation">Category</string>
+    <string name="home_search_field_notes" tools:ignore="MissingTranslation">Notes</string>
+    <string name="home_search_field_barcode" tools:ignore="MissingTranslation">Barcode</string>
+    <string name="home_search_field_serial" tools:ignore="MissingTranslation">Serial #</string>
+    <string name="home_include_archived" tools:ignore="MissingTranslation">Include archived items</string>
+    <string name="home_status_owned" tools:ignore="MissingTranslation">Owned</string>
+    <string name="home_status_wishlist" tools:ignore="MissingTranslation">Wishlist</string>
+    <string name="home_status_depleted" tools:ignore="MissingTranslation">Depleted</string>
+    <string name="home_status_archived" tools:ignore="MissingTranslation">Archived</string>
+    <string name="home_empty_title" tools:ignore="MissingTranslation">No matches for \"%1$s\"</string>
+    <string name="home_empty_subtitle" tools:ignore="MissingTranslation">Add it to a collection or your wishlist to remember next time.</string>
+    <string name="home_empty_add" tools:ignore="MissingTranslation">Add to a collection</string>
+    <string name="home_add_dialog_title" tools:ignore="MissingTranslation">Add \"%1$s\"</string>
+    <string name="home_add_dialog_collection" tools:ignore="MissingTranslation">Collection</string>
+    <string name="home_add_dialog_as_wishlist" tools:ignore="MissingTranslation">Add as a wishlist item (don\'t own it yet)</string>
+    <string name="home_add_dialog_add" tools:ignore="MissingTranslation">Add</string>
+    <string name="home_shortcuts_heading" tools:ignore="MissingTranslation">Jump to</string>
+
     <string name="cd_new_collection">New collection</string>
     <string name="no_collections">No collections yet. Tap + to create one.</string>
     <string name="what_are_you_collecting">What are you collecting?</string>

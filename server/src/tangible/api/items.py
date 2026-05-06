@@ -395,9 +395,59 @@ def ai_prefill(
     )
 
 
+_SEARCH_FIELDS = {"all", "title", "brand", "category", "notes", "barcode", "serial", "tag"}
+_BARCODE_KEYS = ("barcode", "ean", "ean13", "ean8", "upc", "upc_a", "upc_e", "isbn", "qr")
+_SERIAL_KEYS = ("serial", "sn", "serial_number", "service_tag", "imei")
+
+
+def _item_field_text(
+    item: Item,
+    field: str,
+    doc_text_by_item: dict[str, list[str]],
+    category_slug_by_id: dict[str, str],
+    tag_names_by_item: dict[str, list[str]],
+) -> str:
+    """Return the substring of `item` that should be matched for `field`."""
+    if field == "title":
+        return item.title or ""
+    if field == "brand":
+        attrs = item.attrs or {}
+        brand = attrs.get("brand") or attrs.get("manufacturer") or attrs.get("maker") or ""
+        return str(brand)
+    if field == "category":
+        return category_slug_by_id.get(item.category_id or "", "") or ""
+    if field == "notes":
+        return " ".join(filter(None, [item.subtitle or "", item.notes or ""]))
+    if field == "barcode":
+        ids = item.identifiers or {}
+        return " ".join(str(ids[k]) for k in _BARCODE_KEYS if ids.get(k))
+    if field == "serial":
+        ids = item.identifiers or {}
+        attrs = item.attrs or {}
+        parts = [str(ids[k]) for k in _SERIAL_KEYS if ids.get(k)]
+        parts += [str(attrs[k]) for k in _SERIAL_KEYS if attrs.get(k)]
+        return " ".join(parts)
+    if field == "tag":
+        return " ".join(tag_names_by_item.get(item.id, []))
+    # all
+    fields = [
+        item.title or "",
+        item.subtitle or "",
+        item.notes or "",
+        " ".join(str(v) for v in (item.attrs or {}).values()),
+        " ".join(str(v) for v in (item.identifiers or {}).values()),
+        " ".join(doc_text_by_item.get(item.id, [])),
+        category_slug_by_id.get(item.category_id or "", "") or "",
+        " ".join(tag_names_by_item.get(item.id, [])),
+    ]
+    return " ".join(fields)
+
+
 @router.get("/search", response_model=list[ItemRead])
 def search_items(
     q: str = Query(..., min_length=1, max_length=256, description="Search query"),
+    field: str = Query(default="all", description="Field to search in"),
+    include_archived: bool = Query(default=False, description="Include archived/disposed items"),
     limit: int = Query(default=50, ge=1, le=200, description="Max results"),
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
@@ -405,8 +455,15 @@ def search_items(
     """Global search across all items in user's accessible collections.
 
     Supports fuzzy matching with accent-folding (é matches e, etc).
-    Returns items from all collections the user can access.
+    The `field` parameter narrows the search to a single attribute:
+    `all`, `title`, `brand`, `category`, `notes`, `barcode`, `serial`, or `tag`.
     """
+    if field not in _SEARCH_FIELDS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"field must be one of {sorted(_SEARCH_FIELDS)}",
+        )
+
     # Get all collections user has access to (membership + ownership).
     if auth.user.is_admin:
         accessible_collections = db.scalars(select(Collection.id)).all()
@@ -426,13 +483,14 @@ def search_items(
     if not accessible_collections:
         return []
 
-    # Search across all accessible collections
+    # Search across all accessible collections.
     stmt = (
         select(Item)
         .where(Item.collection_id.in_(accessible_collections))
-        .where(Item.archived_at.is_(None))
         .options(selectinload(Item.photos))
     )
+    if not include_archived:
+        stmt = stmt.where(Item.archived_at.is_(None))
 
     items = db.scalars(stmt).all()
     if not items:
@@ -450,37 +508,48 @@ def search_items(
             continue
         doc_text_by_item.setdefault(item_id, []).append(search_text)
 
-    # Normalize search term (accent-folding)
+    # Category slug lookup (for `field=category` and `field=all`).
+    cat_ids = {item.category_id for item in items if item.category_id}
+    category_slug_by_id: dict[str, str] = {}
+    if cat_ids:
+        category_slug_by_id = dict(
+            db.execute(select(Category.id, Category.slug).where(Category.id.in_(cat_ids))).all()
+        )
+
+    # Tag names per item (for `field=tag` and `field=all`).
+    tag_names_by_item: dict[str, list[str]] = {}
+    tag_rows = db.execute(
+        select(ItemTag.item_id, Tag.name)
+        .join(Tag, Tag.id == ItemTag.tag_id)
+        .where(ItemTag.item_id.in_(item_ids))
+    ).all()
+    for it_id, tag_name in tag_rows:
+        tag_names_by_item.setdefault(it_id, []).append(tag_name)
+
+    # Normalize search term (accent-folding).
     normalized_q = unidecode(q.lower().strip())
 
-    # Filter items using fuzzy matching with accent-folding
+    # Filter items using fuzzy matching with accent-folding.
     matched_items: list[tuple[Item, float]] = []
 
     for item in items:
-        # Build searchable content
-        search_fields = [
-            item.title or "",
-            item.subtitle or "",
-            item.notes or "",
-            " ".join(str(v) for v in (item.attrs or {}).values()),
-            " ".join(str(v) for v in (item.identifiers or {}).values()),
-            " ".join(doc_text_by_item.get(item.id, [])),
-        ]
-        combined_text = " ".join(search_fields)
-        normalized_text = unidecode(combined_text.lower())
+        text = _item_field_text(
+            item, field, doc_text_by_item, category_slug_by_id, tag_names_by_item
+        )
+        if not text:
+            continue
+        normalized_text = unidecode(text.lower())
 
-        # Simple fuzzy matching: check if query appears in text or vice versa
-        # Score: exact match > substring match > partial match
+        # Score: exact > substring > all-chars-present.
         score = 0.0
         if normalized_q == normalized_text:
             score = 100.0
         elif normalized_q in normalized_text:
-            score = 50.0 + (len(normalized_q) / len(normalized_text)) * 50.0
-        elif all(c in normalized_text for c in normalized_q):
-            # All characters present (fuzzy match)
+            score = 50.0 + (len(normalized_q) / max(len(normalized_text), 1)) * 50.0
+        elif field == "all" and all(c in normalized_text for c in normalized_q):
             score = 25.0
         else:
-            continue  # No match, skip this item
+            continue
 
         matched_items.append((item, score))
 
@@ -557,6 +626,14 @@ def create_item(
     data = payload.model_dump()
     cat_slug = data.pop("category", None)
     if not data.get("category_id"):
+        if not cat_slug:
+            # Fall back to the collection's default category when present —
+            # lets quick-add flows (universal search empty-state, generic
+            # wishlist add) succeed without forcing the user to pick a
+            # category up front.
+            col = db.get(Collection, payload.collection_id)
+            if col is not None and col.default_category_slug:
+                cat_slug = col.default_category_slug
         if not cat_slug:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

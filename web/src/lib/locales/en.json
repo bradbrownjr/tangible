@@ -9,7 +9,47 @@
     "alerts": "Alerts",
     "whats_new": "What's new",
     "edit_profile": "Edit your profile",
-    "lists": "Lists"
+    "lists": "Lists",
+    "import": "Import"
+  },
+  "home": {
+    "title": "Home",
+    "search": {
+      "placeholder": "Search by name, brand, barcode, serial…",
+      "submit": "Search",
+      "field_label": "Search in",
+      "include_archived": "Include archived items",
+      "field": {
+        "all": "All fields",
+        "title": "Title",
+        "brand": "Brand",
+        "category": "Category",
+        "notes": "Notes",
+        "barcode": "Barcode",
+        "serial": "Serial #"
+      }
+    },
+    "status": {
+      "owned": "Owned",
+      "wishlist": "Wishlist",
+      "depleted": "Depleted",
+      "archived": "Archived"
+    },
+    "empty": {
+      "title": "No matches for \"{q}\"",
+      "subtitle": "Add it to a collection or your wishlist to remember next time.",
+      "add_button": "Add to a collection"
+    },
+    "shortcuts": {
+      "heading": "Jump to"
+    },
+    "add_dialog": {
+      "heading": "Add \"{q}\"",
+      "collection_label": "Collection",
+      "as_wishlist": "Add as a wishlist item (don't own it yet)",
+      "add": "Add",
+      "adding": "Adding…"
+    }
   },
   "alerts": {
     "no_upcoming": "No upcoming alerts.",

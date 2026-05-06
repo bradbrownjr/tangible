@@ -87,6 +87,14 @@ interface TangibleApi {
     @GET("items/{id}")
     suspend fun getItem(@Path("id") id: String): ItemDto
 
+    @GET("items/search")
+    suspend fun searchItems(
+        @Query("q") q: String,
+        @Query("field") field: String? = null,
+        @Query("include_archived") includeArchived: Boolean? = null,
+        @Query("limit") limit: Int? = null,
+    ): List<ItemDto>
+
     @DELETE("items/{id}")
     suspend fun deleteItem(@Path("id") id: String)
 
