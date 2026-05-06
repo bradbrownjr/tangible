@@ -228,9 +228,14 @@
         font-size: 1rem;
         cursor: pointer;
         color: var(--text-muted);
-        padding: 0.25rem;
+        padding: 0;
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
         line-height: 1;
         flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     .panel-close:hover { color: var(--text); }
     .panel-body {

@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Item editor redesign:** the inline row edit form is replaced by a slide-over panel that opens from the right (full-screen on phones). All fields — title, creator, series/subtitle, condition, quantity, purchase date, and consumable date fields — are grouped in a scrollable panel with a sticky Save/Cancel footer. The panel closes when you press × or click the backdrop.
+- **Collection page split into components:** the collections detail page is now composed from focused child components (AddItemCard, FilterBar, AdvancedFilters, BulkToolbar, ItemGrid, ItemTable, ItemEditPanel, and modal dialogs). All behavior is preserved.
+- **Accessibility improvements (Wave 7):** touch targets raised to 44px minimum everywhere (IconButton sm variant, view-toggle buttons, bulk-toolbar compact buttons, slide-over close button); date/time values are now wrapped in `<time datetime="ISO">` elements in item badges, chores last-completed, maintenance due-dates, and audit-log timestamps; modal footers stack vertically on narrow viewports (≤ 480 px) so buttons never clip off-screen.
+- **Accessibility tooling:** `npm run a11y` script added to the web package — runs `pa11y-ci` in WCAG2AA mode against the preview server; config lives in `web/.pa11yci.json`.
+
 ## [0.18.16] — 2026-05-06
 
 ### Fixed

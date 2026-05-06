@@ -111,7 +111,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0.4rem 0.6rem;
+        padding: 0 0.6rem;
+        min-height: var(--tap-min);
         background: var(--surface);
         border: none;
         border-radius: 0;

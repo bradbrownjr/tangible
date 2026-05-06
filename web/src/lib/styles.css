@@ -349,4 +349,9 @@ th { font-size: var(--text-sm); color: var(--text-muted); font-weight: 600; }
     main {
         padding: 1rem;
     }
+
+    /* Audit log table — raw ISO strings can word-break */
+    td code {
+        word-break: break-all;
+    }
 }

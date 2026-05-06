@@ -375,7 +375,7 @@
             <tbody>
                 {#each auditLog as entry (entry.id)}
                     <tr>
-                        <td class="muted">{entry.created_at}</td>
+                        <td class="muted"><time datetime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time></td>
                         <td><code>{entry.action}</code></td>
                         <td class="muted">
                             {entry.target_type ?? ''}{entry.target_id ? ' ' + entry.target_id : ''}

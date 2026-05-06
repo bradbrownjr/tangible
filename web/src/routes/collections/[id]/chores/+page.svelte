@@ -244,7 +244,7 @@
                         {/if}
                         {#if ch.last_completed_at}
                             <p class="last-done">
-                                {$_('chores.last_done_label')} {new Date(ch.last_completed_at).toLocaleDateString()}
+                                {$_('chores.last_done_label')} <time datetime={ch.last_completed_at}>{new Date(ch.last_completed_at).toLocaleDateString()}</time>
                             </p>
                         {/if}
                         {#if canEdit}

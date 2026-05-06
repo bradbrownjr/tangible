@@ -122,7 +122,7 @@
                                 <span class="alert-title">{alert.title}</span>
                                 {#if alert.due_at}
                                     <span class="due-badge" class:critical={alert.severity === 'critical'}>
-                                        {daysLabel(alert.due_at)}
+                                        <time datetime={alert.due_at}>{daysLabel(alert.due_at)}</time>
                                     </span>
                                 {/if}
                             </div>

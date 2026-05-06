@@ -114,8 +114,8 @@
                     {#if i.archived_at}<span class="archived-badge">{$_('collection.badge_archived')}</span>{/if}
                     {#if i.flagged_at}<span class="flagged-badge" title={i.flagged_note ?? $_('collection.flag_for_review')}>{$_('collection.badge_flagged')}</span>{/if}
                     {#if isConsumable(i.category_slug)}
-                        {#if i.use_by_date}<span class="date-badge use-by">{$_('collection.badge_use_by', { values: { date: new Date(i.use_by_date).toLocaleDateString() } })}</span>{/if}
-                        {#if i.date_opened}<span class="date-badge opened">{$_('collection.badge_opened', { values: { date: new Date(i.date_opened).toLocaleDateString() } })}</span>{/if}
+                        {#if i.use_by_date}<span class="date-badge use-by"><time datetime={i.use_by_date}>{$_('collection.badge_use_by', { values: { date: new Date(i.use_by_date).toLocaleDateString() } })}</time></span>{/if}
+                        {#if i.date_opened}<span class="date-badge opened"><time datetime={i.date_opened}>{$_('collection.badge_opened', { values: { date: new Date(i.date_opened).toLocaleDateString() } })}</time></span>{/if}
                     {/if}
                 </div>
             </div>

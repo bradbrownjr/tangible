@@ -49,7 +49,8 @@
         flex-shrink: 0;
     }
 
-    .icon-btn--sm { width: 32px; height: 32px; min-height: 32px; }
+    /* Visual size 32px but hit-area expands to 44px via padding (WCAG 2.5.5) */
+    .icon-btn--sm { width: 32px; height: 32px; min-height: var(--tap-min); padding: 6px; }
     .icon-btn--md { width: var(--tap-min); height: var(--tap-min); min-height: var(--tap-min); }
 
     .icon-btn--primary   { background: var(--accent); color: var(--accent-contrast); }

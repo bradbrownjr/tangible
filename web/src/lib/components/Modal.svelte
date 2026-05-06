@@ -121,5 +121,15 @@
         gap: var(--space-3);
         padding: var(--space-4) var(--space-5);
         border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+        .modal__footer {
+            flex-direction: column-reverse;
+        }
+        .modal__footer :global(button) {
+            width: 100%;
+        }
     }
 </style>

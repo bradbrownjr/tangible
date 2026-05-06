@@ -97,8 +97,10 @@ remembered in the browser.
 ### Viewing and editing items
 
 Each item row has an **Edit** button (visible to editors and owners) that
-expands an inline form for title, creator, series/subtitle, condition, and
-quantity. Viewers see the collection read-only.
+opens a **slide-over panel** on the right side of the screen (full-screen
+on mobile) for title, creator, series/subtitle, condition, quantity, and
+date fields. Close the panel with the **×** button or click the backdrop.
+Viewers see the collection read-only.
 
 - **Duplicate** creates a copy of an item in the same collection and
   category, carrying over identifiers and custom attributes so you can
