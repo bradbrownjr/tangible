@@ -1,7 +1,7 @@
 <script lang="ts">
     import { api } from '$lib/api';
     import { me, refreshMe } from '$lib/session';
-    import { theme, palette, PALETTES, type ThemeMode } from '$lib/theme';
+    import { theme, palette, PALETTES, resolve, type ThemeMode } from '$lib/theme';
     import { _, locale } from 'svelte-i18n';
     import { LOCALES, setLocale } from '$lib/i18n';
 
@@ -16,6 +16,9 @@
             await refreshMe();
         } catch { /* non-fatal */ }
     }
+
+    /** Resolved dark/light for swatch previews — reacts to theme store. */
+    const resolvedMode = $derived(resolve($theme));
 </script>
 
 <h2>{$_('settings.nav_appearance')}</h2>
@@ -24,24 +27,24 @@
     <h3 style="margin-top:0">{$_('settings.appearance_heading')}</h3>
     <p class="muted">{$_('settings.appearance_description')}</p>
 
-    {#if PALETTES.find(p => p.id === $palette)?.mode === 'both'}
-        <div role="radiogroup" aria-label="Theme mode" class="theme-toggle" style="margin-bottom:1rem">
-            {#each ['light', 'dark', 'system'] as const as opt (opt)}
-                <button
-                    type="button"
-                    class={$theme === opt ? '' : 'secondary'}
-                    aria-pressed={$theme === opt}
-                    onclick={() => theme.set(opt as ThemeMode)}
-                >
-                    {opt === 'light' ? $_('settings.theme_light') : opt === 'dark' ? $_('settings.theme_dark') : $_('settings.theme_system')}
-                </button>
-            {/each}
-        </div>
-    {/if}
+    <div role="radiogroup" aria-label="Theme mode" class="theme-toggle" style="margin-bottom:1rem">
+        {#each ['light', 'dark', 'system'] as const as opt (opt)}
+            <button
+                type="button"
+                class={$theme === opt ? '' : 'secondary'}
+                aria-pressed={$theme === opt}
+                onclick={() => theme.set(opt as ThemeMode)}
+            >
+                {opt === 'light' ? $_('settings.theme_light') : opt === 'dark' ? $_('settings.theme_dark') : $_('settings.theme_system')}
+            </button>
+        {/each}
+    </div>
 
     <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0 0 0.5rem">{$_('settings.palette_label')}</p>
     <div class="palette-grid">
         {#each PALETTES as p (p.id)}
+            {@const swatchBg     = resolvedMode === 'light' ? p.bgLight     : p.bg}
+            {@const swatchAccent = resolvedMode === 'light' ? p.accentLight : p.accent}
             <button
                 type="button"
                 class="palette-card {$palette === p.id ? 'palette-card--active' : 'secondary'}"
@@ -49,8 +52,8 @@
                 aria-pressed={$palette === p.id}
                 title={p.name}
             >
-                <span class="palette-swatch" style="background:{p.bg}">
-                    <span class="palette-accent" style="background:{p.accent}"></span>
+                <span class="palette-swatch" style="background:{swatchBg}">
+                    <span class="palette-accent" style="background:{swatchAccent}"></span>
                 </span>
                 <span class="palette-name">{p.name}</span>
             </button>

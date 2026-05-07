@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.21.0] — 2026-05-07
+
+### Added
+
+- **Light and dark modes for every theme (web):** all 11 color themes now fully support the Light, Dark, and System mode toggle. Previously only the Tangible theme responded to the mode switch; the remaining themes were locked to a single appearance. Each theme now has a carefully crafted opposite variant that preserves its key accent color while adapting backgrounds, surfaces, borders, and text for legibility in the chosen mode. The swatch previews in Settings update in real time to show what the theme looks like in the currently selected mode.
+- **Granite dark richer contrast:** the Granite dark variant's background is now noticeably deeper (`#1D2327` vs `#2C343B`) so it no longer looks washed out next to the darker themes.
+
 ## [0.20.3] — 2026-05-07
 
 ### Fixed

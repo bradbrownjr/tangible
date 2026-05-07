@@ -13,19 +13,16 @@
         <script>
             // Pre-hydration theme bootstrap — mirrors theme.ts resolveDataTheme() to avoid FOUC.
             // Reads: tangible:theme-mode ('light'|'dark'|'system')
-            //        tangible:theme-palette (palette id, default 'tangible')
-            // Single-mode palettes (gazette, paper, cloud, passion, granite, tron, espresso, onedark, blues, blackboard)
-            // are applied as-is. The 'tangible' palette appends '-light' or '-dark'.
+            //        tangible:theme-palette (palette id, default 'granite')
+            // All palettes support both light and dark — data-theme is always '<palette>-<mode>'.
             (function () {
-                var BOTH_MODE = { tangible: true };
                 try {
                     var mode = localStorage.getItem('tangible:theme-mode') || 'system';
                     var pal  = localStorage.getItem('tangible:theme-palette') || 'granite';
                     var dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-                    var dt = BOTH_MODE[pal] ? pal + (dark ? '-dark' : '-light') : pal;
-                    document.documentElement.dataset.theme = dt;
+                    document.documentElement.dataset.theme = pal + (dark ? '-dark' : '-light');
                 } catch (_) {
-                    document.documentElement.dataset.theme = 'tangible-dark';
+                    document.documentElement.dataset.theme = 'granite-dark';
                 }
             })();
         </script>

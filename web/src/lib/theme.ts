@@ -17,30 +17,28 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export interface Palette {
     id: string;
     name: string;
-    /** 'light' | 'dark' | 'both' — 'both' means this palette defines light+dark variants */
-    mode: 'light' | 'dark' | 'both';
-    /** Representative background hex for swatch preview */
+    /** Dark-mode background hex for swatch preview */
     bg: string;
-    /** Representative accent hex for swatch preview */
+    /** Dark-mode accent hex for swatch preview */
     accent: string;
+    /** Light-mode background hex for swatch preview */
+    bgLight: string;
+    /** Light-mode accent hex for swatch preview */
+    accentLight: string;
 }
 
 export const PALETTES: Palette[] = [
-    // Brand palette (light + dark variants, mode-switchable)
-    { id: 'tangible', name: 'Tangible',    mode: 'both',  bg: '#1A1D29', accent: '#A78BFA' },
-    // Dark-only brand variant
-    { id: 'granite',  name: 'Granite',     mode: 'dark',  bg: '#2C343B', accent: '#22A88E' },
-    // Light-only
-    { id: 'gazette',  name: 'Gazette',     mode: 'light', bg: '#F2F7FF', accent: '#3B82F6' },
-    { id: 'paper',    name: 'Paper',       mode: 'light', bg: '#F8F6F1', accent: '#AA9A73' },
-    { id: 'cloud',    name: 'Cloud',       mode: 'light', bg: '#F1F2F0', accent: '#37BBE4' },
-    { id: 'passion',  name: 'Passion',     mode: 'light', bg: '#F5F5F5', accent: '#8E24AA' },
-    // Dark-only
-    { id: 'tron',       name: 'Tron',       mode: 'dark', bg: '#242B33', accent: '#6EE2FF' },
-    { id: 'espresso',   name: 'Espresso',   mode: 'dark', bg: '#21211F', accent: '#C49A6C' },
-    { id: 'onedark',    name: 'One Dark',   mode: 'dark', bg: '#282C34', accent: '#98C379' },
-    { id: 'blues',      name: 'Blues',      mode: 'dark', bg: '#2B2C56', accent: '#6677EB' },
-    { id: 'blackboard', name: 'Blackboard', mode: 'dark', bg: '#1A1A1A', accent: '#FFB347' },
+    { id: 'tangible',   name: 'Tangible',   bg: '#1A1D29', accent: '#A78BFA', bgLight: '#F7F6FF', accentLight: '#7C3AED'  },
+    { id: 'granite',    name: 'Granite',    bg: '#1D2327', accent: '#22A88E', bgLight: '#ECF2EF', accentLight: '#0F7A65'  },
+    { id: 'gazette',    name: 'Gazette',    bg: '#1A2030', accent: '#60A5FA', bgLight: '#F2F7FF', accentLight: '#3B82F6'  },
+    { id: 'paper',      name: 'Paper',      bg: '#1E1C18', accent: '#C4A97A', bgLight: '#F8F6F1', accentLight: '#AA9A73'  },
+    { id: 'cloud',      name: 'Cloud',      bg: '#1A2328', accent: '#37BBE4', bgLight: '#F1F2F0', accentLight: '#37BBE4'  },
+    { id: 'passion',    name: 'Passion',    bg: '#1A0A2E', accent: '#CE93D8', bgLight: '#F5F5F5', accentLight: '#8E24AA'  },
+    { id: 'tron',       name: 'Tron',       bg: '#242B33', accent: '#6EE2FF', bgLight: '#EAF8FD', accentLight: '#0891B2'  },
+    { id: 'espresso',   name: 'Espresso',   bg: '#21211F', accent: '#C49A6C', bgLight: '#FDF8F0', accentLight: '#8B6339'  },
+    { id: 'onedark',    name: 'One Dark',   bg: '#282C34', accent: '#98C379', bgLight: '#F2F7EE', accentLight: '#3A7A22'  },
+    { id: 'blues',      name: 'Blues',      bg: '#2B2C56', accent: '#6677EB', bgLight: '#EEF0FF', accentLight: '#4338CA'  },
+    { id: 'blackboard', name: 'Blackboard', bg: '#1A1A1A', accent: '#FFB347', bgLight: '#FDFCF8', accentLight: '#C26800'  },
 ];
 
 const MODE_KEY    = 'tangible:theme-mode';
@@ -68,12 +66,7 @@ function resolveMode(mode: ThemeMode): 'light' | 'dark' {
 }
 
 export function resolveDataTheme(paletteId: string, mode: ThemeMode): string {
-    const palette = PALETTES.find((p) => p.id === paletteId) ?? PALETTES[0];
-    if (palette.mode === 'both') {
-        return `${paletteId}-${resolveMode(mode)}`;
-    }
-    // Single-mode palette: ignore mode, return id directly.
-    return paletteId;
+    return `${paletteId}-${resolveMode(mode)}`;
 }
 
 function applyTheme(paletteId: string, mode: ThemeMode): void {
