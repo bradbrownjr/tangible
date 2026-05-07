@@ -3,7 +3,6 @@
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { api, type Collection } from '$lib/api';
-    import ShoppingStoreManager from '$lib/ShoppingStoreManager.svelte';
     import { categoriesForType } from '$lib/shoppingCategories';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
@@ -107,7 +106,6 @@
     let newWishUrl = $state('');
     let newWishPriority = $state<number | ''>('');
     let adding = $state(false);
-    let showStoreManager = $state(false);
 
     // Edit state
     let editOpen = $state(false);
@@ -322,18 +320,7 @@
     <title>Tangible · {typeTitle(listType)}</title>
 </svelte:head>
 
-<div class="page-heading">
-    {#if listType === 'groceries'}
-        <Button variant="secondary" icon="store" onclick={() => { showStoreManager = true; }}>
-            {$_('grocery.manage_stores_title')}
-        </Button>
-    {/if}
-</div>
 <p class="muted">{$_(`lists.description.${listType}`)}</p>
-
-{#if showStoreManager}
-    <ShoppingStoreManager onClose={() => { showStoreManager = false; }} />
-{/if}
 
 <form class="add-form" onsubmit={addItem}>
     <div class="add-row-main">
@@ -557,20 +544,6 @@
 />
 
 <style>
-    .page-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.25rem;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    .type-head {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        margin: 0;
-    }
     .add-form {
         margin: 1rem 0 1.5rem;
         display: flex;

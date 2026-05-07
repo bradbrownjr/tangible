@@ -21,7 +21,7 @@
         aisles: Aisle[];
     }
 
-    let { onClose }: { onClose: () => void } = $props();
+    let { onClose = undefined, standalone = false }: { onClose?: () => void; standalone?: boolean } = $props();
 
     let stores = $state<Store[]>([]);
     let selectedStoreId = $state<string | null>(null);
@@ -201,11 +201,13 @@
     $effect(() => { load(); });
 </script>
 
-<div class="overlay" role="dialog" aria-modal="true" aria-label="Store manager">
+<div class={standalone ? 'standalone' : 'overlay'} role={standalone ? undefined : 'dialog'} aria-modal={standalone ? undefined : true} aria-label="Store manager">
     <div class="panel">
         <div class="panel-header">
             <h2>{$_('grocery_store.title')}</h2>
-            <button class="close-btn" type="button" onclick={onClose} aria-label={$_('common.close')}><Icon name="x" size={18} /></button>
+            {#if !standalone && onClose}
+                <button class="close-btn" type="button" onclick={onClose} aria-label={$_('common.close')}><Icon name="x" size={18} /></button>
+            {/if}
         </div>
 
         {#if error}
@@ -375,6 +377,17 @@
         background: rgba(0,0,0,0.55);
         display: flex; align-items: center; justify-content: center;
         padding: 1rem;
+    }
+    .standalone {
+        display: block;
+        padding: 0;
+    }
+    .standalone .panel {
+        max-width: 100%;
+        max-height: none;
+        border: none;
+        border-radius: 0;
+        background: transparent;
     }
     .panel {
         background: var(--surface, #1a2232);

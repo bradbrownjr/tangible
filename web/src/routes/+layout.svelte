@@ -234,6 +234,10 @@
                     </div>
                 {/if}
             </div>
+            <a href="/stores" class="nav-link" onclick={closeMenu}>
+                <Icon name="store" size={16} />
+                <span>{$_('nav.stores')}</span>
+            </a>
             <a href="/maintenance" class="nav-link" onclick={closeMenu}>
                 <Icon name="wrench" size={16} />
                 <span>{$_('nav.maintenance')}</span>

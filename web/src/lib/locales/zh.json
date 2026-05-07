@@ -9,7 +9,8 @@
     "alerts": "提醒",
     "whats_new": "最新动态",
     "edit_profile": "编辑个人资料",
-    "lists": "列表"
+    "lists": "列表",
+    "stores": "商店"
   },
   "alerts": {
     "no_upcoming": "暂无即将到来的提醒。",
