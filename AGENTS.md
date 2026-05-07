@@ -392,6 +392,64 @@ Kotlin 2.0.21 analysis API — known noise, not actionable.
 
 ---
 
+## Design Language Tokens
+
+These token names are the shared contract between the web CSS and Android
+theme. When adding spacing, typography, or color to either platform, use the
+matching token from this table rather than inventing new ones.
+
+### Spacing scale
+
+| Web CSS var | Value | Android dp equivalent |
+|---|---|---|
+| `--space-1` | 4px | 4 dp |
+| `--space-2` | 8px | 8 dp |
+| `--space-3` | 12px | 12 dp |
+| `--space-4` | 16px | 16 dp |
+| `--space-6` | 24px | 24 dp |
+| `--space-8` | 32px | 32 dp |
+| `--space-12` | 48px | 48 dp |
+| `--space-16` | 64px | 64 dp |
+
+### Type scale
+
+| Web CSS var | Value | Android M3 equivalent |
+|---|---|---|
+| `--text-xs` | 12px | `labelSmall` |
+| `--text-sm` | 14px | `bodyMedium` |
+| `--text-base` | 16px | `bodyLarge` |
+| `--text-lg` | 18px | `titleMedium` |
+| `--text-xl` | 20px | `titleLarge` |
+| `--text-2xl` | 24px | `headlineMedium` |
+
+### Surface layers (light/dark adaptive)
+
+| Web CSS var | Purpose | Android token |
+|---|---|---|
+| `--bg` | Page background | `MaterialTheme.colorScheme.background` |
+| `--surface` | Card / panel surface | `MaterialTheme.colorScheme.surface` |
+| `--surface-2` | Elevated or nested surface | `MaterialTheme.colorScheme.surfaceVariant` |
+| `--border` | Dividers and borders | `MaterialTheme.colorScheme.outlineVariant` |
+
+### Accent palette
+
+| Name | Hex | Web CSS var | Android usage |
+|---|---|---|---|
+| Tangible violet | `#A78BFA` | `--accent` | `MaterialTheme.colorScheme.primary` (default theme) |
+| Granite teal | `#22A88E` | n/a (collection-specific) | `MaterialTheme.colorScheme.primary` (granite theme) |
+
+### Rules
+
+- Web: all spacing in component styles must use `var(--space-N)` or existing
+  CSS custom properties, not raw pixel or rem values.
+- Android: use `MaterialTheme.colorScheme.*` and `MaterialTheme.typography.*`
+  tokens; hardcoded hex values are only acceptable in `Color.kt` definitions.
+- Border radius: web uses `var(--radius-sm/md/lg/full)`; Android uses
+  `RoundedCornerShape(4/8/16/50.dp)` aligned to those same sizes.
+- Interactive tap targets: minimum 44px / 44 dp (`var(--tap-min)` on web).
+
+---
+
 ## Feature Registry
 
 Compact checklist of shipped user-facing features keyed to their primary

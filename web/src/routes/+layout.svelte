@@ -187,9 +187,6 @@
                     >
                         <Icon name="folder" size={16} />
                         <span>{$_('nav.collections')}</span>
-                        <svg class="chevron" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
-                            <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
-                        </svg>
                     </button>
                     {#if collectionsMenuOpen}
                         <div class="nav-lists-dropdown" role="menu">
@@ -215,10 +212,7 @@
                     aria-expanded={listsMenuOpen}
                 >
                     <Icon name="list" size={16} />
-                    <span>{$_('nav.lists')}{#if shoppingCount > 0} <span class="badge">{shoppingCount}</span>{/if}</span>
-                    <svg class="chevron" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
-                        <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
-                    </svg>
+                    <span>{$_('nav.lists')}</span>
                 </button>
                 {#if listsMenuOpen}
                     <div class="nav-lists-dropdown" role="menu">
@@ -226,16 +220,16 @@
                             {$_('nav.all_lists')}
                         </a>
                         <a href="/lists/groceries" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.groceries')}{#if (shoppingByType['groceries'] ?? 0) > 0} <span class="badge">{shoppingByType['groceries']}</span>{/if}
+                            {$_('lists.type.groceries')}
                         </a>
                         <a href="/lists/hardware" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.hardware')}{#if (shoppingByType['hardware'] ?? 0) > 0} <span class="badge">{shoppingByType['hardware']}</span>{/if}
+                            {$_('lists.type.hardware')}
                         </a>
                         <a href="/lists/home_goods" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.home_goods')}{#if (shoppingByType['home_goods'] ?? 0) > 0} <span class="badge">{shoppingByType['home_goods']}</span>{/if}
+                            {$_('lists.type.home_goods')}
                         </a>
                         <a href="/lists/wish_list" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.wish_list')}{#if (shoppingByType['wish_list'] ?? 0) > 0} <span class="badge">{shoppingByType['wish_list']}</span>{/if}
+                            {$_('lists.type.wish_list')}
                         </a>
                     </div>
                 {/if}
@@ -294,6 +288,8 @@
         display: block;
         width: 28px;
         height: 28px;
+        /* Add drop-shadow so the shield stands out against any header surface color */
+        filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
     }
     .version {
         font-size: 0.75rem;
@@ -369,12 +365,6 @@
     .nav-lists-trigger:hover {
         color: var(--accent);
     }
-    .chevron {
-        transition: transform 0.15s;
-    }
-    .nav-lists-menu.open .chevron {
-        transform: rotate(180deg);
-    }
     .nav-lists-dropdown {
         position: absolute;
         top: calc(100% + 0.5rem);
@@ -410,18 +400,9 @@
         padding: 1.5rem;
         max-width: 1100px;
         margin: 0 auto;
-    }
-    .badge {
-        display: inline-block;
-        min-width: 1.2em;
-        padding: 0 0.4em;
-        margin-left: 0.25em;
-        font-size: 0.75rem;
-        line-height: 1.4;
-        text-align: center;
-        border-radius: 999px;
-        background: var(--accent, #2563eb);
-        color: #fff;
+        /* Prevent child content from creating horizontal page scroll */
+        overflow-x: hidden;
+        min-width: 0;
     }
     /* --- responsive nav --- */
     @media (max-width: 768px) {

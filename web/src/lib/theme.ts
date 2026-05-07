@@ -28,6 +28,8 @@ export interface Palette {
 export const PALETTES: Palette[] = [
     // Brand palette (light + dark variants, mode-switchable)
     { id: 'tangible', name: 'Tangible',    mode: 'both',  bg: '#1A1D29', accent: '#A78BFA' },
+    // Dark-only brand variant
+    { id: 'granite',  name: 'Granite',     mode: 'dark',  bg: '#2C343B', accent: '#22A88E' },
     // Light-only
     { id: 'gazette',  name: 'Gazette',     mode: 'light', bg: '#F2F7FF', accent: '#3B82F6' },
     { id: 'paper',    name: 'Paper',       mode: 'light', bg: '#F8F6F1', accent: '#AA9A73' },
@@ -51,8 +53,8 @@ function readMode(): ThemeMode {
 }
 
 function readPalette(): string {
-    if (typeof localStorage === 'undefined') return 'tangible';
-    return localStorage.getItem(PALETTE_KEY) ?? 'tangible';
+    if (typeof localStorage === 'undefined') return 'granite';
+    return localStorage.getItem(PALETTE_KEY) ?? 'granite';
 }
 
 function systemPrefersDark(): boolean {
@@ -92,14 +94,14 @@ export const theme: Writable<ThemeMode> = writable<ThemeMode>(
 );
 
 export const palette: Writable<string> = writable<string>(
-    typeof window === 'undefined' ? 'tangible' : readPalette(),
+    typeof window === 'undefined' ? 'granite' : readPalette(),
 );
 
 let mediaListener: ((e: MediaQueryListEvent) => void) | null = null;
 
 // Internal state for the combined subscriber.
 let _currentMode: ThemeMode = 'system';
-let _currentPalette: string = 'tangible';
+let _currentPalette: string = 'granite';
 
 export function initTheme(): void {
     if (typeof window === 'undefined') return;

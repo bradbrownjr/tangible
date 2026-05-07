@@ -375,7 +375,7 @@ tools query and react to.
 
 ---
 
-## Phase 14 — Web UI redesign ✅ COMPLETE
+## Phase 14 — Web UI redesign ✅ Wave 1-8 complete; Wave 9 in progress
 
 **Status snapshot (v0.18.16+):** All 8 waves shipped. Wave 1 (tokens +
 palette), Wave 2 (component library), Wave 3 (auth/chrome), Wave 4
@@ -811,6 +811,97 @@ home in either client.
 laptop feels like the Android client (single screen, tabs across the
 top, swipe-to-switch); existing deep-links still work; `npm run check`
 and `npm run build` clean.
+
+### Wave 9 — Polish, bug fixes, and unified design language
+
+Post-Wave-8 follow-up. Addresses visual bugs surfaced during QA and
+establishes a cross-platform design language shared between the web
+client and Android app.
+
+**Bug fixes (must ship before any release tag):**
+
+- **Tab state race condition** — `collections/[id]/+page.svelte` calls
+  `load()` when `cid` changes, but the async function reads `cid`
+  (a reactive `$derived`) at each `await` boundary. If the user switches
+  tabs before the previous fetch completes, subsequent awaits read the
+  NEW cid while the fetch-in-flight still has the old one. Fix:
+  snapshot `cid` at the start of `load()` and use the snapshot
+  throughout; add a generation counter so stale responses are discarded.
+  Also reset `didSeedDefaults` and all filter state on each tab switch
+  so they don't carry over.
+- **Horizontal overflow / whitespace scroll** — item card and table row
+  text elements need `min-width: 0` + `overflow: hidden; text-overflow:
+  ellipsis; white-space: nowrap` on text cells so long titles don't
+  push the row wider than the viewport on small screens.
+- **Category-aware secondary text** — the second line on item cards and
+  table rows should adapt to collection type:
+  - Music: `artist` (from `attrs.creator`)
+  - Books: `author` (from `attrs.creator`)
+  - Movies/TV: `director` + `subtitle`
+  - Groceries / Home Goods / Hardware: `brand` (from `attrs.brand` or
+    `attrs.creator`)
+  - Default: `subtitle` if present, else blank
+  Implement a helper `secondaryLine(item, categorySlug)` in
+  `web/src/lib/itemDisplay.ts` and use it in both `ItemGrid` and
+  `ItemTable`.
+- **Dark-mode logo shield contrast** — the shield SVG in the title bar
+  uses a fill that blends into the `granite` dark background. Fix by
+  either: (a) adding a white/light border or drop-shadow to the shield
+  element in `static/branding/`, or (b) using `currentColor` so the
+  shield inherits the header text color. Must be visible at 4.5:1
+  contrast against both granite-dark and tangible-dark backgrounds.
+
+**UX parity: Collections and Lists pages:**
+
+- Both the `/collections` tab strip and the `/lists/[type]` tab strip
+  use the same CSS classes and keyboard/swipe behavior (already done
+  in Wave 8). Remaining gap: the filter and action controls on each
+  page are at different vertical positions and have inconsistent
+  affordances (dropdowns vs. buttons vs. links). Normalize to a shared
+  `<Toolbar>` pattern: one sticky row with search on the left, primary
+  action (add item / add list entry) on the right. Secondary filters
+  collapse into a `<details>` row below the toolbar, closed by default
+  on mobile, open on desktop >=1024px.
+- Reduce vertical scroll: the "Add item" card currently sits above
+  the filter bar. Move it to an inline `+` button in the toolbar, which
+  opens a compact slide-in form. The filter bar and item list then start
+  near the top of the viewport with no full-card offset.
+- The Lists `[type]` pages should match this toolbar layout (add
+  entry as a one-liner, filters in a collapsible row).
+
+**Cross-platform design language (web + Android):**
+
+Inspired by the Unity UI Design System (systematic spacing, a limited
+type scale, and a small set of reusable surface/overlay patterns). The
+goal is NOT a full Figma-style component library, but a set of shared
+constraints that make the two clients feel like the same product:
+
+- **Spacing scale**: `4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 px` (already
+  in `--space-1..8`). Android uses dp equivalents; verify
+  `android/app/src/main/java/io/github/bradbrownjr/tangible/ui/theme/`
+  spacing tokens match.
+- **Type scale**: `xs=12 / sm=14 / base=16 / lg=18 / xl=20 / 2xl=24`.
+  Android Material 3 equivalents: `labelSmall / bodyMedium / bodyLarge /
+  titleMedium / titleLarge / headlineMedium`.
+- **Surface layers**: 3 levels (`bg / surface / surface-2`). Both
+  clients use the same layer for the same purpose: bg=page, surface=card,
+  surface-2=elevated/hover.
+- **Accent palette parity**: both the granite (web default) and tangible
+  palettes define `--accent` in CSS; Android's `MaterialTheme.colorScheme
+  .primary` should resolve to the same hex. Hard-code `#22A88E` (granite
+  teal) as the primary in `Color.kt` for the granite equivalent, and
+  `#A78BFA` for the tangible/violet palette.
+- **Card anatomy**: every list item in both clients uses the same
+  anatomy: (leading icon or thumbnail) + (primary text) + (secondary
+  text) + (trailing actions). Ensure `ItemGrid` and `ItemTable` in web
+  and `CollectionItemCard` in Android follow this pattern.
+- **Interaction states**: hover/focus ring on web = 2px `accent` offset-2
+  outline; Android ripple uses `primary` at 12% opacity. Both use the
+  same `--radius-md` = 8dp/px for card corners.
+
+Document the shared tokens in `AGENTS.md` under a new
+"Design Language Tokens" section so Android contributors can keep them
+in sync.
 
 ### Out of scope for Phase 14
 

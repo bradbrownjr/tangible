@@ -2,6 +2,7 @@
     import { _ } from 'svelte-i18n';
     import { IconButton } from '$lib/components';
     import type { Item } from '$lib/api';
+    import { secondaryLine } from '$lib/itemDisplay';
 
     interface RelationEntry { key: string; label: string; targetId: string; }
 
@@ -91,6 +92,7 @@
     </thead>
     <tbody>
         {#each items as i (i.id)}
+            {@const sec = secondaryLine(i)}
             <tr
                 id="item-{i.id}"
                 class:depleted-row={i.depleted}
@@ -115,12 +117,17 @@
                 {/if}
                 {#if collectionCreatorLabel}
                     <td class="muted">
-                        <button type="button" class="filter-link" onclick={() => onFilterBySearch(String(i.attrs?.creator ?? ''))}>{String(i.attrs?.creator ?? '')}</button>
+                        {#if sec}
+                            <button type="button" class="filter-link" onclick={() => onFilterBySearch(sec)}>{sec}</button>
+                        {/if}
                     </td>
                 {/if}
                 <td>
                     {i.title}
-                    {#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
+                    {#if !collectionCreatorLabel && !showCollectionSubtitle}
+                        {@const sec = secondaryLine(i)}
+                        {#if sec}<span class="muted"> · {sec}</span>{/if}
+                    {:else if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
                     {#if i.flagged_at}
                         <span class="flagged-inline" title={i.flagged_note ?? $_('collection.flag_for_review')}>{$_('collection.badge_flagged')}</span>
                     {/if}

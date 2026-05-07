@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { _ } from 'svelte-i18n';
     import type { Category, Tag } from '$lib/api';
 
@@ -26,6 +27,13 @@
         onchange,
     }: Props = $props();
 
+    // Open by default on desktop (≥1024px), closed on mobile.
+    let isOpen = $state(false);
+
+    onMount(() => {
+        isOpen = window.matchMedia('(min-width: 1024px)').matches;
+    });
+
     function toggleTag(tagId: string) {
         if (activeTagIds.includes(tagId)) {
             activeTagIds = activeTagIds.filter((t) => t !== tagId);
@@ -46,7 +54,7 @@
     }
 </script>
 
-<details class="advanced-filters" open>
+<details class="advanced-filters" bind:open={isOpen}>
     <summary class="advanced-filters-toggle">{$_('collection.advanced_filters')}</summary>
 
     <div class="advanced-filters-body">

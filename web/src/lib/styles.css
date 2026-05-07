@@ -27,12 +27,49 @@
     --tap-min: 44px;
 }
 
-/* --- DEFAULT: tangible-dark (charcoal shield / teal accent) --- */
-:root,
+/* --- tangible-dark (deep navy / violet) --- */
 :root[data-theme='tangible-dark'] {
+    --bg:              #1A1D29;
+    --surface:         #222637;
+    --surface-2:       #2C3150;
+    --border:          #3B4172;
+    --text:            #EDEDFC;
+    --text-muted:      #9090BB;
+    --accent:          #A78BFA;
+    --accent-hover:    #8B5CF6;
+    --accent-contrast: #1A1D29;
+    --danger:          #F87171;
+    --success:         #4ADE80;
+    --warning:         #FBBF24;
+    --info:            #60A5FA;
+    color-scheme: dark;
+}
+
+/* --- tangible-light (soft lavender / violet) --- */
+:root[data-theme='tangible-light'] {
+    --bg:              #F7F6FF;
+    --surface:         #FFFFFF;
+    --surface-2:       #EEECFF;
+    --border:          #D4D0F0;
+    --text:            #1A1D29;
+    --text-muted:      #5C5C80;
+    --accent:          #7C3AED;
+    --accent-hover:    #6D28D9;
+    --accent-contrast: #FFFFFF;
+    --danger:          #DC2626;
+    --success:         #16A34A;
+    --warning:         #D97706;
+    --info:            #0369A1;
+    color-scheme: light;
+}
+
+/* --- DEFAULT: granite (dark, charcoal / teal) --- */
+/* surface is lifted to #404E5A so the header clearly contrasts the logo shield (~#2E3D4B) */
+:root,
+:root[data-theme='granite'] {
     --bg:              #2C343B;
-    --surface:         #353E47;
-    --surface-2:       #404A55;
+    --surface:         #404E5A;
+    --surface-2:       #374450;
     --border:          #4D5862;
     --text:            #F0F2F4;
     --text-muted:      #9AA4AE;
@@ -44,24 +81,6 @@
     --warning:         #FBBF24;
     --info:            #60A5FA;
     color-scheme: dark;
-}
-
-/* --- tangible-light (warm off-white / teal) --- */
-:root[data-theme='tangible-light'] {
-    --bg:              #F7F8F8;
-    --surface:         #FFFFFF;
-    --surface-2:       #ECEEF0;
-    --border:          #D6DADE;
-    --text:            #2C343B;
-    --text-muted:      #5C6770;
-    --accent:          #1B8A74;
-    --accent-hover:    #117A65;
-    --accent-contrast: #FFFFFF;
-    --danger:          #DC2626;
-    --success:         #16A34A;
-    --warning:         #D97706;
-    --info:            #0369A1;
-    color-scheme: light;
 }
 
 /* --- gazette (light, cool blue) --- */
@@ -325,7 +344,7 @@ label {
    ============================================================ */
 
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
 th { font-size: var(--text-sm); color: var(--text-muted); font-weight: 600; }
 
 /* ============================================================
@@ -342,6 +361,8 @@ th { font-size: var(--text-sm); color: var(--text-muted); font-weight: 600; }
 .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    min-width: 0;
 }
 
 /* Mobile base layout */

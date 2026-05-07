@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
     import type { Snippet } from 'svelte';
+    import Icon from '$lib/Icon.svelte';
 
     interface Props {
         variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -14,6 +15,8 @@
         type?: 'button' | 'submit' | 'reset';
         disabled?: boolean;
         loading?: boolean;
+        icon?: string;
+        form?: string;
         class?: string;
         style?: string;
         onclick?: (e: MouseEvent) => void;
@@ -27,6 +30,8 @@
         type = 'button',
         disabled = false,
         loading = false,
+        icon,
+        form,
         class: cls = '',
         style,
         onclick,
@@ -48,6 +53,7 @@
         {type}
         class={classes}
         {style}
+        {form}
         disabled={isDisabled}
         aria-busy={loading || undefined}
         {onclick}
@@ -55,6 +61,7 @@
         {#if loading}
             <span class="btn__spinner" aria-hidden="true"></span>
         {/if}
+        {#if icon}<Icon name={icon} size={16} />{/if}
         {@render children()}
     </button>
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { _ } from 'svelte-i18n';
     import type { Category } from '$lib/api';
 
@@ -46,10 +47,22 @@
     let titleInput: HTMLInputElement | undefined;
     let subtitleInput: HTMLInputElement | undefined;
 
+    // Open by default on desktop (≥1024px); collapsed on mobile to reduce vertical scroll.
+    let isOpen = $state(false);
+
+    onMount(() => {
+        isOpen = window.matchMedia('(min-width: 1024px)').matches;
+    });
+
     export function focusTitle() {
-        (creatorLabel ? creatorInput : titleInput)?.focus();
+        isOpen = true;
+        // Yield to let the details element expand before focusing.
+        queueMicrotask(() => (creatorLabel ? creatorInput : titleInput)?.focus());
     }
 </script>
+
+<details class="add-item-details" bind:open={isOpen}>
+    <summary class="add-item-summary">{$_('collection.add_item_label')}</summary>
 
 <form onsubmit={onSubmit} class="card add-form">
     <input
@@ -59,10 +72,6 @@
         style="display:none"
         onchange={onBarcodeChange}
     />
-    <label class="add-label" for="addq">
-        {$_('collection.add_item_label')}
-        <span class="muted">— {$_('collection.add_item_help')}</span>
-    </label>
     <div class="add-row">
         {#if !isFocused}
             <select bind:value={newRoot} title="Category root">
@@ -124,9 +133,40 @@
     {#if error}<p class="error">{error}</p>{/if}
 </form>
 
+</details>
+
 <style>
+    .add-item-details {
+        margin-bottom: 0.5rem;
+    }
+    .add-item-summary {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: var(--radius-sm);
+        transition: background 0.1s;
+    }
+    .add-item-summary::-webkit-details-marker { display: none; }
+    .add-item-summary::before {
+        content: '+';
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1;
+        transition: transform 0.15s;
+    }
+    details[open] .add-item-summary::before { content: '−'; }
+    .add-item-summary:hover {
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
     .add-form {
-        margin: 1rem 0;
+        margin: 0.5rem 0 1rem;
     }
     .add-label {
         display: block;

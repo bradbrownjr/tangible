@@ -21,7 +21,7 @@
         footer?: Snippet;
     }
 
-    let { open = false, title, width = '34rem', onclose, children, footer }: Props = $props();
+    let { open = $bindable(false), title, width = '34rem', onclose, children, footer }: Props = $props();
 
     let dialogEl: HTMLDialogElement | undefined;
 

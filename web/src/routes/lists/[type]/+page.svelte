@@ -46,6 +46,7 @@
     }
 
     let listType = $derived((page.params.type ?? 'groceries') as ListType);
+    let loadGen = $state(0);
 
     const LIST_ICON: Record<string, string> = {
         groceries: 'shopping-cart',
@@ -79,6 +80,15 @@
             case 3: return $_('lists.priority.high');
             default: return '';
         }
+    }
+
+    /** Returns a contextual label for the brand field based on category hints. */
+    function brandLabel(slug: string | null): string {
+        if (!slug) return '';
+        if (/music|album|vinyl|cd|record|jazz|rock|hip.?hop|classical/i.test(slug)) return 'Artist';
+        if (/book|novel|comic|manga|author/i.test(slug)) return 'Author';
+        if (/movie|film|dvd|blu.?ray|cinema/i.test(slug)) return 'Studio';
+        return '';
     }
 
     let feed = $state<FeedEntry[]>([]);
@@ -174,15 +184,18 @@
     }
 
     async function load() {
+        const snapType = listType;
+        const snapGen = loadGen;
         loading = true;
         try {
             const [fetched, fetchedCollections] = await Promise.all([
-                api.get<FeedEntry[]>(`/lists?list_type=${listType}`),
+                api.get<FeedEntry[]>(`/lists?list_type=${snapType}`),
                 api.get<Collection[]>('/collections'),
             ]);
+            if (snapGen !== loadGen) return;
             feed = fetched;
             collections = new Map(fetchedCollections.map((c) => [c.id, c]));
-            const backingName = BACKING_COLLECTION[listType];
+            const backingName = BACKING_COLLECTION[snapType];
             const backing = backingName
                 ? fetchedCollections.find((c) => c.name.toLowerCase() === backingName.toLowerCase())
                 : null;
@@ -190,9 +203,9 @@
                 newCollectionId = backing?.id ?? (fetchedCollections[0]?.id ?? '');
             }
         } catch (e) {
-            error = (e as Error).message;
+            if (snapGen === loadGen) error = (e as Error).message;
         } finally {
-            loading = false;
+            if (snapGen === loadGen) loading = false;
         }
     }
 
@@ -290,7 +303,9 @@
     }
 
     $effect(() => {
-        const _ = listType;
+        const _type = listType;
+        loadGen += 1;
+        feed = [];
         newCollectionId = '';
         newCategorySlug = '';
         load();
@@ -387,8 +402,15 @@
     <EmptyState icon={LIST_ICON[listType] ?? 'inbox'} heading={$_('lists.empty')} />
 {:else}
     {#snippet nameCell(entry: FeedEntry)}
+        {#if entry.brand}
+            {@const lbl = brandLabel(entry.category_slug)}
+            <div class="item-brand">{entry.brand}{#if lbl}&nbsp;<span class="item-brand-label">{lbl}</span>{/if}</div>
+        {/if}
         <strong>{entry.name}</strong>
         {#if entry.subtitle}<span class="muted"> · {entry.subtitle}</span>{/if}
+        {#if collections.size > 1 && entry.collection_id}
+            <div class="muted small">{collections.get(entry.collection_id)?.name ?? ''}</div>
+        {/if}
         {#if entry.notes}<div class="muted small">{entry.notes}</div>{/if}
         {#if entry.source.kind === 'depleted_item'}
             <span class="badge-depleted">{$_('grocery.source_depleted')}</span>
@@ -449,13 +471,11 @@
                 { key: 'name',          label: $_('grocery.col_item'),       cell: nameCell },
                 { key: 'category_slug', label: $_('grocery.col_category'),   cell: categoryCell },
                 { key: 'quantity',      label: $_('grocery.col_qty'),        cell: qtyCell, align: 'right' },
-                { key: 'collection_id', label: $_('grocery.col_collection'), cell: collectionCell },
               ] satisfies Column<FeedEntry>[])
             : ([
                 { key: 'name',          label: $_('grocery.col_item'),       cell: nameCell },
                 { key: 'wish_url',      label: $_('lists.col_url'),          cell: urlCell },
                 { key: 'wish_priority', label: $_('lists.col_priority'),     cell: priorityCell },
-                { key: 'collection_id', label: $_('grocery.col_collection'), cell: collectionCell },
               ] satisfies Column<FeedEntry>[])}
         rows={feed}
         rowKey="id"
@@ -602,6 +622,17 @@
     .qty-row { display: flex; gap: 0.4rem; }
     .qty { width: 4.5rem !important; flex: none !important; }
     .unit { width: 6rem !important; flex: none !important; }
+    .item-brand {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 0.1rem;
+    }
+    .item-brand-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.6;
+    }
     .row-actions { display: flex; gap: 0.25rem; flex-wrap: nowrap; }
     .cat-chip {
         display: inline-block;

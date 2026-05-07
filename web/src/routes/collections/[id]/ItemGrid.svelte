@@ -4,6 +4,7 @@
     import ItemComments from '$lib/ItemComments.svelte';
     import PhotoGallery from '$lib/PhotoGallery.svelte';
     import type { Item } from '$lib/api';
+    import { secondaryLine } from '$lib/itemDisplay';
 
     interface RelationEntry { key: string; label: string; targetId: string; }
 
@@ -70,6 +71,7 @@
 
 <div class="item-grid">
     {#each items as i (i.id)}
+        {@const secondary = secondaryLine(i)}
         <div class="item-card" class:depleted-card={i.depleted} class:wanted-card={i.wanted} class:archived-card={i.archived_at != null}>
             <div class="item-card-body">
                 {#if canEdit}
@@ -85,14 +87,10 @@
                 {#if !isFocused && i.category_slug}
                     <button type="button" class="category-badge filter-link" onclick={() => onFilterByCategory(i.category_slug!)}>{i.category_slug.split('.').at(-1) ?? i.category_slug}</button>
                 {/if}
-                {#if i.attrs?.creator}
-                    <p class="item-creator"><button type="button" class="filter-link" onclick={() => onFilterBySearch(String(i.attrs!.creator))}>{String(i.attrs.creator)}</button></p>
+                {#if secondary}
+                    <p class="item-creator"><button type="button" class="filter-link" onclick={() => onFilterBySearch(secondary)}>{secondary}</button></p>
                 {/if}
-                <p class="item-title">{i.title}</p>
-                {#if i.subtitle}
-                    <p class="item-subtitle">{i.subtitle}</p>
-                {/if}
-                <PhotoGallery itemId={i.id} {canEdit} compact />
+                <p class="item-title">{i.title}</p>                <PhotoGallery itemId={i.id} {canEdit} compact />
                 <ItemComments itemId={i.id} {currentUserId} canManage={canEdit} />
                 {#if relationEntries(i).length}
                     <div class="relation-list">
@@ -174,6 +172,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        min-width: 0;
     }
     .item-card-actions {
         display: flex;
@@ -264,6 +263,9 @@
         font-weight: 600;
         margin: 0;
         line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .item-subtitle {
         font-size: 0.8rem;

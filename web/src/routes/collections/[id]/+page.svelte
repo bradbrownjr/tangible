@@ -128,6 +128,8 @@
     }
 
     const cid = $derived(page.params.id ?? '');
+    // Generation counter: incremented on every tab switch so stale async loads are discarded.
+    let loadGen = $state(0);
     const roots = $derived(rootCategories(categories));
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
@@ -272,10 +274,14 @@
     }
 
     async function load() {
+        const snapCid = cid;
+        const snapGen = loadGen;
         loading = true;
         try {
             if (categories.length === 0) categories = await loadCategories();
-            collection = await api.get<Collection>(`/collections/${cid}`);
+            if (snapGen !== loadGen) return;
+            collection = await api.get<Collection>(`/collections/${snapCid}`);
+            if (snapGen !== loadGen) return;
             const def = collection?.default_category_slug;
             if (def && !didSeedDefaults) {
                 const cat = categories.find((c) => c.slug === def);
@@ -290,7 +296,7 @@
                 }
                 didSeedDefaults = true;
             }
-            const params = new URLSearchParams({ collection_id: cid });
+            const params = new URLSearchParams({ collection_id: snapCid });
             if (search) params.set('search', search);
             if (rootFilter) params.set('category_subtree', rootFilter);
             if (archivedFilter === 'archived') {
@@ -310,11 +316,13 @@
             }
             const [fetchedItems, fetchedTemplates, fetchedTags, fetchedContacts, fetchedLocations] = await Promise.all([
                 api.get<Item[]>(`/items?${params.toString()}`),
-                api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
+                api.get<ItemTemplate[]>(`/collections/${snapCid}/templates`),
                 api.get<Tag[]>('/tags'),
                 api.get<Contact[]>('/contacts'),
-                api.get<LocationNode[]>(`/locations?collection_id=${cid}`),
+                api.get<LocationNode[]>(`/locations?collection_id=${snapCid}`),
             ]);
+            // Discard if a newer load has already started (tab was switched mid-flight).
+            if (snapGen !== loadGen) return;
             items = fetchedItems;
             templates = fetchedTemplates;
             tags = fetchedTags;
@@ -322,9 +330,9 @@
             locations = fetchedLocations;
             await hydrateRelatedItemTitles(items);
         } catch (e) {
-            error = (e as Error).message;
+            if (snapGen === loadGen) error = (e as Error).message;
         } finally {
-            loading = false;
+            if (snapGen === loadGen) loading = false;
         }
     }
 
@@ -746,8 +754,31 @@
             searchInputEl?.select();
         };
         window.addEventListener('keydown', onGlobalKeydown);
-        load();
         return () => window.removeEventListener('keydown', onGlobalKeydown);
+    });
+
+    // Reload everything when the route's collection id changes (tab switch).
+    // SvelteKit reuses the component across [id] changes, so onMount runs only once.
+    $effect(() => {
+        if (!cid) return;
+        // Bump generation first so any in-flight load() for the previous cid
+        // discards its results when it eventually resolves.
+        loadGen += 1;
+        // Reset per-collection state so the previous tab's data doesn't flash.
+        items = [];
+        templates = [];
+        locations = [];
+        selectedItemIds = [];
+        editPanelItem = null;
+        // Reset filter/sort state so it doesn't carry over to a different collection.
+        search = '';
+        rootFilter = '';
+        activeTagIds = [];
+        wantedFilter = 'all';
+        archivedFilter = 'active';
+        didSeedDefaults = false;
+        loading = true;
+        void load();
     });
 
     function filterBySearch(value: string) {
