@@ -4,7 +4,22 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
-## [0.19.0] — 2026-05-07
+## [0.20.0] — 2026-05-07
+
+### Fixed
+
+- **Tab state race condition (web):** switching collection or list tabs quickly no longer causes items from the previous tab to flash into the new tab. Each load now uses a generation counter so stale in-flight responses are silently discarded on arrival.
+- **Horizontal scroll eliminated (web):** long item titles no longer push list rows wider than the viewport on small screens. Titles truncate with an ellipsis; table and card containers are constrained to the viewport width.
+- **Logo visibility in dark mode (web):** the shield icon in the header now has a subtle drop-shadow so it reads clearly against the granite-dark and tangible-dark header surfaces.
+
+### Changed
+
+- **Category-aware secondary text (web):** the second line on item cards and table rows now adapts to the collection type — Artist for Music, Author for Books, Brand for Groceries/Hardware/Home Goods, and Subtitle/Creator for everything else. A shared `itemDisplay.ts` helper provides consistent output across the grid and table views.
+- **Collapsible add and filter controls (web):** the Add Item form and the Advanced Filters panel are now collapsible. On mobile they start closed (saving screen space); on desktop (≥ 1024 px) they start open. Both retain the toggle state as you interact.
+- **Button component (web):** `Button` now accepts an optional `icon` prop that renders a leading icon before the label, and a `form` prop for submit buttons placed outside their form element.
+- **Modal component (web):** `Modal`'s `open` prop is now properly `$bindable` in Svelte 5, so `bind:open` works correctly without type errors.
+
+
 
 ### Changed
 
