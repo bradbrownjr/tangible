@@ -129,7 +129,8 @@
 
     const cid = $derived(page.params.id ?? '');
     // Generation counter: incremented on every tab switch so stale async loads are discarded.
-    let loadGen = $state(0);
+    // Plain variable (not $state) so reading/writing it inside $effect creates no reactive dependency.
+    let loadGen = 0;
     const roots = $derived(rootCategories(categories));
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
