@@ -24,7 +24,6 @@ WORKDIR /src/web
 
 COPY web/package.json web/package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; \
     else npm install --no-audit --no-fund; fi
 
