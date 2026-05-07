@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { api, type Collection } from '$lib/api';
@@ -46,7 +46,7 @@
     }
 
     let listType = $derived((page.params.type ?? 'groceries') as ListType);
-    let loadGen = $state(0);
+    let loadGen = 0;
 
     const LIST_ICON: Record<string, string> = {
         groceries: 'shopping-cart',
@@ -308,7 +308,7 @@
         feed = [];
         newCollectionId = '';
         newCategorySlug = '';
-        load();
+        untrack(() => load());
     });
 
     onMount(() => {

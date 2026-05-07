@@ -4,7 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
-## [0.20.2] — 2026-05-07
+## [0.20.3] — 2026-05-07
+
+### Fixed
+
+- **Lists view crash (web):** the `effect_update_depth_exceeded` infinite loop affecting the grocery/hardware/home goods/wish list views is now fixed. Same root cause as the v0.20.2 collections fix — `loadGen` was declared as `$state`, causing the load-trigger `$effect` to re-register it as a reactive dependency on every run.
+- **Reactive effect over-triggering (web):** three `$effect` blocks in the collections detail and import pages that both read and wrote the same `$state` variable (leaf category selection clamping) now use `untrack()` on the read side, preventing a redundant extra evaluation on every root-category change.
 
 ### Fixed
 

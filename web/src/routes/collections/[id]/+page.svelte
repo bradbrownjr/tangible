@@ -177,7 +177,7 @@
     });
 
     $effect(() => {
-        if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
+        if (leaves.length && !leaves.some((l) => l.slug === untrack(() => newLeaf))) {
             newLeaf = leaves[0].slug;
         }
     });

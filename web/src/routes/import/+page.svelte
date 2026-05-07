@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { page } from '$app/stores';
     import { _ } from 'svelte-i18n';
     import { api, ApiError, type Category, type Collection } from '$lib/api';
@@ -49,12 +49,12 @@
     });
 
     $effect(() => {
-        if (csvLeaves.length && !csvLeaves.some((l) => l.slug === csvLeaf)) {
+        if (csvLeaves.length && !csvLeaves.some((l) => l.slug === untrack(() => csvLeaf))) {
             csvLeaf = csvLeaves[0].slug;
         }
     });
     $effect(() => {
-        if (listLeaves.length && !listLeaves.some((l) => l.slug === listLeaf)) {
+        if (listLeaves.length && !listLeaves.some((l) => l.slug === untrack(() => listLeaf))) {
             listLeaf = listLeaves[0].slug;
         }
     });
