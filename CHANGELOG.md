@@ -4,7 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
-## [0.21.0] — 2026-05-07
+## [0.21.1] — 2026-05-07
+
+### Fixed
+
+- **Theme list now alphabetical (web):** the color theme picker in Settings is sorted A–Z (Blackboard, Blues, Cloud, Espresso, Gazette, Granite, One Dark, Paper, Passion, Tangible, Tron).
+- **Collection filter controls no longer stack (web):** the Sort, Direction, and filter selects on collection detail pages now stay inline in a single row instead of expanding to full width and stacking vertically. Layout now matches the compact single-row style of the shopping list view.
 
 ### Added
 
