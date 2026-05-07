@@ -84,9 +84,7 @@
                     <tr>
                         {#each cols as col (col.key)}
                             <th
-                                class:dt-th--right={col.align === 'right'}
-                                class:dt-th--center={col.align === 'center'}
-                                class:dt-th--sortable={col.sortable}
+                                class={[col.tdClass, col.align === 'right' && 'dt-th--right', col.align === 'center' && 'dt-th--center', col.sortable && 'dt-th--sortable'].filter(Boolean).join(' ')}
                                 onclick={col.sortable ? () => toggleSort(col.key) : undefined}
                                 aria-sort={col.sortable && sortKey === col.key
                                     ? sortDir === 'asc' ? 'ascending' : 'descending'
@@ -108,8 +106,7 @@
                         <tr id={rowKey ? `item-${row[rowKey]}` : undefined}>
                             {#each cols as col (col.key)}
                                 <td
-                                    class:dt-td--right={col.align === 'right'}
-                                    class:dt-td--center={col.align === 'center'}
+                                    class={[col.tdClass, col.align === 'right' && 'dt-td--right', col.align === 'center' && 'dt-td--center'].filter(Boolean).join(' ')}
                                 >
                                     {#if col.cell}
                                         {@render col.cell(row)}

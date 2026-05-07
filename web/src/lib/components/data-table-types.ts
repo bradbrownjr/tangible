@@ -5,6 +5,8 @@ export interface Column<T> {
     mobileLabel?: string;
     sortable?: boolean;
     align?: 'left' | 'center' | 'right';
+    /** CSS class added to both <th> and <td> for this column. */
+    tdClass?: string;
     /** Custom cell renderer snippet */
     cell?: import('svelte').Snippet<[T]>;
 }

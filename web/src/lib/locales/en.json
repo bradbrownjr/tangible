@@ -476,6 +476,8 @@
     "empty": "Nothing on the list — all clear!",
     "col_item": "Item",
     "col_qty": "Qty",
+    "col_brand": "Brand",
+    "col_notes": "Notes",
     "col_collection": "Collection",
     "col_source": "Source",
     "source_depleted": "depleted",

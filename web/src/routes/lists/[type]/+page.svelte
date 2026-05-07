@@ -448,17 +448,16 @@
 {:else if feed.length === 0}
     <EmptyState icon={LIST_ICON[listType] ?? 'inbox'} heading={$_('lists.empty')} />
 {:else}
-    {#snippet nameCell(entry: FeedEntry)}
+    {#snippet brandCell(entry: FeedEntry)}
         {#if entry.brand}
             {@const lbl = brandLabel(entry.category_slug)}
-            <div class="item-brand">{entry.brand}{#if lbl}&nbsp;<span class="item-brand-label">{lbl}</span>{/if}</div>
+            <span class="cell-brand">{entry.brand}{#if lbl}&nbsp;<span class="brand-label">{lbl}</span>{/if}</span>
         {/if}
-        <strong>{entry.name}</strong>
+    {/snippet}
+
+    {#snippet nameCell(entry: FeedEntry)}
+        <strong class="cell-name">{entry.name}</strong>
         {#if entry.subtitle}<span class="muted"> · {entry.subtitle}</span>{/if}
-        {#if collections.size > 1 && entry.collection_id}
-            <div class="muted small">{collections.get(entry.collection_id)?.name ?? ''}</div>
-        {/if}
-        {#if entry.notes}<div class="muted small">{entry.notes}</div>{/if}
         {#if entry.source.kind === 'depleted_item'}
             <span class="badge-depleted">{$_('grocery.source_depleted')}</span>
         {/if}
@@ -485,6 +484,12 @@
     {#snippet priorityCell(entry: FeedEntry)}
         {#if entry.wish_priority}
             <span class="priority-chip priority-{entry.wish_priority}">{priorityLabel(entry.wish_priority)}</span>
+        {/if}
+    {/snippet}
+
+    {#snippet notesCell(entry: FeedEntry)}
+        {#if entry.notes}
+            <span class="cell-notes">{entry.notes}</span>
         {/if}
     {/snippet}
 
@@ -515,14 +520,16 @@
     <DataTable
         cols={listType !== 'wish_list'
             ? ([
-                { key: 'name',          label: $_('grocery.col_item'),       cell: nameCell },
-                { key: 'category_slug', label: $_('grocery.col_category'),   cell: categoryCell },
-                { key: 'quantity',      label: $_('grocery.col_qty'),        cell: qtyCell, align: 'right' },
+                { key: 'brand',         label: $_('grocery.col_brand'),      cell: brandCell,    tdClass: 'col-brand', mobileLabel: $_('grocery.col_brand') },
+                { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
+                { key: 'category_slug', label: $_('grocery.col_category'),    cell: categoryCell, tdClass: 'col-cat' },
+                { key: 'quantity',      label: $_('grocery.col_qty'),         cell: qtyCell,      tdClass: 'col-qty', align: 'right' },
+                { key: 'notes',         label: $_('grocery.col_notes'),       cell: notesCell,    tdClass: 'col-notes' },
               ] satisfies Column<FeedEntry>[])
             : ([
-                { key: 'name',          label: $_('grocery.col_item'),       cell: nameCell },
-                { key: 'wish_url',      label: $_('lists.col_url'),          cell: urlCell },
-                { key: 'wish_priority', label: $_('lists.col_priority'),     cell: priorityCell },
+                { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
+                { key: 'wish_url',      label: $_('lists.col_url'),           cell: urlCell },
+                { key: 'wish_priority', label: $_('lists.col_priority'),      cell: priorityCell },
               ] satisfies Column<FeedEntry>[])}
         rows={feed}
         rowKey="id"
@@ -604,6 +611,42 @@
 />
 
 <style>
+    /* --- column sizing and truncation for the DataTable --- */
+    :global(.col-brand) { width: 9ch; max-width: 11ch; }
+    :global(.col-name)  { min-width: 0; max-width: 28ch; }
+    :global(.col-cat)   { width: 10ch; }
+    :global(.col-qty)   { width: 5ch; }
+    :global(.col-notes) { min-width: 0; max-width: 20ch; }
+
+    .cell-brand {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .brand-label {
+        font-size: 0.65rem;
+        opacity: 0.75;
+    }
+    .cell-name {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+    .cell-notes {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* --- add form --- */
     .add-form {
         margin: 1rem 0 1.5rem;
         display: flex;
@@ -655,17 +698,6 @@
     .qty-row { display: flex; gap: 0.4rem; }
     .qty { width: 4.5rem !important; flex: none !important; }
     .unit { width: 6rem !important; flex: none !important; }
-    .item-brand {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        margin-bottom: 0.1rem;
-    }
-    .item-brand-label {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        opacity: 0.6;
-    }
     .row-actions { display: flex; gap: 0.25rem; flex-wrap: nowrap; }
     .cat-chip {
         display: inline-block;
