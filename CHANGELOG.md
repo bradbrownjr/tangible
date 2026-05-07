@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.20.1] — 2026-05-07
+
+### Fixed
+
+- **Collections view crash (web):** opening a collection no longer throws `effect_update_depth_exceeded` and renders a blank page. The `$effect` that reloads on collection-id changes was creating an infinite reactive loop by reading `loadGen` inside `load()` synchronously, which Svelte 5 tracked as a dependency. Wrapped the call in `untrack()` to break the cycle.
+
 ## [0.20.0] — 2026-05-07
 
 ### Fixed
