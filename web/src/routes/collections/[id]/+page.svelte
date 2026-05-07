@@ -9,7 +9,6 @@
     import { me } from '$lib/session';
     import AddItemCard from './AddItemCard.svelte';
     import FilterBar from './FilterBar.svelte';
-    import AdvancedFilters from './AdvancedFilters.svelte';
     import BulkToolbar from './BulkToolbar.svelte';
     import ItemGrid from './ItemGrid.svelte';
     import ItemTable from './ItemTable.svelte';
@@ -827,10 +826,6 @@
         bind:sortDir
         bind:sortAttr
         bind:searchInputEl
-        onchange={() => load()}
-    />
-
-    <AdvancedFilters
         {isFocused}
         {roots}
         bind:rootFilter

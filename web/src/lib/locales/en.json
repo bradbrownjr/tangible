@@ -765,6 +765,18 @@
     "cat_hg_small_appliances": "Small Appliances",
     "cat_hg_storage": "Storage"
   },
+  "filters": {
+    "label": "Filters",
+    "search_placeholder": "Search…",
+    "sort_by": "Sort by",
+    "sort_asc": "A → Z",
+    "sort_desc": "Z → A",
+    "all_categories": "All categories",
+    "sort_name": "Name",
+    "sort_qty": "Quantity",
+    "sort_added": "Date added",
+    "sort_category": "Category"
+  },
   "lists": {
     "type": {
       "groceries": "Groceries",

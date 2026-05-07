@@ -9,6 +9,7 @@
     import IconButton from '$lib/components/IconButton.svelte';
     import DataTable from '$lib/components/DataTable.svelte';
     import type { Column } from '$lib/components/data-table-types.js';
+    import FiltersPanel from '$lib/components/FiltersPanel.svelte';
     import Modal from '$lib/components/Modal.svelte';
     import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
     import Button from '$lib/components/Button.svelte';
@@ -46,6 +47,18 @@
 
     let listType = $derived((page.params.type ?? 'groceries') as ListType);
     let loadGen = 0;
+
+    // Filter + sort state (client-side, no API round-trip needed for small lists)
+    let listSearch = $state('');
+    let listSortBy = $state<'name' | 'quantity' | 'created_at' | 'category_slug'>('name');
+    let listSortDir = $state<'asc' | 'desc'>('asc');
+    let listCategoryFilter = $state('');
+
+    let listActiveCount = $derived(
+        (listSearch.trim() ? 1 : 0) +
+        (listSortBy !== 'name' || listSortDir !== 'asc' ? 1 : 0) +
+        (listCategoryFilter ? 1 : 0)
+    );
 
     const LIST_ICON: Record<string, string> = {
         groceries: 'shopping-cart',
@@ -93,6 +106,34 @@
     let feed = $state<FeedEntry[]>([]);
     let collections = $state<Map<string, Collection>>(new Map());
     let loading = $state(true);
+
+    let filteredFeed = $derived.by(() => {
+        let result = feed;
+        const q = listSearch.trim().toLowerCase();
+        if (q) {
+            result = result.filter(
+                (e) =>
+                    e.name.toLowerCase().includes(q) ||
+                    (e.brand ?? '').toLowerCase().includes(q) ||
+                    (e.notes ?? '').toLowerCase().includes(q)
+            );
+        }
+        if (listCategoryFilter) {
+            result = result.filter((e) => e.category_slug === listCategoryFilter);
+        }
+        result = [...result].sort((a, b) => {
+            let av: string | number = '';
+            let bv: string | number = '';
+            if (listSortBy === 'name') { av = a.name.toLowerCase(); bv = b.name.toLowerCase(); }
+            else if (listSortBy === 'quantity') { av = a.quantity; bv = b.quantity; }
+            else if (listSortBy === 'created_at') { av = a.created_at; bv = b.created_at; }
+            else if (listSortBy === 'category_slug') { av = a.category_slug ?? ''; bv = b.category_slug ?? ''; }
+            if (av < bv) return listSortDir === 'asc' ? -1 : 1;
+            if (av > bv) return listSortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+        return result;
+    });
     let error = $state('');
 
     let newCollectionId = $state('');
@@ -356,6 +397,11 @@
         feed = [];
         newCollectionId = '';
         newCategorySlug = '';
+        // Reset filters when switching list types
+        listSearch = '';
+        listCategoryFilter = '';
+        listSortBy = 'name';
+        listSortDir = 'asc';
         untrack(() => load());
     });
 
@@ -445,9 +491,39 @@
 
 {#if loading}
     <p class="muted">{$_('common.loading')}</p>
-{:else if feed.length === 0}
-    <EmptyState icon={LIST_ICON[listType] ?? 'inbox'} heading={$_('lists.empty')} />
 {:else}
+    <FiltersPanel activeCount={listActiveCount}>
+        {#snippet children()}
+            <input
+                type="search"
+                bind:value={listSearch}
+                placeholder={$_('filters.search_placeholder')}
+                class="list-search-input"
+            />
+            {#if listType !== 'wish_list'}
+                <select bind:value={listCategoryFilter} class="list-filter-select">
+                    <option value="">{$_('filters.all_categories')}</option>
+                    {#each categories as cat (cat.slug)}
+                        <option value={cat.slug}>{cat.label}</option>
+                    {/each}
+                </select>
+            {/if}
+            <select bind:value={listSortBy} class="list-filter-select">
+                <option value="name">{$_('filters.sort_name')}</option>
+                <option value="quantity">{$_('filters.sort_qty')}</option>
+                <option value="created_at">{$_('filters.sort_added')}</option>
+                {#if listType !== 'wish_list'}<option value="category_slug">{$_('filters.sort_category')}</option>{/if}
+            </select>
+            <select bind:value={listSortDir} class="list-filter-select">
+                <option value="asc">{$_('filters.sort_asc')}</option>
+                <option value="desc">{$_('filters.sort_desc')}</option>
+            </select>
+        {/snippet}
+    </FiltersPanel>
+
+    {#if filteredFeed.length === 0}
+        <EmptyState icon={LIST_ICON[listType] ?? 'inbox'} heading={$_('lists.empty')} />
+    {:else}
     {#snippet brandCell(entry: FeedEntry)}
         {#if entry.brand}
             {@const lbl = brandLabel(entry.category_slug)}
@@ -531,10 +607,11 @@
                 { key: 'wish_url',      label: $_('lists.col_url'),           cell: urlCell },
                 { key: 'wish_priority', label: $_('lists.col_priority'),      cell: priorityCell },
               ] satisfies Column<FeedEntry>[])}
-        rows={feed}
+        rows={filteredFeed}
         rowKey="id"
         actions={rowActions}
     />
+    {/if}
 {/if}
 
 <Modal bind:open={editOpen} title={$_('grocery.edit_item_title')} onclose={cancelEdit}>
@@ -617,6 +694,17 @@
     :global(.col-cat)   { width: 10ch; }
     :global(.col-qty)   { width: 5ch; }
     :global(.col-notes) { min-width: 0; max-width: 20ch; }
+
+    /* --- filter controls inside FiltersPanel --- */
+    .list-search-input {
+        flex: 1;
+        min-width: 140px;
+    }
+    .list-filter-select {
+        width: auto;
+        min-width: 7rem;
+        flex-shrink: 0;
+    }
 
     .cell-brand {
         display: block;
