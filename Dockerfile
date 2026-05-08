@@ -24,8 +24,8 @@ WORKDIR /src/web
 
 COPY web/package.json web/package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
-    if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; \
-    else npm install --no-audit --no-fund; fi
+    if [ -f package-lock.json ]; then npm ci --no-audit --no-fund --omit=optional; \
+    else npm install --no-audit --no-fund --omit=optional; fi
 
 COPY web/ ./
 RUN npm run build
