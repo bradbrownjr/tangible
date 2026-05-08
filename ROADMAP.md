@@ -1532,7 +1532,7 @@ Remaining work:
 
 ---
 
-## Phase 19 — Stack modernisation (in progress)
+## Phase 19 — Stack modernisation (done)
 
 Keep the runtime dependencies current so security patches, performance
 improvements, and new framework features remain accessible.
@@ -1549,9 +1549,9 @@ version string. Never copy from training memory or conversation history.
 | vite `5.4 → 6.4.2` | v0.23.0 | ✅ done (Node 18 ceiling) |
 | @sveltejs/vite-plugin-svelte `4.0 → 5.1.1` | v0.23.0 | ✅ done (Node 18 ceiling) |
 | Icon.js bundle `9.1 MB → 153 kB` | v0.23.0 | ✅ done (static import map) |
-| **Node 18 → 22 (dev container)** | pending | ⬜ prerequisite for next vite bump |
-| vite `6 → 8.x` | pending | ⬜ blocked on Node 22 locally |
-| @sveltejs/vite-plugin-svelte `5 → 7.x` | pending | ⬜ blocked on vite 8 |
+| **Node 18 → 20 (dev host)** | v0.24.0 | ✅ done (Node 20.19.2 on new dev host) |
+| vite `6.4.2 → 8.0.11` | v0.24.0 | ✅ done |
+| @sveltejs/vite-plugin-svelte `5.1.1 → 7.1.2` | v0.24.0 | ✅ done |
 
 Steps once Node 22 is in the dev container:
 1. `npm info vite version` + `npm info @sveltejs/vite-plugin-svelte version` — get live latest.
@@ -1564,13 +1564,17 @@ Steps once Node 22 is in the dev container:
 
 | Item | Current | Action |
 |---|---|---|
-| Compose BOM | 2024.11.00 | ⬜ bump to latest (check maven.google.com) |
-| AGP | 8.7.2 | ⬜ bump to latest stable |
-| Kotlin | 2.0.21 | ⬜ bump (must match KSP exactly) |
-| KSP | 2.0.21-1.0.28 | ⬜ bump with Kotlin |
-| Room | 2.6.1 | ⬜ bump minor |
-| Lifecycle | 2.8.7 | ⬜ bump minor |
+| Compose BOM | 2026.05.00 | ✅ bumped from 2024.11.00 |
+| AGP | 8.13.2 | ✅ bumped from 8.7.2 |
+| Kotlin | 2.3.21 | ✅ bumped from 2.0.21 |
+| KSP | 2.3.7 | ✅ bumped from 2.0.21-1.0.28 |
+| Room | 2.8.4 | ✅ bumped from 2.6.1 |
+| Lifecycle | 2.10.0 | ✅ bumped from 2.8.7 |
 | Coil | 2.7.0 | ⬜ skip Coil 3.x (breaking API change) |
+| Hilt | 2.57.2 | ✅ bumped from 2.52 (KSP 2.3.x class-loader fix) |
+| hilt-navigation-compose | 1.3.0 | ✅ bumped from 1.2.0 |
+| hilt-work | 1.3.0 | ✅ bumped from 1.2.0 |
+| Gradle wrapper | 8.13 | ✅ bumped from 8.10.2 (required by AGP 8.13.2) |
 
 Steps for Android bump:
 1. Look up current versions on maven.google.com for each library above.

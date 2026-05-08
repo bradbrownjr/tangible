@@ -129,13 +129,15 @@ fun AboutScreen(
     val s by vm.state.collectAsState()
     val ctx = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val labelDiagnostics = stringResource(R.string.diagnostics_clipboard_label)
+    val labelCopied = stringResource(R.string.diagnostics_copied)
 
     // Copy diagnostics to clipboard when the ViewModel has them ready.
     LaunchedEffect(s.diagnosticsReady) {
         val text = s.diagnosticsReady ?: return@LaunchedEffect
         val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText(ctx.getString(R.string.diagnostics_clipboard_label), text))
-        snackbarHostState.showSnackbar(ctx.getString(R.string.diagnostics_copied))
+        clipboard.setPrimaryClip(ClipData.newPlainText(labelDiagnostics, text))
+        snackbarHostState.showSnackbar(labelCopied)
         vm.clearDiagnostics()
     }
 

@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.bradbrownjr.tangible"
         minSdk = 26 // Android 8.0
         targetSdk = 35
-        versionCode = 90
-        versionName = "0.23.0"
+        versionCode = 91
+        versionName = "0.24.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -40,8 +40,6 @@ android {
         isCoreLibraryDesugaringEnabled = false
     }
 
-    kotlinOptions { jvmTarget = "17" }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -56,6 +54,12 @@ android {
     lint {
         // Project-wide opt-in declared in app/lint.xml
         lintConfig = file("lint.xml")
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

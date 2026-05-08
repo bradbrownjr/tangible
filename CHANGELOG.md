@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-05-08
+
+### Internal
+
+- **Web toolchain bump:** Node 18 → 20 (dev host), Vite `6.4.2 → 8.0.11`, `@sveltejs/vite-plugin-svelte` `5.1.1 → 7.1.2`. No behaviour change; `npm run check` (0 errors) and `npm run build` both pass.
+- **Android toolchain bump:** Compose BOM `2024.11.00 → 2026.05.00`, AGP `8.7.2 → 8.13.2`, Kotlin `2.0.21 → 2.3.21`, KSP `2.0.21-1.0.28 → 2.3.7`, Room `2.6.1 → 2.8.4`, Lifecycle `2.8.7 → 2.10.0`, Hilt `2.52 → 2.57.2`, hilt-navigation-compose/hilt-work `1.2.0 → 1.3.0`. Gradle wrapper `8.10.2 → 8.13`. Removed obsolete `ksp.useKSP2=false` workaround. Migrated `kotlinOptions { jvmTarget }` to `kotlin { compilerOptions { } }` DSL. Fixed `LocalContextGetResourceValueCall` lint error in `AboutScreen.kt`. Lint 0 errors, unit tests pass, debug APK assembles.
+
 ## [0.23.0] — 2026-05-08
 
 ### Internal
