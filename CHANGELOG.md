@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.22.3] — 2026-05-20
+
+### Fixed
+
+- **Empty section-toolbar buttons (web, regression):** the Templates / Locations / Bundles / Chores / Members icons in the collection-detail toolbar were rendering as blank squares because `$lib/Icon.svelte` used Svelte 5's deprecated `<svelte:component>` to render `lucide-svelte` v1.0.1 components, whose legacy `$$props` plumbing did not receive the forwarded props. `Icon.svelte` now renders the resolved component value directly (Svelte 5 idiom). All icons across the app now render as intended.
+- **Lists table horizontal scroll (web, Wave 10-B regression):** the Lists tables (Groceries / Hardware / Home Goods / Wish List) regained a horizontal scrollbar in v0.22.0, contradicting the "no horizontal scroll" promise. The shared `DataTable` now uses `table-layout: fixed` (scoped to a `.lists-table` wrapper) so column width caps are honoured; brand cell is 9ch, item cell flex-grows with `min-width: 0`, category 10ch, qty 5ch, notes 18ch, actions 6rem. Edit/delete buttons are no longer clipped on viewports ≥ 768 px.
+
+### Changed
+
+- **Filters panel collapsed by default everywhere (web):** the unified `FiltersPanel.svelte` shell on Collections detail and Lists pages now starts collapsed at every viewport, instead of auto-opening on ≥ 1024 px. Look and behaviour are now identical across both pages: a single `Filters · N` chip with an active-count badge; the user opens the panel explicitly when they need it.
+- **Collection Add-item card matches Lists pattern (web, Wave 10-A):** the collection-detail Add card no longer hides the form behind an outer "+ Add an item" `<details>`. The form is always visible (one row: category root + leaf + URL/ISBN/EAN/title input + Scan image + Add). Extra fields (creator, subtitle) remain in the inner "+ More options" details. Visual and behavioural parity with `/lists/[type]` is restored.
+
 ## [0.22.2] — 2026-05-20
 
 ### Added

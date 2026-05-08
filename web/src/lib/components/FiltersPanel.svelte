@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
     import type { Snippet } from 'svelte';
@@ -15,11 +14,10 @@
 
     let { activeCount = 0, children, actions }: Props = $props();
 
+    // Filters start collapsed everywhere (Collections + Lists), at every viewport.
+    // The user opens the panel explicitly via the chip; the active-count badge
+    // makes any current filters visible while the panel is closed.
     let isOpen = $state(false);
-
-    onMount(() => {
-        isOpen = window.matchMedia('(min-width: 1024px)').matches;
-    });
 </script>
 
 <div class="filters-panel">

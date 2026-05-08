@@ -594,6 +594,7 @@
     {/snippet}
 
     <DataTable
+        class="lists-table"
         cols={listType !== 'wish_list'
             ? ([
                 { key: 'brand',         label: $_('grocery.col_brand'),      cell: brandCell,    tdClass: 'col-brand', mobileLabel: $_('grocery.col_brand') },
@@ -689,11 +690,16 @@
 
 <style>
     /* --- column sizing and truncation for the DataTable --- */
-    :global(.col-brand) { width: 9ch; max-width: 11ch; }
-    :global(.col-name)  { min-width: 0; max-width: 28ch; }
+    /* table-layout: fixed honors width caps; without it, td max-width is ignored. */
+    :global(.lists-table .dt-table) { table-layout: fixed; }
+    :global(.col-brand) { width: 9ch; }
+    :global(.col-name)  { width: auto; min-width: 0; }
     :global(.col-cat)   { width: 10ch; }
     :global(.col-qty)   { width: 5ch; }
-    :global(.col-notes) { min-width: 0; max-width: 20ch; }
+    :global(.col-notes) { width: 18ch; }
+    /* actions column width: enough for two icon-buttons + gap */
+    :global(.lists-table .dt-th--actions),
+    :global(.lists-table .dt-td--actions) { width: 6rem; }
 
     /* --- filter controls inside FiltersPanel --- */
     .list-search-input {

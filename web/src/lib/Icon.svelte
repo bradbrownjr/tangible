@@ -32,15 +32,15 @@
     }
 
     // Resolve to the Svelte icon component, or undefined for unknown names.
-    // Cast via `unknown` to satisfy svelte:component's type while keeping the
-    // lookup type-safe at the key level.
+    // lucide-svelte v1.x icon components use legacy `$$props`, so we render
+    // them directly via a value-binding (Svelte 5) instead of the deprecated
+    // `<svelte:component>`, which fails to forward props to legacy components.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const IconComponent = $derived(lucide[toPascal(name) as keyof typeof lucide] as any);
 </script>
 
 {#if IconComponent}
-    <svelte:component
-        this={IconComponent}
+    <IconComponent
         {size}
         {strokeWidth}
         {color}
