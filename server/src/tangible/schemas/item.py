@@ -104,6 +104,8 @@ class ItemRead(ItemBase):
     rollup_current_value: Decimal | None = None
     # Set only when result comes from a shopping list (not an inventory item).
     list_type: str | None = None
+    # Populated by the search endpoint when tag_names are available.
+    tag_names: list[str] = []
     created_at: datetime
     updated_at: datetime
 

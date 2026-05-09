@@ -31,7 +31,8 @@
         "category": "Category",
         "notes": "Notes",
         "barcode": "Barcode",
-        "serial": "Serial #"
+        "serial": "Serial #",
+        "tag": "Tag"
       }
     },
     "status": {

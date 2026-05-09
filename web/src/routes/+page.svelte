@@ -13,7 +13,8 @@
         | 'category'
         | 'notes'
         | 'barcode'
-        | 'serial';
+        | 'serial'
+        | 'tag';
 
     const FIELDS: { value: SearchField; key: string }[] = [
         { value: 'all', key: 'home.search.field.all' },
@@ -22,7 +23,8 @@
         { value: 'category', key: 'home.search.field.category' },
         { value: 'notes', key: 'home.search.field.notes' },
         { value: 'barcode', key: 'home.search.field.barcode' },
-        { value: 'serial', key: 'home.search.field.serial' }
+        { value: 'serial', key: 'home.search.field.serial' },
+        { value: 'tag', key: 'home.search.field.tag' }
     ];
 
     let q = $state('');
@@ -224,6 +226,17 @@
                     {#if item.subtitle || item.notes}
                         <div class="snippet muted">{item.subtitle ?? item.notes}</div>
                     {/if}
+                    {#if item.tag_names && item.tag_names.length > 0}
+                        <div class="tag-chips">
+                            {#each item.tag_names as tag}
+                                <button
+                                    type="button"
+                                    class="tag-chip"
+                                    onclick={(e) => { e.preventDefault(); q = tag; field = 'tag'; runSearch(); }}
+                                >{tag}</button>
+                            {/each}
+                        </div>
+                    {/if}
                 </a>
             </li>
         {/each}
@@ -415,4 +428,21 @@
     .check { display: inline-flex; gap: 0.4rem; align-items: center; margin: 0.5rem 0; }
     .field { margin: 0.75rem 0; }
     .field label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
+    .tag-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+    }
+    .tag-chip {
+        padding: 0.1rem 0.55rem;
+        font-size: 0.75rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--accent);
+        cursor: pointer;
+        line-height: 1.6;
+    }
+    .tag-chip:hover { background: var(--accent); color: var(--accent-fg, #fff); border-color: var(--accent); }
 </style>

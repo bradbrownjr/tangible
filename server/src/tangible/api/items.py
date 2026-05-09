@@ -566,7 +566,9 @@ def search_items(
     for collection_id, items_in_collection in by_collection.items():
         rollups = _compute_rollup_values(db, collection_id)
         for item, _ in items_in_collection:
-            result.append(_to_item_read(item, rollups))
+            dto = _to_item_read(item, rollups)
+            dto.tag_names = tag_names_by_item.get(item.id, [])
+            result.append(dto)
 
     # Also search shopping list items (field=all only, unpurchased).
     if field == "all":
