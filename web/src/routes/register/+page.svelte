@@ -42,7 +42,7 @@
 </script>
 
 <div class="auth">
-    <img src="/branding/logo-stacked.png" alt="Tangible" class="auth-logo" />
+    <img src="/branding/logo-stacked-light.png" alt="Tangible" class="auth-logo" />
     <h1>{$_('auth.register')}</h1>
     <form onsubmit={submit} class="card">
         <FormField label={$_('auth.username')} for="u" required>
@@ -94,5 +94,9 @@
         margin: 0 auto 1.5rem;
         width: 180px;
         height: auto;
+        content: url('/branding/logo-stacked-light.png');
+    }
+    :global([data-theme$="-dark"]) .auth-logo {
+        content: url('/branding/logo-stacked-dark.png');
     }
 </style>
