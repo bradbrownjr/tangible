@@ -647,8 +647,8 @@ fun CollectionsTabsScreen(
                                         items(displayItems, key = { it.id }) { item ->
                                             ItemRow(
                                                 item = item,
-                                                onClick = { onOpenItem(item.id) },
-                                                onLongClick = { onItemEdit(item.id) },
+                                                onClick = { onItemEdit(item.id) },
+                                                onLongClick = { onOpenItem(item.id) },
                                                 onEdit = { onItemEdit(item.id) },
                                                 onAddToList = { vm.confirmAddToList(item) },
                                                 onDelete = { vm.confirmDelete(item) },
@@ -674,7 +674,7 @@ fun CollectionsTabsScreen(
                                         gridItems(displayItems, key = { it.id }) { item ->
                                             ItemCard(
                                                 item = item,
-                                                onClick = { onOpenItem(item.id) },
+                                                onClick = { onItemEdit(item.id) },
                                                 onEdit = { onItemEdit(item.id) },
                                                 onAddToList = { vm.confirmAddToList(item) },
                                                 onDelete = { vm.confirmDelete(item) },

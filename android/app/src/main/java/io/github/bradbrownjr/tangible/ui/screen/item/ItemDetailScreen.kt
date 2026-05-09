@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 import javax.inject.Inject
 
 data class ItemDetailUi(
@@ -279,11 +280,6 @@ fun ItemDetailScreen(
             else -> DetailView(s, vm, onAddPhoto = { galleryLauncher.launch("image/*") }, Modifier.padding(padding))
         }
 
-        // Edit dialog — shown as overlay matching list-item edit style
-        if (s.editing) {
-            EditItemDialog(s, vm)
-        }
-
         // Full-screen photo viewer
         s.fullScreenPhoto?.let { photo ->
             Dialog(
@@ -309,6 +305,13 @@ fun ItemDetailScreen(
                 }
             }
         }
+    }
+
+    // Edit bottom sheet — shown as a slideout over the detail view
+    if (s.editing) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val scope = rememberCoroutineScope()
+        EditItemSheet(s, vm, sheetState, scope)
     }
 }
 
@@ -537,7 +540,12 @@ private fun formatPrice(amount: Double, currency: String?): String =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditItemDialog(s: ItemDetailUi, vm: ItemDetailViewModel) {
+private fun EditItemSheet(
+    s: ItemDetailUi,
+    vm: ItemDetailViewModel,
+    sheetState: SheetState,
+    scope: CoroutineScope,
+) {
     var locationMenuOpen by remember { mutableStateOf(false) }
     val flat = remember(s.locations) {
         val out = mutableListOf<Pair<Int, LocationDto>>()
@@ -551,128 +559,145 @@ private fun EditItemDialog(s: ItemDetailUi, vm: ItemDetailViewModel) {
     val noLocation = stringResource(R.string.no_location)
     val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name ?: noLocation
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = vm::cancelEditing,
-        title = { Text(stringResource(R.string.edit_item)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                s.error?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                stringResource(R.string.edit_item),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+            s.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            OutlinedTextField(
+                value = s.brand,
+                onValueChange = { vm.update { copy(brand = it) } },
+                label = { Text(stringResource(R.string.brand_optional)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.title,
+                onValueChange = { vm.update { copy(title = it) } },
+                label = { Text(stringResource(R.string.title_required)) },
+                isError = s.title.isBlank(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.subtitle,
+                onValueChange = { vm.update { copy(subtitle = it) } },
+                label = { Text(stringResource(R.string.subtitle)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = s.notes,
+                onValueChange = { vm.update { copy(notes = it) } },
+                label = { Text(stringResource(R.string.notes)) },
+                minLines = 2,
+                maxLines = 4,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = s.condition,
+                    onValueChange = { vm.update { copy(condition = it) } },
+                    label = { Text(stringResource(R.string.condition)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = s.quantity,
+                    onValueChange = { vm.update { copy(quantity = it.filter { c -> c.isDigit() }) } },
+                    label = { Text(stringResource(R.string.qty)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.width(72.dp),
+                )
+            }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { locationMenuOpen = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.location_button, selectedName))
                 }
-                OutlinedTextField(
-                    value = s.brand,
-                    onValueChange = { vm.update { copy(brand = it) } },
-                    label = { Text(stringResource(R.string.brand_optional)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = s.title,
-                    onValueChange = { vm.update { copy(title = it) } },
-                    label = { Text(stringResource(R.string.title_required)) },
-                    isError = s.title.isBlank(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = s.subtitle,
-                    onValueChange = { vm.update { copy(subtitle = it) } },
-                    label = { Text(stringResource(R.string.subtitle)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = s.notes,
-                    onValueChange = { vm.update { copy(notes = it) } },
-                    label = { Text(stringResource(R.string.notes)) },
-                    minLines = 2,
-                    maxLines = 4,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = s.condition,
-                        onValueChange = { vm.update { copy(condition = it) } },
-                        label = { Text(stringResource(R.string.condition)) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
+                DropdownMenu(
+                    expanded = locationMenuOpen,
+                    onDismissRequest = { locationMenuOpen = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(noLocation) },
+                        onClick = { vm.update { copy(locationId = "") }; locationMenuOpen = false },
                     )
-                    OutlinedTextField(
-                        value = s.quantity,
-                        onValueChange = { vm.update { copy(quantity = it.filter { c -> c.isDigit() }) } },
-                        label = { Text(stringResource(R.string.qty)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(72.dp),
-                    )
-                }
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
-                        onClick = { locationMenuOpen = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.location_button, selectedName))
-                    }
-                    DropdownMenu(
-                        expanded = locationMenuOpen,
-                        onDismissRequest = { locationMenuOpen = false },
-                    ) {
+                    flat.forEach { (depth, loc) ->
                         DropdownMenuItem(
-                            text = { Text(noLocation) },
-                            onClick = { vm.update { copy(locationId = "") }; locationMenuOpen = false },
+                            text = { Text("${"  ".repeat(depth)}${loc.name}") },
+                            onClick = { vm.update { copy(locationId = loc.id) }; locationMenuOpen = false },
                         )
-                        flat.forEach { (depth, loc) ->
-                            DropdownMenuItem(
-                                text = { Text("${"  ".repeat(depth)}${loc.name}") },
-                                onClick = { vm.update { copy(locationId = loc.id) }; locationMenuOpen = false },
-                            )
-                        }
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = s.purchasePrice,
-                        onValueChange = { vm.update { copy(purchasePrice = it) } },
-                        label = { Text(stringResource(R.string.purchase_price)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = s.currentValue,
-                        onValueChange = { vm.update { copy(currentValue = it) } },
-                        label = { Text(stringResource(R.string.current_value)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
-                    value = s.currency,
-                    onValueChange = { vm.update { copy(currency = it.take(3).uppercase()) } },
-                    label = { Text(stringResource(R.string.currency_hint)) },
+                    value = s.purchasePrice,
+                    onValueChange = { vm.update { copy(purchasePrice = it) } },
+                    label = { Text(stringResource(R.string.purchase_price)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = s.currentValue,
+                    onValueChange = { vm.update { copy(currentValue = it) } },
+                    label = { Text(stringResource(R.string.current_value)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
                 )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = vm::save,
-                enabled = !s.saving && s.title.isNotBlank(),
+            OutlinedTextField(
+                value = s.currency,
+                onValueChange = { vm.update { copy(currency = it.take(3).uppercase()) } },
+                label = { Text(stringResource(R.string.currency_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (s.saving) {
-                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(stringResource(R.string.save))
+                Button(
+                    onClick = vm::save,
+                    enabled = !s.saving && s.title.isNotBlank(),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    if (s.saving) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(R.string.save))
+                    }
+                }
+                OutlinedButton(
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { vm.cancelEditing() }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.cancel))
                 }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = vm::cancelEditing) { Text(stringResource(R.string.cancel)) }
-        },
-    )
+        }
+    }
 }
