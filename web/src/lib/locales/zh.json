@@ -11,7 +11,10 @@
     "edit_profile": "编辑个人资料",
     "lists": "列表",
     "stores": "商店",
-    "tasks": "维护"
+    "tasks": "维护",
+    "all_lists": "所有列表",
+    "home": "主页",
+    "import": "导入"
   },
   "alerts": {
     "no_upcoming": "暂无即将到来的提醒。",
@@ -29,7 +32,8 @@
     "loading": "加载中…",
     "error": "错误",
     "confirm": "确定吗？",
-    "never": "永不"
+    "never": "永不",
+    "more_options": "更多选项"
   },
   "auth": {
     "sign_in": "登录",
@@ -236,7 +240,17 @@
     "bulk_group_location": "Location",
     "bulk_group_lend": "Lend",
     "advanced_filters": "Filters",
-    "edit_panel_title": "Edit item"
+    "edit_panel_title": "Edit item",
+    "section_toolbar_label": "工具栏",
+    "settings": "收藏设置",
+    "settings_description": "描述",
+    "settings_name": "名称",
+    "settings_theme": "视觉主题",
+    "theme_bookshelf": "书架 – 暖胡桃木",
+    "theme_game_room": "游戏室 – 暗色霓虹",
+    "theme_hint": "主题将更改此收藏的配色方案。",
+    "theme_movie_room": "影院 – 电影风格",
+    "theme_none": "默认（无主题）"
   },
   "members": {
     "add_placeholder": "用户名或电子邮件",
@@ -450,7 +464,10 @@
     "custom_placeholder": "类别名称",
     "col_category": "类别",
     "edit_button": "编辑",
-    "edit_item_title": "编辑条目"
+    "edit_item_title": "编辑条目",
+    "col_brand": "品牌",
+    "col_notes": "备注",
+    "remove_confirm": "删除此条目？"
   },
   "import_page": {
     "title": "导入",
@@ -778,5 +795,59 @@
     "achievement_power_user": "Power User — 25+ completions",
     "achievement_household_hero": "Household Hero — 50+ completions",
     "achievement_legend": "Legend — 100+ completions"
+  },
+  "filters": {
+    "all_categories": "所有类别",
+    "label": "筛选",
+    "search_placeholder": "搜索…",
+    "sort_added": "添加时间",
+    "sort_asc": "升序",
+    "sort_by": "排序方式",
+    "sort_category": "类别",
+    "sort_desc": "降序",
+    "sort_name": "名称",
+    "sort_qty": "数量"
+  },
+  "home": {
+    "add_dialog": {
+      "add": "添加",
+      "adding": "添加中…",
+      "as_wishlist": "作为心愿单物品添加",
+      "collection_label": "收藏",
+      "heading": "添加\"{q}\""
+    },
+    "empty": {
+      "add_button": "添加到收藏",
+      "subtitle": "将其添加到收藏或心愿单以便下次记忆。",
+      "title": "未找到\"{q}\"的匹配项"
+    },
+    "search": {
+      "field": {
+        "all": "所有字段",
+        "barcode": "条形码",
+        "brand": "品牌",
+        "category": "类别",
+        "notes": "备注",
+        "serial": "序列号",
+        "tag": "标签",
+        "title": "标题"
+      },
+      "field_label": "搜索范围",
+      "include_archived": "包含已归档项目",
+      "include_archived_short": "已归档",
+      "placeholder": "搜索",
+      "submit": "搜索"
+    },
+    "shortcuts": {
+      "heading": "快速入口"
+    },
+    "status": {
+      "archived": "已归档",
+      "depleted": "已耗尽",
+      "on_list": "在列表中",
+      "owned": "已拥有",
+      "wishlist": "心愿单"
+    },
+    "title": "主页"
   }
 }

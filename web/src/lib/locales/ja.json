@@ -11,7 +11,10 @@
     "edit_profile": "プロフィールを編集",
     "lists": "リスト",
     "stores": "店舗",
-    "tasks": "メンテナンス"
+    "tasks": "メンテナンス",
+    "all_lists": "すべてのリスト",
+    "home": "ホーム",
+    "import": "インポート"
   },
   "alerts": {
     "no_upcoming": "今後のアラートはありません。",
@@ -29,7 +32,8 @@
     "loading": "読み込み中…",
     "error": "エラー",
     "confirm": "よろしいですか？",
-    "never": "なし"
+    "never": "なし",
+    "more_options": "その他のオプション"
   },
   "auth": {
     "sign_in": "サインイン",
@@ -236,7 +240,17 @@
     "bulk_group_location": "Location",
     "bulk_group_lend": "Lend",
     "advanced_filters": "Filters",
-    "edit_panel_title": "Edit item"
+    "edit_panel_title": "Edit item",
+    "section_toolbar_label": "ツールバー",
+    "settings": "コレクション設定",
+    "settings_description": "説明",
+    "settings_name": "名前",
+    "settings_theme": "ビジュアルテーマ",
+    "theme_bookshelf": "本棚 – ウォールナット",
+    "theme_game_room": "ゲームルーム – ネオン",
+    "theme_hint": "テーマはこのコレクションの配色を変更します。",
+    "theme_movie_room": "映画室 – シネマ調",
+    "theme_none": "デフォルト（テーマなし）"
   },
   "members": {
     "add_placeholder": "ユーザー名またはメールアドレス",
@@ -450,7 +464,10 @@
     "custom_placeholder": "カテゴリー名",
     "col_category": "カテゴリー",
     "edit_button": "編集",
-    "edit_item_title": "アイテムを編集"
+    "edit_item_title": "アイテムを編集",
+    "col_brand": "ブランド",
+    "col_notes": "メモ",
+    "remove_confirm": "削除しますか？"
   },
   "import_page": {
     "title": "インポート",
@@ -778,5 +795,59 @@
     "achievement_power_user": "Power User — 25+ completions",
     "achievement_household_hero": "Household Hero — 50+ completions",
     "achievement_legend": "Legend — 100+ completions"
+  },
+  "filters": {
+    "all_categories": "すべてのカテゴリ",
+    "label": "フィルター",
+    "search_placeholder": "検索…",
+    "sort_added": "追加日",
+    "sort_asc": "昇順",
+    "sort_by": "並べ替え",
+    "sort_category": "カテゴリ",
+    "sort_desc": "降順",
+    "sort_name": "名前",
+    "sort_qty": "数量"
+  },
+  "home": {
+    "add_dialog": {
+      "add": "追加",
+      "adding": "追加中…",
+      "as_wishlist": "ウィッシュリストとして追加",
+      "collection_label": "コレクション",
+      "heading": "「{q}」を追加"
+    },
+    "empty": {
+      "add_button": "コレクションに追加",
+      "subtitle": "コレクションまたはウィッシュリストに追加してください。",
+      "title": "「{q}」に一致するものがありません"
+    },
+    "search": {
+      "field": {
+        "all": "すべてのフィールド",
+        "barcode": "バーコード",
+        "brand": "ブランド",
+        "category": "カテゴリ",
+        "notes": "メモ",
+        "serial": "シリアル番号",
+        "tag": "タグ",
+        "title": "タイトル"
+      },
+      "field_label": "検索対象",
+      "include_archived": "アーカイブ済みを含む",
+      "include_archived_short": "アーカイブ",
+      "placeholder": "検索",
+      "submit": "検索"
+    },
+    "shortcuts": {
+      "heading": "ショートカット"
+    },
+    "status": {
+      "archived": "アーカイブ済み",
+      "depleted": "在庫切れ",
+      "on_list": "リスト中",
+      "owned": "所有",
+      "wishlist": "ウィッシュリスト"
+    },
+    "title": "ホーム"
   }
 }

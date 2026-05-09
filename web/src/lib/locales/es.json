@@ -11,7 +11,10 @@
     "edit_profile": "Editar perfil",
     "lists": "Listas",
     "stores": "Tiendas",
-    "tasks": "Mantenimiento"
+    "tasks": "Mantenimiento",
+    "all_lists": "Todas las listas",
+    "home": "Inicio",
+    "import": "Importar"
   },
   "alerts": {
     "no_upcoming": "Sin alertas próximas.",
@@ -29,7 +32,8 @@
     "loading": "Cargando…",
     "error": "Error",
     "confirm": "¿Está seguro/a?",
-    "never": "nunca"
+    "never": "nunca",
+    "more_options": "Más opciones"
   },
   "auth": {
     "sign_in": "Iniciar sesión",
@@ -236,7 +240,17 @@
     "bulk_group_location": "Location",
     "bulk_group_lend": "Lend",
     "advanced_filters": "Filters",
-    "edit_panel_title": "Edit item"
+    "edit_panel_title": "Edit item",
+    "section_toolbar_label": "Barra de herramientas",
+    "settings": "Ajustes de colección",
+    "settings_description": "Descripción",
+    "settings_name": "Nombre",
+    "settings_theme": "Tema visual",
+    "theme_bookshelf": "Estantería – nogal cálido",
+    "theme_game_room": "Sala de juegos – neón oscuro",
+    "theme_hint": "Los temas cambian la paleta de colores de esta colección.",
+    "theme_movie_room": "Sala de cine – cinematográfico",
+    "theme_none": "Predeterminado (sin tema)"
   },
   "members": {
     "add_placeholder": "Nombre de usuario o correo",
@@ -450,7 +464,10 @@
     "custom_placeholder": "Nombre de categoría",
     "col_category": "Categoría",
     "edit_button": "Editar",
-    "edit_item_title": "Editar artículo"
+    "edit_item_title": "Editar artículo",
+    "col_brand": "Marca",
+    "col_notes": "Notas",
+    "remove_confirm": "¿Eliminar entrada?"
   },
   "import_page": {
     "title": "Importar",
@@ -778,5 +795,59 @@
     "achievement_power_user": "Power User — 25+ completions",
     "achievement_household_hero": "Household Hero — 50+ completions",
     "achievement_legend": "Legend — 100+ completions"
+  },
+  "filters": {
+    "all_categories": "Todas las categorías",
+    "label": "Filtros",
+    "search_placeholder": "Buscar…",
+    "sort_added": "Añadido",
+    "sort_asc": "Ascendente",
+    "sort_by": "Ordenar por",
+    "sort_category": "Categoría",
+    "sort_desc": "Descendente",
+    "sort_name": "Nombre",
+    "sort_qty": "Cantidad"
+  },
+  "home": {
+    "add_dialog": {
+      "add": "Añadir",
+      "adding": "Añadiendo…",
+      "as_wishlist": "Añadir como artículo de lista de deseos",
+      "collection_label": "Colección",
+      "heading": "Añadir \"{q}\""
+    },
+    "empty": {
+      "add_button": "Añadir a una colección",
+      "subtitle": "Añádelo a una colección o lista de deseos.",
+      "title": "Sin coincidencias para \"{q}\""
+    },
+    "search": {
+      "field": {
+        "all": "Todos los campos",
+        "barcode": "Código de barras",
+        "brand": "Marca",
+        "category": "Categoría",
+        "notes": "Notas",
+        "serial": "N.º de serie",
+        "tag": "Etiqueta",
+        "title": "Título"
+      },
+      "field_label": "Buscar en",
+      "include_archived": "Incluir artículos archivados",
+      "include_archived_short": "Archivado",
+      "placeholder": "Buscar",
+      "submit": "Buscar"
+    },
+    "shortcuts": {
+      "heading": "Accesos directos"
+    },
+    "status": {
+      "archived": "Archivado",
+      "depleted": "Agotado",
+      "on_list": "En la lista",
+      "owned": "Disponible",
+      "wishlist": "Lista de deseos"
+    },
+    "title": "Inicio"
   }
 }

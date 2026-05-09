@@ -266,7 +266,8 @@ class CollectionsTabsViewModel @Inject constructor(
                     notes = item.notes,
                     categorySlug = item.category_slug,
                 )
-                itemsRepo.delete(item.id)
+                // Mark as depleted (restockable) rather than deleting outright.
+                itemsRepo.update(item.id, depleted = true)
                 loadItems(item.collection_id, force = true)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
