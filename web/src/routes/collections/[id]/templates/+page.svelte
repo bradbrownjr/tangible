@@ -6,6 +6,7 @@
         type Category,
         type Collection,
         type ItemTemplate,
+        type ScaffoldTemplate,
         type ScraperRegistryEntry,
         type TemplateField,
         type TemplateFieldType
@@ -20,6 +21,8 @@
     let collection = $state<Collection | null>(null);
     let templates = $state<ItemTemplate[]>([]);
     let scaffoldNames = $state<string[]>([]);
+    let scaffoldPreview = $state<ScaffoldTemplate[]>([]);
+    let scaffoldPreviewOpen = $state(false);
     let registryEntries = $state<ScraperRegistryEntry[]>([]);
     let categories = $state<Category[]>([]);
     let loading = $state(true);
@@ -115,10 +118,11 @@
         loading = true;
         error = '';
         try {
-            [collection, templates, scaffoldNames, registryEntries, categories] = await Promise.all([
+            [collection, templates, scaffoldNames, scaffoldPreview, registryEntries, categories] = await Promise.all([
                 api.get<Collection>(`/collections/${cid}`),
                 api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
                 api.get<string[]>(`/collections/${cid}/scaffold-templates`),
+                api.get<ScaffoldTemplate[]>(`/collections/${cid}/scaffold-templates/preview`),
                 api.get<ScraperRegistryEntry[]>(`/metadata/registry`),
                 loadCategories(),
             ]);
@@ -273,12 +277,48 @@
         {#if canEdit}
             <button onclick={openWizard}>+ New template</button>
         {/if}
+        {#if scaffoldPreview.length > 0}
+            <button
+                type="button"
+                class="secondary"
+                onclick={() => (scaffoldPreviewOpen = !scaffoldPreviewOpen)}
+                aria-expanded={scaffoldPreviewOpen}
+            >{scaffoldPreviewOpen ? 'Hide scaffold preview' : 'View scaffold templates'}</button>
+        {/if}
         {#if hasMissingDefaults}
             <button type="button" class="secondary" onclick={createDefaults}>
                 Create {scaffoldRootLabel} defaults
             </button>
         {/if}
     </div>
+
+    {#if scaffoldPreviewOpen && scaffoldPreview.length > 0}
+        <div class="scaffold-preview">
+            <p class="muted hint">These templates are seeded when you click <strong>Create {scaffoldRootLabel} defaults</strong>. Templates whose names already exist are skipped.</p>
+            {#each scaffoldPreview as s (s.name)}
+                <details class="scaffold-entry">
+                    <summary>
+                        <strong>{s.name}</strong>
+                        <code class="slug">{s.category_slug}</code>
+                        <span class="muted">{s.fields.length} field{s.fields.length !== 1 ? 's' : ''}</span>
+                    </summary>
+                    <table class="fields-preview">
+                        <thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Options / notes</th></tr></thead>
+                        <tbody>
+                            {#each s.fields as f (f.key)}
+                                <tr>
+                                    <td><code>{f.key}</code>{#if f.required}<span class="req" title="required"> *</span>{/if}</td>
+                                    <td>{f.label}</td>
+                                    <td><code>{f.type}</code></td>
+                                    <td class="muted">{#if f.options?.length}{f.options.join(', ')}{:else if f.default !== undefined && f.default !== null}default: {f.default}{:else}—{/if}</td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </details>
+            {/each}
+        </div>
+    {/if}
 
     {#if loading}
         <p class="muted">Loading&#x2026;</p>
@@ -724,4 +764,51 @@
         justify-content: space-between;
         align-items: center;
     }
+    .scaffold-preview {
+        margin-bottom: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem;
+        background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    }
+    .scaffold-entry {
+        border-bottom: 1px solid var(--border);
+        padding: 0.4rem 0;
+    }
+    .scaffold-entry:last-child {
+        border-bottom: none;
+    }
+    .scaffold-entry > summary {
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        list-style: none;
+        padding: 0.25rem 0;
+    }
+    .scaffold-entry > summary::-webkit-details-marker { display: none; }
+    .scaffold-entry > summary::before {
+        content: '▸';
+        font-size: 0.7em;
+        color: var(--muted-text, #888);
+        transition: transform 0.15s;
+    }
+    .scaffold-entry[open] > summary::before { content: '▾'; }
+    .scaffold-entry .slug {
+        font-size: 0.78em;
+        color: var(--muted-text, #888);
+    }
+    .fields-preview {
+        margin: 0.4rem 0 0.25rem 1rem;
+        font-size: 0.88em;
+        border-collapse: collapse;
+        width: calc(100% - 1rem);
+    }
+    .fields-preview th,
+    .fields-preview td {
+        padding: 0.2rem 0.4rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    .fields-preview thead th { font-weight: 600; }
 </style>

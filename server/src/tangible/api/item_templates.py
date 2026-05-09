@@ -651,6 +651,25 @@ def scaffold_template_names(
     return [s["name"] for s in _SCAFFOLD.get(root, [])]
 
 
+@router.get(
+    "/collections/{collection_id}/scaffold-templates/preview",
+    response_model=list[dict],
+)
+def scaffold_template_preview(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[dict]:
+    """Return the full scaffold template definitions (name + fields) for this collection's type."""
+    _require_role(db, auth, collection_id, _VIEWER_ROLES)
+    coll = db.get(Collection, collection_id)
+    if coll is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    root = (coll.default_category_slug or "").split(".")[0]
+    return [{"name": s["name"], "category_slug": s["category_slug"], "fields": s["fields"]}
+            for s in _SCAFFOLD.get(root, [])]
+
+
 @router.post(
     "/collections/{collection_id}/scaffold-templates",
     response_model=list[ItemTemplateRead],

@@ -349,6 +349,12 @@ export interface ItemTemplate {
     updated_at: string;
 }
 
+export interface ScaffoldTemplate {
+    name: string;
+    category_slug: string;
+    fields: TemplateField[];
+}
+
 export interface PublicConfig {
     version: string;
     public_url: string;
