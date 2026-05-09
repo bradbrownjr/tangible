@@ -179,6 +179,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        padding: 0;
+        min-height: unset;
         width: 2.2rem;
         height: 2.2rem;
         border-radius: var(--radius-sm);
