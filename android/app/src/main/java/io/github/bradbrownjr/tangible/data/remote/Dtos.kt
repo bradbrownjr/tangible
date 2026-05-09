@@ -462,3 +462,36 @@ data class ShoppingAislePatch(
     val position: Int? = null,
     val category_slugs: List<String>? = null,
 )
+
+// ---------------------------------------------------------------------------
+// Chores
+// ---------------------------------------------------------------------------
+
+@JsonClass(generateAdapter = true)
+data class ChoreDto(
+    val id: String,
+    val collection_id: String,
+    val name: String,
+    val notes: String? = null,
+    val interval_days: Int? = null,
+    val last_completed_at: String? = null,
+    val next_due_at: String? = null,
+    val created_at: String,
+    val updated_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class ChoreCreateDto(
+    val name: String,
+    val notes: String? = null,
+    val interval_days: Int? = null,
+    val next_due_at: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ChoreCompletePayloadDto(
+    val notes: String? = null,
+    val cost: Double? = null,
+    val currency: String? = null,
+    val technician: String? = null,
+)

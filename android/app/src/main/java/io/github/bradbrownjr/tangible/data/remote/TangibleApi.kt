@@ -225,4 +225,23 @@ interface TangibleApi {
         @Path("kind") kind: String,
         @Body body: NotificationPrefUpdate,
     ): NotificationPrefDto
+
+    // --- Chores ---
+    @GET("collections/{collectionId}/chores")
+    suspend fun listChores(@Path("collectionId") collectionId: String): List<ChoreDto>
+
+    @POST("collections/{collectionId}/chores")
+    suspend fun createChore(
+        @Path("collectionId") collectionId: String,
+        @Body body: ChoreCreateDto,
+    ): ChoreDto
+
+    @POST("chores/{choreId}/complete")
+    suspend fun completeChore(
+        @Path("choreId") choreId: String,
+        @Body body: ChoreCompletePayloadDto,
+    ): ChoreDto
+
+    @DELETE("chores/{choreId}")
+    suspend fun deleteChore(@Path("choreId") choreId: String)
 }

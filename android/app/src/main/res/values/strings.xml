@@ -348,4 +348,19 @@
     <string name="add_to_list_confirm" tools:ignore="MissingTranslation">Add \"%s\" to the shopping list?\n\nCopy keeps it in your collection. Move also marks it as depleted.</string>
     <string name="delete_item_confirm" tools:ignore="MissingTranslation">Delete \"%s\"? This cannot be undone.</string>
     <string name="no_search_results" tools:ignore="MissingTranslation">No items match your search.</string>
+    <!-- Chores -->
+    <string name="chores" tools:ignore="MissingTranslation">Chores</string>
+    <string name="chores_empty" tools:ignore="MissingTranslation">No chores yet. Tap + to add one.</string>
+    <string name="chore_name_hint" tools:ignore="MissingTranslation">Chore name</string>
+    <string name="chore_notes_hint" tools:ignore="MissingTranslation">Notes (optional)</string>
+    <string name="chore_interval_hint" tools:ignore="MissingTranslation">Repeat every N days (optional)</string>
+    <string name="chore_next_due_hint" tools:ignore="MissingTranslation">Next due date (optional, YYYY-MM-DD)</string>
+    <string name="chore_complete" tools:ignore="MissingTranslation">Mark complete</string>
+    <string name="chore_complete_notes_hint" tools:ignore="MissingTranslation">Completion notes (optional)</string>
+    <string name="chore_due_label" tools:ignore="MissingTranslation">Due: %s</string>
+    <string name="chore_interval_label" tools:ignore="MissingTranslation">Every %d days</string>
+    <string name="chore_last_done_label" tools:ignore="MissingTranslation">Last done: %s</string>
+    <string name="add_chore" tools:ignore="MissingTranslation">Add chore</string>
+    <string name="cd_chores" tools:ignore="MissingTranslation">Chores</string>
+    <string name="delete_chore_confirm" tools:ignore="MissingTranslation">Delete \"%s\"? This cannot be undone.</string>
 </resources>

@@ -58,6 +58,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Task
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 
 enum class ViewMode { LIST, GRID }
@@ -380,6 +381,7 @@ fun CollectionsTabsScreen(
     onOpenItem: (String) -> Unit = {},
     onItemEdit: (String) -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
+    onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     onSwipeLeft: () -> Unit = {},
     onSwipeRight: () -> Unit = {},
     vm: CollectionsTabsViewModel = hiltViewModel(),
@@ -539,6 +541,14 @@ fun CollectionsTabsScreen(
                                 Icons.Default.QrCodeScanner,
                                 contentDescription = stringResource(R.string.cd_scan_barcode),
                             )
+                        }
+                        currentColl?.let { coll ->
+                            IconButton(onClick = { onNavigateToChores(coll.id, coll.name) }) {
+                                Icon(
+                                    Icons.Default.Task,
+                                    contentDescription = stringResource(R.string.cd_chores),
+                                )
+                            }
                         }
                         if (currentColl != null) {
                             IconButton(onClick = { imagePicker.launch("image/*") }) {

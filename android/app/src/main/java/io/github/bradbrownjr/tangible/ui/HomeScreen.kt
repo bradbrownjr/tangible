@@ -58,6 +58,7 @@ fun HomeScreen(
     onItemEdit: (String) -> Unit = {},
     onManageStores: () -> Unit,
     onNavigateToScanner: () -> Unit,
+    onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     onSignOut: () -> Unit,
     scannedBarcode: String? = null,
     initialSection: Int = 0,
@@ -132,6 +133,7 @@ fun HomeScreen(
                 1 -> CollectionsTabsScreen(
                     onOpenItem = onOpenItem,
                     onItemEdit = onItemEdit,
+                    onNavigateToChores = onNavigateToChores,
                     onNavigateToScanner = onNavigateToScanner,
                     onSwipeLeft = {
                         scope.launch {

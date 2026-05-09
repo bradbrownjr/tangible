@@ -15,6 +15,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import io.github.bradbrownjr.tangible.nfc.NfcManager
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
+import io.github.bradbrownjr.tangible.ui.screen.chores.ChoresScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingAisleEditorScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingStoreListScreen
@@ -32,6 +33,9 @@ object Routes {
     fun itemDetail(id: String) = "item/$id"
     fun itemDetailEdit(id: String) = "item/$id?edit=true"
     const val SCANNER = "scanner"
+    const val COLLECTION_CHORES = "collections/{collectionId}/chores?name={collectionName}"
+    fun collectionChores(collectionId: String, collectionName: String = "") =
+        "collections/$collectionId/chores?name=${java.net.URLEncoder.encode(collectionName, "UTF-8")}"
 }
 
 @Composable
@@ -75,6 +79,9 @@ fun TangibleApp() {
                     onItemEdit = { nav.navigate(Routes.itemDetailEdit(it)) },
                     onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
                     onNavigateToScanner = { nav.navigate(Routes.SCANNER) },
+                    onNavigateToChores = { collId, collName ->
+                        nav.navigate(Routes.collectionChores(collId, collName))
+                    },
                     onSignOut = {
                         nav.navigate(Routes.LOGIN) {
                             popUpTo(0) { inclusive = true }
@@ -116,6 +123,15 @@ fun TangibleApp() {
                     nav.previousBackStackEntry?.savedStateHandle?.set("barcode", code)
                     nav.popBackStack()
                 })
+            }
+            composable(
+                Routes.COLLECTION_CHORES,
+                arguments = listOf(
+                    navArgument("collectionId") { type = NavType.StringType },
+                    navArgument("collectionName") { type = NavType.StringType; defaultValue = "" },
+                ),
+            ) {
+                ChoresScreen(onBack = { nav.popBackStack() })
             }
         }
     }
