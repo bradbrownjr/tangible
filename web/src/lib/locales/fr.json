@@ -10,7 +10,8 @@
     "whats_new": "Nouveautés",
     "edit_profile": "Modifier votre profil",
     "lists": "Listes",
-    "stores": "Magasins"
+    "stores": "Magasins",
+    "tasks": "Maintenance"
   },
   "alerts": {
     "no_upcoming": "Aucune alerte à venir.",
@@ -745,5 +746,16 @@
     "col_priority": "Priorité",
     "view_link": "Voir",
     "empty": "Rien sur la liste — tout est bon !"
+  },
+  "tasks": {
+    "title": "Tasks & Alerts",
+    "description": "Upcoming and overdue tasks, chores, expiry dates, and low stock.",
+    "tab_alerts": "Alerts",
+    "tab_chores": "Chores",
+    "chores_empty": "No chores due in the next {days} days.",
+    "chores_all_clear": "All chores are on schedule!",
+    "chores_hint": "Showing chores due across all collections. Click Manage Chores to complete or edit.",
+    "manage_chores_link": "Manage chores",
+    "mark_done_tooltip": "Mark done (opens chores page)"
   }
 }

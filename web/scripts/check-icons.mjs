@@ -31,6 +31,7 @@ const SRC_DIR = path.resolve(__dirname, '../src');
 const REGISTERED_ICONS = new Set([
   'activity', 'arrow-down', 'arrow-up',
   'battery-charging', 'bell', 'book-open', 'box', 'building',
+  'calendar-check', 'calendar-clock', 'calendar-x',
   'car', 'check', 'check-circle', 'chevron-down', 'chevron-up', 'chevron-left', 'chevron-right',
   'circle-alert', 'circle-x', 'clock', 'corner-down-right',
   'database-backup', 'dice-5', 'door-open', 'download',

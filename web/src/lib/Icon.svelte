@@ -8,6 +8,7 @@
 <script lang="ts">
     import {
         Activity, ArrowDown, ArrowUp, BatteryCharging, Bell, BookOpen, Box, Building,
+        CalendarCheck, CalendarClock, CalendarX,
         Car, Check, CheckCircle, ChevronDown, ChevronUp, CircleX,
         ChevronLeft, ChevronRight, CircleAlert, Clock, CornerDownRight,
         DatabaseBackup, Dice5, DoorOpen, Download, Eye, EyeOff, File, FileArchive, FileCog, FileSpreadsheet,
@@ -22,6 +23,7 @@
     const ICON_MAP: Record<string, any> = {
         'activity': Activity, 'arrow-down': ArrowDown, 'arrow-up': ArrowUp,
         'battery-charging': BatteryCharging, 'bell': Bell, 'book-open': BookOpen, 'box': Box, 'building': Building,
+        'calendar-check': CalendarCheck, 'calendar-clock': CalendarClock, 'calendar-x': CalendarX,
         'car': Car, 'check': Check,
         'check-circle': CheckCircle, 'chevron-down': ChevronDown, 'chevron-up': ChevronUp, 'circle-x': CircleX,
         'chevron-left': ChevronLeft, 'chevron-right': ChevronRight,

@@ -10,7 +10,8 @@
     "whats_new": "新機能",
     "edit_profile": "プロフィールを編集",
     "lists": "リスト",
-    "stores": "店舗"
+    "stores": "店舗",
+    "tasks": "メンテナンス"
   },
   "alerts": {
     "no_upcoming": "今後のアラートはありません。",
@@ -745,5 +746,16 @@
     "col_priority": "優先度",
     "view_link": "表示",
     "empty": "リストに何もありません"
+  },
+  "tasks": {
+    "title": "Tasks & Alerts",
+    "description": "Upcoming and overdue tasks, chores, expiry dates, and low stock.",
+    "tab_alerts": "Alerts",
+    "tab_chores": "Chores",
+    "chores_empty": "No chores due in the next {days} days.",
+    "chores_all_clear": "All chores are on schedule!",
+    "chores_hint": "Showing chores due across all collections. Click Manage Chores to complete or edit.",
+    "manage_chores_link": "Manage chores",
+    "mark_done_tooltip": "Mark done (opens chores page)"
   }
 }

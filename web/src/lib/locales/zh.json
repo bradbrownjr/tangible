@@ -10,7 +10,8 @@
     "whats_new": "最新动态",
     "edit_profile": "编辑个人资料",
     "lists": "列表",
-    "stores": "商店"
+    "stores": "商店",
+    "tasks": "维护"
   },
   "alerts": {
     "no_upcoming": "暂无即将到来的提醒。",
@@ -745,5 +746,16 @@
     "col_priority": "优先级",
     "view_link": "查看",
     "empty": "列表为空 — 一切顺利！"
+  },
+  "tasks": {
+    "title": "Tasks & Alerts",
+    "description": "Upcoming and overdue tasks, chores, expiry dates, and low stock.",
+    "tab_alerts": "Alerts",
+    "tab_chores": "Chores",
+    "chores_empty": "No chores due in the next {days} days.",
+    "chores_all_clear": "All chores are on schedule!",
+    "chores_hint": "Showing chores due across all collections. Click Manage Chores to complete or edit.",
+    "manage_chores_link": "Manage chores",
+    "mark_done_tooltip": "Mark done (opens chores page)"
   }
 }

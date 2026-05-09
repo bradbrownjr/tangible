@@ -241,9 +241,9 @@
         <Icon name="list" size={24} />
         <strong>{$_('nav.lists')}</strong>
     </a>
-    <a href="/maintenance" class="tile">
-        <Icon name="wrench" size={24} />
-        <strong>{$_('nav.maintenance')}</strong>
+    <a href="/tasks" class="tile">
+        <Icon name="calendar-clock" size={24} />
+        <strong>{$_('nav.tasks')}</strong>
     </a>
     <a href="/import" class="tile">
         <Icon name="upload" size={24} />

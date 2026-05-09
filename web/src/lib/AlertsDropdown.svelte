@@ -114,7 +114,7 @@
                 </ul>
             {/if}
             <div class="dropdown-footer">
-                <a href="/maintenance" onclick={() => (open = false)}>{$_('alerts.view_all')}</a>
+                <a href="/tasks" onclick={() => (open = false)}>{$_('alerts.view_all')}</a>
                 <a href="/settings" onclick={() => (open = false)}>{$_('alerts.preferences_link')}</a>
             </div>
         </div>

@@ -240,9 +240,9 @@
                 <Icon name="store" size={16} />
                 <span>{$_('nav.stores')}</span>
             </a>
-            <a href="/maintenance" class="nav-link" onclick={closeMenu}>
-                <Icon name="wrench" size={16} />
-                <span>{$_('nav.maintenance')}</span>
+            <a href="/tasks" class="nav-link" onclick={closeMenu}>
+                <Icon name="calendar-clock" size={16} />
+                <span>{$_('nav.tasks')}</span>
             </a>
             <a href="/settings/appearance" class="nav-link" onclick={closeMenu}>
                 <Icon name="settings" size={16} />
