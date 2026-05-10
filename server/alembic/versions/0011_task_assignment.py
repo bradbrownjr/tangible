@@ -23,12 +23,7 @@ def upgrade() -> None:
     if "assigned_to_user_id" not in existing_cols:
         with op.batch_alter_table("standalone_tasks") as batch_op:
             batch_op.add_column(
-                sa.Column(
-                    "assigned_to_user_id",
-                    sa.String(26),
-                    sa.ForeignKey("users.id", ondelete="SET NULL"),
-                    nullable=True,
-                )
+                sa.Column("assigned_to_user_id", sa.String(26), nullable=True)
             )
 
 

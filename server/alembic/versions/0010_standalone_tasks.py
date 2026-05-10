@@ -68,24 +68,14 @@ def upgrade() -> None:
     if "completed_by_user_id" not in existing_cols:
         with op.batch_alter_table("chore_completions") as batch_op:
             batch_op.add_column(
-                sa.Column(
-                    "completed_by_user_id",
-                    sa.String(26),
-                    sa.ForeignKey("users.id", ondelete="SET NULL"),
-                    nullable=True,
-                )
+                sa.Column("completed_by_user_id", sa.String(26), nullable=True)
             )
 
     existing_cols = {c["name"] for c in inspector.get_columns("maintenance_completions")}
     if "completed_by_user_id" not in existing_cols:
         with op.batch_alter_table("maintenance_completions") as batch_op:
             batch_op.add_column(
-                sa.Column(
-                    "completed_by_user_id",
-                    sa.String(26),
-                    sa.ForeignKey("users.id", ondelete="SET NULL"),
-                    nullable=True,
-                )
+                sa.Column("completed_by_user_id", sa.String(26), nullable=True)
             )
 
 
