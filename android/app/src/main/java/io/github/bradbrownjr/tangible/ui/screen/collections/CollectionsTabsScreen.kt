@@ -662,7 +662,10 @@ fun CollectionsTabsScreen(
                                 CollectionCard(
                                     collection = coll,
                                     itemCount = s.itemCountByCollection[coll.id] ?: 0,
-                                    onClick = { onNavigateToCollection(coll.id) },
+                                    onClick = {
+                                        val idx = s.collections.indexOfFirst { it.id == coll.id }
+                                        if (idx >= 0) scope.launch { pagerState.animateScrollToPage(idx + 1) }
+                                    },
                                 )
                             }
                             item {
