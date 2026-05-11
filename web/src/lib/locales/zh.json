@@ -762,7 +762,8 @@
     "add_type_delete_confirm": "删除此列表类型？现有条目将保留其类型。",
     "new_pair_title": "New list",
     "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
-    "no_lists": "No lists yet — create one to get started."
+    "no_lists": "No lists yet — create one to get started.",
+    "add_button": "+ 新建清单"
   },
   "tasks": {
     "title": "Tasks & Alerts",

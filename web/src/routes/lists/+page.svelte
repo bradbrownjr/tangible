@@ -104,7 +104,11 @@
 
 <h1>{$_('nav.lists')}</h1>
 
-{#if pickerOpen && !chosen}
+{#if !pickerOpen}
+    <div style="margin-bottom: 1.5rem">
+        <button type="button" onclick={openPicker}>{$_('lists.add_button')}</button>
+    </div>
+{:else if !chosen}
     <div class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">{$_('lists.new_pair_title')}</h3>
         <p class="muted" style="margin-top:0; margin-bottom:1rem">
@@ -123,7 +127,7 @@
             <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
         </p>
     </div>
-{:else if pickerOpen && chosen}
+{:else}
     <form onsubmit={create} class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">
             {$_('collections.new_form_heading_preset', { values: { name: chosen.name } })}
@@ -144,32 +148,25 @@
             <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
         </div>
     </form>
+{/if}
+
+{#if loading}
+    <p class="muted">{$_('common.loading')}</p>
+{:else if listTypes.length === 0}
+    <p class="muted">{$_('lists.no_lists')}</p>
 {:else}
-    {#if loading}
-        <p class="muted">{$_('common.loading')}</p>
-    {:else if listTypes.length === 0}
-        <p class="muted">{$_('lists.no_lists')}</p>
-    {:else}
-        <div class="presets">
-            {#each listTypes as lt (lt.id)}
-                <a href={`/lists/${lt.slug}`} class="preset preset-link">
-                    <span class="preset-icon">
-                        <Icon name={PRESET_ICON[lt.category_slug ?? ''] ?? 'list'} size={24} />
-                    </span>
-                    <strong>{lt.label}</strong>
-                    {#if counts[lt.slug]}
-                        <span class="badge">{counts[lt.slug]}</span>
-                    {/if}
-                </a>
-            {/each}
-        </div>
-    {/if}
-    <div style="margin-top: 1.5rem">
-        <button type="button" class="preset preset-new" onclick={openPicker}>
-            <span class="preset-icon"><Icon name="plus" size={24} /></span>
-            <strong>{$_('lists.new_pair_title')}</strong>
-            <span class="muted">{$_('lists.new_pair_subtitle')}</span>
-        </button>
+    <div class="presets">
+        {#each listTypes as lt (lt.id)}
+            <a href={`/lists/${lt.slug}`} class="preset preset-link">
+                <span class="preset-icon">
+                    <Icon name={PRESET_ICON[lt.category_slug ?? ''] ?? 'list'} size={24} />
+                </span>
+                <strong>{lt.label}</strong>
+                {#if counts[lt.slug]}
+                    <span class="badge">{counts[lt.slug]}</span>
+                {/if}
+            </a>
+        {/each}
     </div>
 {/if}
 
@@ -209,12 +206,6 @@
     .preset-link {
         text-decoration: none;
     }
-    .preset-new {
-        border-style: dashed;
-        width: 100%;
-        min-height: auto;
-    }
-
     .badge {
         position: absolute;
         top: 0.5rem;

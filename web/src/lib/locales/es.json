@@ -762,7 +762,8 @@
     "add_type_delete_confirm": "¿Eliminar este tipo de lista? Los elementos existentes conservan su tipo.",
     "new_pair_title": "New list",
     "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
-    "no_lists": "No lists yet — create one to get started."
+    "no_lists": "No lists yet — create one to get started.",
+    "add_button": "+ Nueva lista"
   },
   "tasks": {
     "title": "Tasks & Alerts",
