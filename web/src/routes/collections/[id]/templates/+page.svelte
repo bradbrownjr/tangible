@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { _ } from 'svelte-i18n';
     import { page } from '$app/state';
     import {
         api,
@@ -265,6 +266,7 @@
 </script>
 
 {#if collection}
+    <h1>{$_('collections.tab_templates')}</h1>
     <p class="muted intro">
         Templates add custom fields (e.g. <em>Pressing year</em>, <em>Catalog&#x202F;#</em>) to items
         in this collection. Each template extends the built-in fields for its category. Items inherit

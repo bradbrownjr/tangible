@@ -220,8 +220,10 @@
 {#if collection}
     {#if error}<p class="error">{error}</p>{/if}
 
+    <h1>{$_('collections.tab_bundles')}</h1>
+
     {#if canEdit}
-        <form onsubmit={createBundle} class="card" style="margin: 1rem 0">
+        <form onsubmit={createBundle} class="card" style="margin-bottom: 1.5rem">
             <h2>{$_('bundles.add_heading')}</h2>
             <div class="form-row">
                 <input

@@ -136,6 +136,8 @@
 {#if collection}
     {#if error}<p class="error">{error}</p>{/if}
 
+    <h1>{$_('collections.tab_locations')}</h1>
+
     {#if canEdit}
         <form onsubmit={createLocation} class="card" style="margin: 1rem 0">
             <h2>{$_('locations.add_heading')}</h2>

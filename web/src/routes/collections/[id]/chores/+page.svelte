@@ -178,6 +178,7 @@
 {:else if error}
     <p class="error">{error}</p>
 {:else}
+    <h1>{$_('collections.tab_chores')}</h1>
     <div class="page-header">
         <p class="muted">{$_('chores.page_description')}</p>
     </div>

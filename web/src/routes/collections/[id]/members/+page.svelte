@@ -190,8 +190,10 @@
 {#if collection}
     {#if error}<p class="error">{error}</p>{/if}
 
-    <form onsubmit={addMember} class="card" style="margin: 1rem 0">
-        <div style="display:grid; grid-template-columns: 1fr 140px auto; gap:.5rem">
+    <h1>{$_('collections.tab_members')}</h1>
+
+    <form onsubmit={addMember} class="card" style="margin-bottom: 1.5rem">
+        <div class="member-form-row">
             <input bind:value={newIdent} placeholder={$_('members.add_placeholder')} />
             <select bind:value={newRole}>
                 <option value="viewer">{$_('members.role_viewer')}</option>
@@ -250,8 +252,8 @@
         {$_('members.invitations_description')}
     </p>
 
-    <form onsubmit={createInvitation} class="card" style="margin: 1rem 0">
-        <div style="display:grid; grid-template-columns: 1fr 140px auto; gap:.5rem">
+    <form onsubmit={createInvitation} class="card" style="margin-bottom: 1.5rem">
+        <div class="member-form-row">
             <input
                 type="email"
                 bind:value={newInviteEmail}
@@ -317,8 +319,8 @@
         {$_('members.share_links_description')}
     </p>
 
-    <form onsubmit={createShareLink} class="card" style="margin: 1rem 0">
-        <div style="display:grid; grid-template-columns: 1fr auto; gap:.5rem">
+    <form onsubmit={createShareLink} class="card" style="margin-bottom: 1.5rem">
+        <div class="share-form-row">
             <input bind:value={newLinkLabel} placeholder={$_('members.share_link_label_placeholder')} />
             <button type="submit">{$_('members.create_share_button')}</button>
         </div>
@@ -421,4 +423,14 @@
 </ConfirmDialog>
 
 <style>
+    .member-form-row {
+        display: grid;
+        grid-template-columns: 1fr 140px auto;
+        gap: var(--space-2);
+    }
+    .share-form-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: var(--space-2);
+    }
 </style>
