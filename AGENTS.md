@@ -154,8 +154,13 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
      increment by 1) **and** `versionName` (string, match the release tag).
      Even if no Android code changed, `versionName` must match the tag so
      `Settings → About` in the app always reflects the current release.
-     Skipping this causes user-visible version drift (e.g. app shows
-     "0.25.25" while the release is "0.25.27").
+     Skipping this causes two user-visible problems:
+     1. The app displays a stale version string (e.g. "0.25.25" while the
+        release is "0.25.27").
+     2. **Obtainium permanently shows a pending update** because it compares
+        `versionName` in the APK against the GitHub release tag. A mismatch
+        means every Obtainium user sees a false update notification that
+        never resolves.
 2. Add a `## [X.Y.Z] — YYYY-MM-DD` section to `CHANGELOG.md` describing the
    release in user-facing terms.
 3. Commit, push, then `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
