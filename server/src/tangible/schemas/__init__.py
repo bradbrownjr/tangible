@@ -99,6 +99,8 @@ from tangible.schemas.shopping import (
     UserListTypeCreate,
     UserListTypeRead,
     UserListTypeUpdate,
+    PairCreate,
+    PairRead,
 )
 from tangible.schemas.sync import (
     SyncChange,
@@ -206,6 +208,8 @@ __all__ = [
     "UserListTypeCreate",
     "UserListTypeRead",
     "UserListTypeUpdate",
+    "PairCreate",
+    "PairRead",
     "SyncChange",
     "SyncChangeUpload",
     "SyncDocSummary",

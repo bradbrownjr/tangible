@@ -42,7 +42,7 @@ const REGISTERED_ICONS = new Set([
   'link-2-off', 'list', 'loader',
   'map-pin', 'menu', 'more-horizontal', 'music',
   'nut',
-  'package', 'package-check', 'package-x', 'palette', 'party-popper', 'pencil',
+  'package', 'package-check', 'package-x', 'palette', 'party-popper', 'pencil', 'plus',
   'settings', 'settings-2', 'share-2', 'shield', 'shirt', 'shopping-cart', 'sliders-horizontal',
   'sparkles', 'star', 'store',
   'trash-2', 'triangle-alert',

@@ -161,7 +161,7 @@ class BarcodeHint(Base):
 
 
 class UserListType(ULIDPrimaryKey, TimestampMixin, Base):
-    """A custom list type created by a user (in addition to the 4 built-in types)."""
+    """A user-defined list type, always paired with a Collection."""
 
     __tablename__ = "user_list_types"
 
@@ -175,4 +175,8 @@ class UserListType(ULIDPrimaryKey, TimestampMixin, Base):
     label: Mapped[str] = mapped_column(String(120), nullable=False)
     icon: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # Category this type was created from (one of the 16 catalog roots).
+    category_slug: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # ID of the paired Collection (1:1 link). Nullable for standalone list types.
+    linked_collection_id: Mapped[str | None] = mapped_column(String(26), nullable=True, index=True)
 

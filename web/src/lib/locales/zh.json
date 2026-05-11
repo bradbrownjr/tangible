@@ -97,7 +97,8 @@
     "form_create": "创建",
     "form_category_hint": "此收藏夹中的新条目默认分类为 {slug}；您可以为每个条目选择不同的分类。",
     "empty": "暂无收藏。点击\"新建收藏\"开始吧。",
-    "tab_all": "全部"
+    "tab_all": "全部",
+    "pair_created_hint": "A matching collection was also created."
   },
   "collection": {
     "tab_items": "物品",
@@ -740,18 +741,6 @@
   },
   "lists": {
     "tab_all": "全部",
-    "type": {
-      "groceries": "食材",
-      "hardware": "五金建材",
-      "home_goods": "家居用品",
-      "wish_list": "愃望清单"
-    },
-    "description": {
-      "groceries": "您添加的商品以及已标记耗尽的商品。",
-      "hardware": "所需的五金和自己动手用品。",
-      "home_goods": "所需的家居用品。",
-      "wish_list": "您想要的东西 — 分享或跟踪赠品。"
-    },
     "item_name_placeholder": "添加商品…",
     "wish_url_placeholder": "链接（可选）",
     "wish_priority_any": "优先级",
@@ -770,7 +759,10 @@
     "add_type_label_placeholder": "名称（例：汽车零件）",
     "add_type_label_label": "名称",
     "add_type_confirm": "创建",
-    "add_type_delete_confirm": "删除此列表类型？现有条目将保留其类型。"
+    "add_type_delete_confirm": "删除此列表类型？现有条目将保留其类型。",
+    "new_pair_title": "New list",
+    "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
+    "no_lists": "No lists yet — create one to get started."
   },
   "tasks": {
     "title": "Tasks & Alerts",

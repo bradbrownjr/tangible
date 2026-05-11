@@ -75,6 +75,10 @@
     <string name="no_collections">No collections yet. Tap + to create one.</string>
     <string name="what_are_you_collecting">What are you collecting?</string>
     <string name="new_collection">New collection</string>
+    <string name="new_list">New list</string>
+    <string name="new_pair_title">New list</string>
+    <string name="new_pair_subtitle">Pick a category to create a paired shopping list and collection.</string>
+    <string name="pair_created_success">List and collection created.</string>
     <string name="collection_name">Name</string>
     <string name="collection_description_optional">Description (optional)</string>
 

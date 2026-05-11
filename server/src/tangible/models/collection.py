@@ -33,6 +33,9 @@ class Collection(ULIDPrimaryKey, TimestampMixin, Base):
     # Optional visual theme for the collection detail view.
     # Values: None (default) | 'bookshelf' | 'game_room' | 'movie_room'
     theme: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Slug of the linked UserListType (1:1 pair). Nullable for
+    # inventory-only collections that have no shopping list.
+    linked_list_type_slug: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
     owner: Mapped[User] = relationship(foreign_keys=[owner_id])
     items: Mapped[list[Item]] = relationship(

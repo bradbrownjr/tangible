@@ -42,6 +42,7 @@ data class CollectionDto(
     val is_public: Boolean = false,
     val owner_id: String,
     val default_category_slug: String? = null,
+    val linked_list_type_slug: String? = null,
     val my_role: String? = null,
 )
 
@@ -507,9 +508,24 @@ data class UserListTypeDto(
     val label: String,
     val icon: String? = null,
     val sort_order: Int = 0,
+    val category_slug: String? = null,
+    val linked_collection_id: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
 data class UserListTypeCreateRequest(
     val label: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class PairCreateRequest(
+    val label: String,
+    val category_slug: String? = null,
+    val description: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class PairReadDto(
+    val collection: CollectionDto,
+    val list_type: UserListTypeDto,
 )

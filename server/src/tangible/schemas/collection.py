@@ -17,6 +17,7 @@ class CollectionBase(BaseModel):
     is_public: bool = False
     default_category_slug: str | None = Field(default=None, max_length=64)
     theme: str | None = Field(default=None, max_length=32)
+    linked_list_type_slug: str | None = Field(default=None, max_length=64)
 
 
 class CollectionCreate(CollectionBase):
@@ -30,6 +31,7 @@ class CollectionUpdate(BaseModel):
     is_public: bool | None = None
     default_category_slug: str | None = Field(default=None, max_length=64)
     theme: str | None = Field(default=None, max_length=32)
+    linked_list_type_slug: str | None = Field(default=None, max_length=64)
 
 
 class CollectionRead(CollectionBase):

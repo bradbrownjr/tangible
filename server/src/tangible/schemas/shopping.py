@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from tangible.schemas.collection import CollectionRead
+
 
 class ShoppingSource(BaseModel):
     """Sub-schema describing where a grocery feed entry comes from."""
@@ -157,7 +159,7 @@ class ShoppingCount(BaseModel):
 
 
 class UserListTypeRead(BaseModel):
-    """A user-defined custom list type."""
+    """A user-defined list type."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -167,15 +169,35 @@ class UserListTypeRead(BaseModel):
     label: str
     icon: str | None = None
     sort_order: int = 0
+    category_slug: str | None = None
+    linked_collection_id: str | None = None
     created_at: datetime
 
 
 class UserListTypeCreate(BaseModel):
     label: str = Field(min_length=1, max_length=120)
     icon: str | None = Field(default=None, max_length=64)
+    category_slug: str | None = Field(default=None, max_length=64)
+    linked_collection_id: str | None = None
 
 
 class UserListTypeUpdate(BaseModel):
     label: str | None = Field(default=None, min_length=1, max_length=120)
     icon: str | None = Field(default=None, max_length=64)
     sort_order: int | None = None
+    linked_collection_id: str | None = None
+
+
+class PairCreate(BaseModel):
+    """Create a Collection + UserListType as an atomic pair."""
+
+    label: str = Field(min_length=1, max_length=120)
+    category_slug: str | None = Field(default=None, max_length=64)
+    description: str | None = Field(default=None, max_length=2048)
+
+
+class PairRead(BaseModel):
+    """The result of creating a collection/list pair."""
+
+    collection: CollectionRead
+    list_type: UserListTypeRead

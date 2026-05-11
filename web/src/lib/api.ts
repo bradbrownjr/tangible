@@ -143,6 +143,7 @@ export interface Collection {
     owner_id: string;
     default_category_slug: string | null;
     theme: string | null;
+    linked_list_type_slug: string | null;
     my_role: Role | null;
 }
 
@@ -499,5 +500,12 @@ export interface UserListType {
     label: string;
     icon: string | null;
     sort_order: number;
+    category_slug: string | null;
+    linked_collection_id: string | null;
     created_at: string;
+}
+
+export interface CollectionListPair {
+    collection: Collection;
+    list_type: UserListType;
 }

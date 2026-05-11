@@ -15,7 +15,7 @@
         Film, FlaskConical, Folder, Gamepad2, Grid2x2, Home, House, Image, Inbox, Info, Link2Off, List,
         Loader, MapPin, Menu, MoreHorizontal, Music,
         Nut, Package, PackageCheck, PackageX, PartyPopper,
-        Palette, Pencil, Settings, Settings2, Share2, Shield, ShoppingCart, Shirt,
+        Palette, Pencil, Plus, Settings, Settings2, Share2, Shield, ShoppingCart, Shirt,
         SlidersHorizontal, Sparkles, Star, Store,
         Trash2, TriangleAlert, Upload, User, Users, Wrench, X,
     } from 'lucide-svelte';
@@ -37,7 +37,7 @@
         'link-2-off': Link2Off, 'loader': Loader,
         'map-pin': MapPin, 'menu': Menu, 'more-horizontal': MoreHorizontal, 'music': Music,
         'nut': Nut, 'package': Package, 'package-check': PackageCheck, 'package-x': PackageX,
-        'palette': Palette, 'party-popper': PartyPopper, 'pencil': Pencil,
+        'palette': Palette, 'party-popper': PartyPopper, 'pencil': Pencil, 'plus': Plus,
         'settings': Settings, 'settings-2': Settings2,
         'share-2': Share2, 'shield': Shield, 'shirt': Shirt, 'shopping-cart': ShoppingCart,
         'sliders-horizontal': SlidersHorizontal,

@@ -139,7 +139,8 @@
     "form_create": "Create",
     "form_category_hint": "New items in this collection default to {slug}; you can pick a different category per item.",
     "empty": "No collections yet. Click New collection to get started.",
-    "tab_all": "All"
+    "tab_all": "All",
+    "pair_created_hint": "A matching collection was also created."
   },
   "collection": {
     "tab_items": "Items",
@@ -794,18 +795,6 @@
   },
   "lists": {
     "tab_all": "All",
-    "type": {
-      "groceries": "Groceries",
-      "hardware": "Hardware",
-      "home_goods": "Home Goods",
-      "wish_list": "Wish List"
-    },
-    "description": {
-      "groceries": "Items added by you, plus anything marked depleted across your collections.",
-      "hardware": "Hardware and DIY supplies needed.",
-      "home_goods": "Home furnishings and household items needed.",
-      "wish_list": "Things you want — share or track for gifting."
-    },
     "item_name_placeholder": "Add item…",
     "wish_url_placeholder": "Link (optional)",
     "wish_priority_any": "Priority",
@@ -824,7 +813,10 @@
     "add_type_label_placeholder": "Name (e.g. Car Parts)",
     "add_type_label_label": "Name",
     "add_type_confirm": "Create",
-    "add_type_delete_confirm": "Remove this list type? Existing items keep their type."
+    "add_type_delete_confirm": "Remove this list type? Existing items keep their type.",
+    "new_pair_title": "New list",
+    "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
+    "no_lists": "No lists yet — create one to get started."
   },
   "tasks": {
     "title": "Tasks & Alerts",

@@ -1,69 +1,220 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
     import { _ } from 'svelte-i18n';
-    import { api } from '$lib/api';
+    import { api, type Category, type UserListType, type CollectionListPair } from '$lib/api';
+    import { loadCategories, rootCategories } from '$lib/categories';
     import Icon from '$lib/Icon.svelte';
 
-    interface ShoppingCount {
-        total: number;
-        ad_hoc: number;
-        depleted_items: number;
-        by_type: Record<string, number>;
+    const PRESET_ICON: Record<string, string> = {
+        art_decor:      'palette',
+        batteries:      'battery-charging',
+        books:          'book-open',
+        clothing:       'shirt',
+        collectibles:   'star',
+        fuel_chemicals: 'flask-conical',
+        home_equipment: 'home',
+        movies:         'film',
+        music:          'music',
+        other:          'grid-2x2',
+        spices:         'shopping-cart',
+        sports:         'activity',
+        tabletop:       'dice-5',
+        tools:          'wrench',
+        vehicles:       'car',
+        games:          'gamepad-2',
+    };
+
+    let listTypes = $state<UserListType[]>([]);
+    let categories = $state<Category[]>([]);
+    let counts = $state<Record<string, number>>({});
+    let loading = $state(true);
+    let error = $state('');
+
+    // Wizard state
+    let pickerOpen = $state(false);
+    let chosen = $state<{ slug: string | null; name: string; description: string } | null>(null);
+    let formName = $state('');
+    let formDescription = $state('');
+    let creating = $state(false);
+
+    const roots = $derived(rootCategories(categories));
+
+    async function refresh() {
+        try {
+            const [types, cats, countData] = await Promise.all([
+                api.get<UserListType[]>('/lists/types'),
+                loadCategories(),
+                api.get<{ by_type: Record<string, number> }>('/lists/count'),
+            ]);
+            listTypes = types;
+            categories = cats;
+            counts = countData.by_type ?? {};
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            loading = false;
+        }
     }
 
-    const TYPES: { slug: string; key: string; icon: string }[] = [
-        { slug: 'groceries', key: 'lists.type.groceries', icon: 'shopping-cart' },
-        { slug: 'hardware', key: 'lists.type.hardware', icon: 'wrench' },
-        { slug: 'home_goods', key: 'lists.type.home_goods', icon: 'house' },
-        { slug: 'wish_list', key: 'lists.type.wish_list', icon: 'star' }
-    ];
+    function openPicker() {
+        pickerOpen = true;
+        chosen = null;
+        formName = '';
+        formDescription = '';
+        error = '';
+    }
 
-    let counts = $state<Record<string, number>>({});
+    function pickPreset(root: Category) {
+        chosen = { slug: root.slug, name: root.name, description: root.description ?? '' };
+        formName = root.name;
+        formDescription = root.description ?? '';
+    }
 
-    onMount(async () => {
+    function cancel() {
+        pickerOpen = false;
+        chosen = null;
+        formName = '';
+        formDescription = '';
+        error = '';
+    }
+
+    async function create(e: Event) {
+        e.preventDefault();
+        if (!formName.trim()) return;
+        creating = true;
         try {
-            const c = await api.get<ShoppingCount>('/lists/count');
-            counts = c.by_type ?? {};
-        } catch {
-            counts = {};
+            const result = await api.post<CollectionListPair>('/lists/pairs', {
+                label: formName.trim(),
+                category_slug: chosen?.slug ?? null,
+                description: formDescription.trim() || null,
+            });
+            cancel();
+            listTypes = [...listTypes, result.list_type];
+            goto(`/lists/${result.list_type.slug}`);
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            creating = false;
         }
-    });
+    }
+
+    onMount(refresh);
 </script>
 
 <h1>{$_('nav.lists')}</h1>
 
-<div class="tiles">
-    {#each TYPES as t (t.slug)}
-        <a href={`/lists/${t.slug}`} class="tile">
-            <Icon name={t.icon} size={28} />
-            <strong>{$_(t.key)}</strong>
-            {#if counts[t.slug]}<span class="badge">{counts[t.slug]}</span>{/if}
-        </a>
-    {/each}
-</div>
+{#if pickerOpen && !chosen}
+    <div class="card" style="margin-bottom: 1.5rem">
+        <h3 style="margin-top:0">{$_('lists.new_pair_title')}</h3>
+        <p class="muted" style="margin-top:0; margin-bottom:1rem">
+            {$_('lists.new_pair_subtitle')}
+        </p>
+        <div class="presets">
+            {#each roots as r (r.id)}
+                <button type="button" class="preset" onclick={() => pickPreset(r)}>
+                    <span class="preset-icon"><Icon name={PRESET_ICON[r.slug] ?? 'box'} size={24} /></span>
+                    <strong>{r.name}</strong>
+                    {#if r.description}<span class="muted">{r.description}</span>{/if}
+                </button>
+            {/each}
+        </div>
+        <p style="margin-top:1rem">
+            <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
+        </p>
+    </div>
+{:else if pickerOpen && chosen}
+    <form onsubmit={create} class="card" style="margin-bottom: 1.5rem">
+        <h3 style="margin-top:0">
+            {$_('collections.new_form_heading_preset', { values: { name: chosen.name } })}
+        </h3>
+        <div class="field">
+            <label for="lname">{$_('collections.form_name_label')}</label>
+            <input id="lname" bind:value={formName} placeholder={$_('collections.form_name_placeholder')} required />
+        </div>
+        <div class="field">
+            <label for="ldesc">{$_('collections.form_description_label')}</label>
+            <input id="ldesc" bind:value={formDescription} />
+        </div>
+        {#if error}<p class="error">{error}</p>{/if}
+        <div style="display:flex; gap:.5rem">
+            <button type="submit" disabled={creating}>
+                {creating ? $_('collections.form_creating') : $_('collections.form_create')}
+            </button>
+            <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
+        </div>
+    </form>
+{:else}
+    {#if loading}
+        <p class="muted">{$_('common.loading')}</p>
+    {:else if listTypes.length === 0}
+        <p class="muted">{$_('lists.no_lists')}</p>
+    {:else}
+        <div class="presets">
+            {#each listTypes as lt (lt.id)}
+                <a href={`/lists/${lt.slug}`} class="preset preset-link">
+                    <span class="preset-icon">
+                        <Icon name={PRESET_ICON[lt.category_slug ?? ''] ?? 'list'} size={24} />
+                    </span>
+                    <strong>{lt.label}</strong>
+                    {#if counts[lt.slug]}
+                        <span class="badge">{counts[lt.slug]}</span>
+                    {/if}
+                </a>
+            {/each}
+        </div>
+    {/if}
+    <div style="margin-top: 1.5rem">
+        <button type="button" class="preset preset-new" onclick={openPicker}>
+            <span class="preset-icon"><Icon name="plus" size={24} /></span>
+            <strong>{$_('lists.new_pair_title')}</strong>
+            <span class="muted">{$_('lists.new_pair_subtitle')}</span>
+        </button>
+    </div>
+{/if}
 
 <style>
     h1 { margin: 0 0 1rem; }
-    .tiles {
+
+    .presets {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.5rem;
     }
-    .tile {
+
+    .preset {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1.5rem 0.75rem;
+        align-items: flex-start;
+        gap: 0.25rem;
+        padding: 0.75rem;
+        min-height: 6rem;
+        text-align: left;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 6px;
+        cursor: pointer;
         color: inherit;
-        text-decoration: none;
         position: relative;
     }
-    .tile:hover { border-color: var(--accent); }
+    .preset-icon {
+        color: var(--accent);
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+    .preset:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+    }
+    .preset-link {
+        text-decoration: none;
+    }
+    .preset-new {
+        border-style: dashed;
+        width: 100%;
+        min-height: auto;
+    }
+
     .badge {
         position: absolute;
         top: 0.5rem;
@@ -75,5 +226,37 @@
         padding: 0.05rem 0.45rem;
         min-width: 1.25rem;
         text-align: center;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+    .field label {
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+    .field input {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 0.375rem);
+        font-size: var(--text-base, 1rem);
+        background: var(--surface);
+        color: var(--text);
+    }
+
+    .link {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--accent);
+        cursor: pointer;
+    }
+    .error {
+        color: var(--danger, #e53e3e);
+        font-size: 0.875rem;
+        margin: 0;
     }
 </style>

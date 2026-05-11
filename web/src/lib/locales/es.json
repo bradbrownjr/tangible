@@ -97,7 +97,8 @@
     "form_create": "Crear",
     "form_category_hint": "Los nuevos artículos de esta colección usan {slug} por defecto; puede elegir una categoría diferente por artículo.",
     "empty": "Sin colecciones. Haga clic en Nueva colección para comenzar.",
-    "tab_all": "Todas"
+    "tab_all": "Todas",
+    "pair_created_hint": "A matching collection was also created."
   },
   "collection": {
     "tab_items": "Artículos",
@@ -740,18 +741,6 @@
   },
   "lists": {
     "tab_all": "Todos",
-    "type": {
-      "groceries": "Comestibles",
-      "hardware": "Ferretera",
-      "home_goods": "Hogar",
-      "wish_list": "Lista de deseos"
-    },
-    "description": {
-      "groceries": "Artículos añadidos por ti, más todo lo marcado como agotado.",
-      "hardware": "Materiales de ferretera y bricolaje necesarios.",
-      "home_goods": "Artículos del hogar necesarios.",
-      "wish_list": "Cosas que deseas — comparte o sigue para regalos."
-    },
     "item_name_placeholder": "Añadir artículo…",
     "wish_url_placeholder": "Enlace (opcional)",
     "wish_priority_any": "Prioridad",
@@ -770,7 +759,10 @@
     "add_type_label_placeholder": "Nombre (p.ej. Repuestos)",
     "add_type_label_label": "Nombre",
     "add_type_confirm": "Crear",
-    "add_type_delete_confirm": "¿Eliminar este tipo de lista? Los elementos existentes conservan su tipo."
+    "add_type_delete_confirm": "¿Eliminar este tipo de lista? Los elementos existentes conservan su tipo.",
+    "new_pair_title": "New list",
+    "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
+    "no_lists": "No lists yet — create one to get started."
   },
   "tasks": {
     "title": "Tasks & Alerts",

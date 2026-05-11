@@ -43,6 +43,7 @@ import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ItemDto
+import io.github.bradbrownjr.tangible.data.remote.PairCreateRequest
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CategoryRepository
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
@@ -75,6 +76,7 @@ enum class ViewMode { LIST, GRID }
 data class CollectionsTabsUi(
     val collections: List<CollectionDto> = emptyList(),
     val itemsByCollection: Map<String, List<ItemDto>> = emptyMap(),
+    val itemCountByCollection: Map<String, Int> = emptyMap(),
     val loadingByCollection: Map<String, Boolean> = emptyMap(),
     val searchByCollection: Map<String, String> = emptyMap(),
     val loading: Boolean = false,
@@ -149,8 +151,10 @@ class CollectionsTabsViewModel @Inject constructor(
             try {
                 val items = itemsRepo.list(collectionId = collectionId)
                 val s = _state.value
+                val updatedItems = s.itemsByCollection + (collectionId to items)
                 _state.value = s.copy(
-                    itemsByCollection = s.itemsByCollection + (collectionId to items),
+                    itemsByCollection = updatedItems,
+                    itemCountByCollection = updatedItems.mapValues { it.value.size },
                     loadingByCollection = s.loadingByCollection - collectionId,
                 )
             } catch (t: Throwable) {
@@ -173,8 +177,10 @@ class CollectionsTabsViewModel @Inject constructor(
                     async { coll.id to itemsRepo.list(collectionId = coll.id) }
                 }.awaitAll().toMap()
                 val s = _state.value
+                val updatedItems = s.itemsByCollection + results
                 _state.value = s.copy(
-                    itemsByCollection = s.itemsByCollection + results,
+                    itemsByCollection = updatedItems,
+                    itemCountByCollection = updatedItems.mapValues { it.value.size },
                     allItemsLoading = false,
                 )
             } catch (_: Throwable) {
@@ -208,10 +214,12 @@ class CollectionsTabsViewModel @Inject constructor(
         if (name.isEmpty()) return
         viewModelScope.launch {
             try {
-                collectionsRepo.create(
-                    name = name,
-                    description = s.newDescription.takeIf { it.isNotBlank() },
-                    defaultCategorySlug = s.selectedPreset?.slug,
+                api.createPair(
+                    PairCreateRequest(
+                        label = name,
+                        category_slug = s.selectedPreset?.slug,
+                        description = s.newDescription.takeIf { it.isNotBlank() },
+                    )
                 )
                 _state.value = _state.value.copy(wizardStep = WizardStep.CLOSED)
                 refresh()
@@ -642,59 +650,23 @@ fun CollectionsTabsScreen(
                     beyondViewportPageCount = 0,
                 ) { page ->
                     if (page == 0) {
-                        // All items across all collections, grouped by collection name.
-                        val allItems = remember(s.collections, s.itemsByCollection) {
-                            s.collections.flatMap { coll ->
-                                (s.itemsByCollection[coll.id] ?: emptyList()).map { coll to it }
-                            }.sortedWith(compareBy({ it.first.name }, { it.second.title }))
-                        }
-                        when {
-                            s.allItemsLoading && allItems.isEmpty() ->
-                                LazyColumn(Modifier.fillMaxSize()) {
-                                    item {
-                                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                            CircularProgressIndicator()
-                                        }
-                                    }
-                                }
-                            allItems.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
-                                item {
-                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                        Text(stringResource(R.string.no_items))
-                                    }
-                                }
+                        // Card grid of all collections.
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            gridItems(s.collections, key = { it.id }) { coll ->
+                                CollectionCard(
+                                    collection = coll,
+                                    itemCount = s.itemCountByCollection[coll.id] ?: 0,
+                                    onClick = { onNavigateToCollection(coll.id) },
+                                )
                             }
-                            else -> {
-                                LazyColumn(Modifier.fillMaxSize()) {
-                                    var renderedCollId: String? = null
-                                    allItems.forEach { (coll, item) ->
-                                        if (coll.id != renderedCollId) {
-                                            renderedCollId = coll.id
-                                            stickyHeader(key = "header_${coll.id}") {
-                                                Surface(
-                                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                ) {
-                                                    Text(
-                                                        text = coll.name,
-                                                        style = MaterialTheme.typography.labelLarge,
-                                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        item(key = "all_${item.id}") {
-                                            ItemRow(
-                                                item = item,
-                                                onClick = { onItemEdit(item.id) },
-                                                onEdit = { onItemEdit(item.id) },
-                                                onAddToList = { vm.confirmAddToList(item) },
-                                                onDelete = { vm.confirmDelete(item) },
-                                            )
-                                            HorizontalDivider()
-                                        }
-                                    }
-                                }
+                            item {
+                                NewCollectionCard(onClick = vm::openWizard)
                             }
                         }
                     } else {
@@ -1057,6 +1029,42 @@ private fun CreateItemDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel)
         },
         dismissButton = { TextButton(onClick = vm::dismissCreateItem) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+@Composable
+private fun CollectionCard(
+    collection: CollectionDto,
+    itemCount: Int,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(collection.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (collection.description != null) {
+                Text(collection.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            if (itemCount > 0) {
+                Text("$itemCount items", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewCollectionCard(onClick: () -> Unit) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.new_collection), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
 }
 
 @Composable

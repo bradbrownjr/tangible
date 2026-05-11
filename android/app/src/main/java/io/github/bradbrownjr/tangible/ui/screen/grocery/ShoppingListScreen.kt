@@ -64,7 +64,7 @@ import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingItemPatchRequest
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
-import io.github.bradbrownjr.tangible.data.remote.UserListTypeCreateRequest
+import io.github.bradbrownjr.tangible.data.remote.PairCreateRequest
 import io.github.bradbrownjr.tangible.data.remote.UserListTypeDto
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ItemRepository
@@ -74,18 +74,10 @@ import io.github.bradbrownjr.tangible.R
 import java.io.IOException
 import javax.inject.Inject
 
-private val LIST_TYPES = listOf("groceries", "hardware", "home_goods", "wish_list")
-
-/** Implied collection name that will be auto-created if absent for each list type.
- *  Wish List is intentionally absent — the user picks the target collection in the dialog. */
-private val IMPLIED_COLLECTION_NAME = mapOf(
-    "groceries"  to "Pantry",
-    "hardware"   to "Workshop",
-    "home_goods" to "Home",
-)
+enum class ListTypeWizardStep { CLOSED, PICK_PRESET, CONFIRM }
 
 data class ShoppingListUi(
-    val listType: String = "groceries",
+    val listType: String = "",
     val items: List<ShoppingFeedEntryDto> = emptyList(),
     val collections: Map<String, CollectionDto> = emptyMap(),
     val stores: List<ShoppingStoreDto> = emptyList(),
@@ -110,7 +102,11 @@ data class ShoppingListUi(
     val allItems: List<ShoppingFeedEntryDto> = emptyList(),
     val allItemsLoading: Boolean = false,
     val customListTypes: List<UserListTypeDto> = emptyList(),
-    val showCreateTypeDialog: Boolean = false,
+    val countByType: Map<String, Int> = emptyMap(),
+    val listTypeWizardStep: ListTypeWizardStep = ListTypeWizardStep.CLOSED,
+    val listTypePresets: List<CategoryDto> = emptyList(),
+    val listTypePreset: CategoryDto? = null,
+    val listTypeName: String = "",
 )
 
 enum class ShoppingViewMode { LIST, GRID }
@@ -140,8 +136,9 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val types = api.listUserListTypes()
-                _state.value = _state.value.copy(customListTypes = types)
-            } catch (_: Throwable) { /* built-in tabs still work */ }
+                val cats = try { api.listCategories().filter { it.parent_id == null } } catch (_: Throwable) { emptyList() }
+                _state.value = _state.value.copy(customListTypes = types, listTypePresets = cats)
+            } catch (_: Throwable) { /* non-fatal */ }
         }
     }
 
@@ -216,38 +213,52 @@ class ShoppingListViewModel @Inject constructor(
     fun loadAllItems() {
         if (_state.value.allItemsLoading) return
         _state.value = _state.value.copy(allItemsLoading = true)
-        val allTypes = LIST_TYPES + _state.value.customListTypes.map { it.slug }
+        val allTypes = _state.value.customListTypes.map { it.slug }
         viewModelScope.launch {
             try {
                 val results = allTypes.map { type ->
                     async { shoppingRepo.feed(type) }
                 }.awaitAll().flatten()
-                _state.value = _state.value.copy(allItems = results, allItemsLoading = false)
+                val countByType = _state.value.customListTypes.associate { lt ->
+                    lt.slug to results.count { it.list_type == lt.slug }
+                }
+                _state.value = _state.value.copy(allItems = results, allItemsLoading = false, countByType = countByType)
             } catch (_: Throwable) {
                 _state.value = _state.value.copy(allItemsLoading = false)
             }
         }
     }
 
-    fun showCreateTypeDialog() {
-        _state.value = _state.value.copy(showCreateTypeDialog = true)
+    fun openListTypeWizard() {
+        _state.value = _state.value.copy(listTypeWizardStep = ListTypeWizardStep.PICK_PRESET, listTypePreset = null, listTypeName = "")
+    }
+    fun closeListTypeWizard() {
+        _state.value = _state.value.copy(listTypeWizardStep = ListTypeWizardStep.CLOSED)
+    }
+    fun backListTypeWizard() {
+        _state.value = _state.value.copy(listTypeWizardStep = ListTypeWizardStep.PICK_PRESET, listTypePreset = null)
+    }
+    fun pickListTypePreset(cat: CategoryDto?) {
+        _state.value = _state.value.copy(listTypePreset = cat, listTypeWizardStep = ListTypeWizardStep.CONFIRM, listTypeName = cat?.name ?: "")
+    }
+    fun setListTypeName(v: String) {
+        _state.value = _state.value.copy(listTypeName = v)
     }
 
-    fun dismissCreateTypeDialog() {
-        _state.value = _state.value.copy(showCreateTypeDialog = false)
-    }
-
-    fun createCustomType(label: String, onSuccess: (String) -> Unit) {
+    fun createCustomType(onSuccess: (String) -> Unit) {
+        val s = _state.value
+        val name = s.listTypeName.trim()
+        if (name.isEmpty()) return
         viewModelScope.launch {
             try {
-                val created = api.createUserListType(UserListTypeCreateRequest(label = label))
+                val result = api.createPair(PairCreateRequest(label = name, category_slug = s.listTypePreset?.slug))
                 _state.value = _state.value.copy(
-                    customListTypes = _state.value.customListTypes + created,
-                    showCreateTypeDialog = false,
+                    customListTypes = _state.value.customListTypes + result.list_type,
+                    listTypeWizardStep = ListTypeWizardStep.CLOSED,
                 )
-                onSuccess(created.slug)
+                onSuccess(result.list_type.slug)
             } catch (t: Throwable) {
-                _state.value = _state.value.copy(error = t.message, showCreateTypeDialog = false)
+                _state.value = _state.value.copy(error = t.message, listTypeWizardStep = ListTypeWizardStep.CLOSED)
             }
         }
     }
@@ -261,7 +272,7 @@ class ShoppingListViewModel @Inject constructor(
                     customListTypes = _state.value.customListTypes.filter { it.id != typeId },
                 )
                 if (removed != null && _state.value.listType == removed.slug) {
-                    setListType("groceries")
+                    setListType("")
                 }
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -269,19 +280,14 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    /** Returns the ID of the implied collection for [listType], creating it if needed. */
+    /** Returns the ID of the implied collection for [listType], using the linked collection from the paired list type. */
     private suspend fun resolveImpliedCollection(
         listType: String,
         collections: List<CollectionDto>,
     ): String? {
-        val impliedName = IMPLIED_COLLECTION_NAME[listType] ?: return collections.firstOrNull()?.id
-        val existing = collections.find { it.name.equals(impliedName, ignoreCase = true) }
-        if (existing != null) return existing.id
-        return try {
-            collectionRepo.create(impliedName).id
-        } catch (_: Throwable) {
-            collections.firstOrNull()?.id
-        }
+        if (listType.isEmpty()) return collections.firstOrNull()?.id
+        val matched = _state.value.customListTypes.find { it.slug == listType }
+        return matched?.linked_collection_id ?: collections.firstOrNull()?.id
     }
 
     fun onBarcode(barcode: String) {
@@ -628,15 +634,14 @@ fun ShoppingListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        val pagerState = rememberPagerState(pageCount = { 1 + LIST_TYPES.size + ui.customListTypes.size })
+        val pagerState = rememberPagerState(pageCount = { 1 + ui.customListTypes.size })
         // Sync pager → ViewModel when user swipes
         LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
             if (!pagerState.isScrollInProgress) {
                 when (val page = pagerState.currentPage) {
                     0 -> viewModel.loadAllItems()
-                    in 1..LIST_TYPES.size -> viewModel.setListType(LIST_TYPES[page - 1])
                     else -> {
-                        val ci = page - LIST_TYPES.size - 1
+                        val ci = page - 1
                         if (ci < ui.customListTypes.size) viewModel.setListType(ui.customListTypes[ci].slug)
                     }
                 }
@@ -644,14 +649,9 @@ fun ShoppingListScreen(
         }
         // Sync ViewModel → pager when tab is tapped
         LaunchedEffect(ui.listType) {
-            val builtInIdx = LIST_TYPES.indexOf(ui.listType)
-            val targetPage = if (builtInIdx >= 0) {
-                builtInIdx + 1
-            } else {
-                val ci = ui.customListTypes.indexOfFirst { it.slug == ui.listType }
-                if (ci >= 0) LIST_TYPES.size + 1 + ci else 0
-            }
-            if (pagerState.currentPage != 0 && pagerState.currentPage != targetPage) {
+            val ci = ui.customListTypes.indexOfFirst { it.slug == ui.listType }
+            val targetPage = if (ci >= 0) ci + 1 else 0
+            if (pagerState.currentPage != targetPage) {
                 pagerState.animateScrollToPage(targetPage)
             }
         }
@@ -674,12 +674,6 @@ fun ShoppingListScreen(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 0.dp,
             ) {
-            val tabLabels = mapOf(
-                "groceries"  to stringResource(R.string.list_type_groceries),
-                "hardware"   to stringResource(R.string.list_type_hardware),
-                "home_goods" to stringResource(R.string.list_type_home_goods),
-                "wish_list"  to stringResource(R.string.list_type_wish_list),
-            )
             Tab(
                 selected = pagerState.currentPage == 0,
                 onClick = {
@@ -688,31 +682,16 @@ fun ShoppingListScreen(
                 },
                 text = { Text(stringResource(R.string.tab_all)) },
             )
-            LIST_TYPES.forEachIndexed { index, type ->
-                Tab(
-                    selected = pagerState.currentPage == index + 1,
-                    onClick = {
-                        viewModel.setListType(type)
-                        coroutineScope.launch { pagerState.animateScrollToPage(index + 1) }
-                    },
-                    text = { Text(tabLabels[type] ?: type) },
-                )
-            }
             ui.customListTypes.forEachIndexed { index, customType ->
                 Tab(
-                    selected = pagerState.currentPage == LIST_TYPES.size + 1 + index,
+                    selected = pagerState.currentPage == 1 + index,
                     onClick = {
                         viewModel.setListType(customType.slug)
-                        coroutineScope.launch { pagerState.animateScrollToPage(LIST_TYPES.size + 1 + index) }
+                        coroutineScope.launch { pagerState.animateScrollToPage(1 + index) }
                     },
                     text = { Text(customType.label) },
                 )
             }
-            Tab(
-                selected = false,
-                onClick = { viewModel.showCreateTypeDialog() },
-                text = { Text("+") },
-            )
             }
         HorizontalPager(
             state = pagerState,
@@ -725,66 +704,27 @@ fun ShoppingListScreen(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 if (page == 0) {
-                    // All lists combined, grouped by list type label.
-                    val tabLabels2 = mapOf(
-                        "groceries"  to stringResource(R.string.list_type_groceries),
-                        "hardware"   to stringResource(R.string.list_type_hardware),
-                        "home_goods" to stringResource(R.string.list_type_home_goods),
-                        "wish_list"  to stringResource(R.string.list_type_wish_list),
-                    )
-                    when {
-                        ui.allItemsLoading && ui.allItems.isEmpty() ->
-                            LazyColumn(Modifier.fillMaxSize()) {
-                                item {
-                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                        CircularProgressIndicator()
-                                    }
-                                }
-                            }
-                        ui.allItems.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
-                            item {
-                                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(R.string.all_stocked), style = MaterialTheme.typography.headlineSmall)
-                                }
-                            }
+                    // Home page: card grid of list types
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(ui.customListTypes, key = { it.id }) { lt ->
+                            ListTypeCard(
+                                listType = lt,
+                                count = ui.countByType[lt.slug] ?: 0,
+                                onClick = {
+                                    viewModel.setListType(lt.slug)
+                                    val idx = ui.customListTypes.indexOfFirst { it.slug == lt.slug }
+                                    if (idx >= 0) coroutineScope.launch { pagerState.animateScrollToPage(idx + 1) }
+                                },
+                            )
                         }
-                        else -> {
-                            val grouped = remember(ui.allItems) {
-                                LIST_TYPES.mapNotNull { type ->
-                                    val typeItems = ui.allItems.filter { it.list_type == type }
-                                    if (typeItems.isEmpty()) null else type to typeItems
-                                }
-                            }
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 8.dp),
-                            ) {
-                                grouped.forEach { (type, typeItems) ->
-                                    stickyHeader(key = "hdr_$type") {
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.surfaceVariant,
-                                            modifier = Modifier.fillMaxWidth(),
-                                        ) {
-                                            Text(
-                                                text = tabLabels2[type] ?: type,
-                                                style = MaterialTheme.typography.labelLarge,
-                                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                                            )
-                                        }
-                                    }
-                                    items(typeItems, key = { "all_${it.id}" }) { entry ->
-                                        ShoppingEntryRow(
-                                            entry = entry,
-                                            collectionName = ui.collections[entry.collection_id]?.name ?: entry.collection_id,
-                                            isUpdating = entry.id in ui.updating,
-                                            onCheck = { viewModel.checkItem(entry.id) },
-                                            onDelete = { viewModel.deleteItem(entry.id) },
-                                            onEdit = { viewModel.startEdit(entry) },
-                                        )
-                                        HorizontalDivider()
-                                    }
-                                }
-                            }
+                        item {
+                            NewListTypeCard(onClick = { viewModel.openListTypeWizard() })
                         }
                     }
                 } else {
@@ -950,14 +890,54 @@ fun ShoppingListScreen(
         )
     }
 
-    if (ui.showCreateTypeDialog) {
-        CreateListTypeDialog(
-            onDismiss = { viewModel.dismissCreateTypeDialog() },
-            onCreate = { label ->
-                viewModel.createCustomType(label) { slug ->
-                    viewModel.setListType(slug)
+    if (ui.listTypeWizardStep == ListTypeWizardStep.PICK_PRESET) {
+        AlertDialog(
+            onDismissRequest = { viewModel.closeListTypeWizard() },
+            title = { Text(stringResource(R.string.what_are_you_collecting)) },
+            text = {
+                val sorted = ui.listTypePresets.sortedBy { it.name }
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.heightIn(max = 320.dp),
+                ) {
+                    items(sorted, key = { it.id }) { cat ->
+                        OutlinedButton(
+                            onClick = { viewModel.pickListTypePreset(cat) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(cat.name) }
+                    }
+                    item {
+                        OutlinedButton(
+                            onClick = { viewModel.pickListTypePreset(null) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(stringResource(R.string.custom)) }
+                    }
                 }
             },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { viewModel.closeListTypeWizard() }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (ui.listTypeWizardStep == ListTypeWizardStep.CONFIRM) {
+        AlertDialog(
+            onDismissRequest = { viewModel.closeListTypeWizard() },
+            title = { Text(stringResource(R.string.create_list_type_title)) },
+            text = {
+                OutlinedTextField(
+                    value = ui.listTypeName,
+                    onValueChange = { viewModel.setListTypeName(it) },
+                    label = { Text(stringResource(R.string.create_list_type_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.createCustomType { slug -> viewModel.setListType(slug) } },
+                    enabled = ui.listTypeName.isNotBlank(),
+                ) { Text(stringResource(R.string.create)) }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.backListTypeWizard() }) { Text(stringResource(R.string.cd_back)) } },
         )
     }
 
@@ -972,33 +952,34 @@ fun ShoppingListScreen(
 }
 
 @Composable
-private fun CreateListTypeDialog(
-    onDismiss: () -> Unit,
-    onCreate: (String) -> Unit,
+private fun ListTypeCard(
+    listType: UserListTypeDto,
+    count: Int,
+    onClick: () -> Unit,
 ) {
-    var label by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.create_list_type_title)) },
-        text = {
-            OutlinedTextField(
-                value = label,
-                onValueChange = { label = it },
-                placeholder = { Text(stringResource(R.string.create_list_type_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (label.isNotBlank()) onCreate(label.trim()) },
-                enabled = label.isNotBlank(),
-            ) { Text(stringResource(R.string.create)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(listType.label, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text("$count items", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun NewListTypeCard(onClick: () -> Unit) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.new_list), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
 }
 
 @Composable

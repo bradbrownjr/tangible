@@ -97,7 +97,8 @@
     "form_create": "作成",
     "form_category_hint": "このコレクション内の新しいアイテムはデフォルトで {slug} になります。アイテムごとに異なるカテゴリを選択できます。",
     "empty": "コレクションはまだありません。「新規コレクション」をクリックして開始してください。",
-    "tab_all": "すべて"
+    "tab_all": "すべて",
+    "pair_created_hint": "A matching collection was also created."
   },
   "collection": {
     "tab_items": "アイテム",
@@ -740,18 +741,6 @@
   },
   "lists": {
     "tab_all": "すべて",
-    "type": {
-      "groceries": "食料品",
-      "hardware": "ホームセンター",
-      "home_goods": "ホーム用品",
-      "wish_list": "欲しいものリスト"
-    },
-    "description": {
-      "groceries": "追加したアイテムと贇库が切れた商品。",
-      "hardware": "必要なホームセンター用品。",
-      "home_goods": "必要なホーム用品。",
-      "wish_list": "欲しいもの — 共有またはギフト用に追跡。"
-    },
     "item_name_placeholder": "アイテムを追加…",
     "wish_url_placeholder": "リンク（任意）",
     "wish_priority_any": "優先度",
@@ -770,7 +759,10 @@
     "add_type_label_placeholder": "名前（例：車の部品）",
     "add_type_label_label": "名前",
     "add_type_confirm": "作成",
-    "add_type_delete_confirm": "このリストタイプを削除しますか？既存のアイテムはタイプを保持します。"
+    "add_type_delete_confirm": "このリストタイプを削除しますか？既存のアイテムはタイプを保持します。",
+    "new_pair_title": "New list",
+    "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
+    "no_lists": "No lists yet — create one to get started."
   },
   "tasks": {
     "title": "Tasks & Alerts",

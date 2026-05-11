@@ -97,7 +97,8 @@
     "form_create": "Créer",
     "form_category_hint": "Les nouveaux articles sont classés en {slug} par défaut ; vous pouvez choisir une autre catégorie par article.",
     "empty": "Aucune collection. Cliquez sur Nouvelle collection pour commencer.",
-    "tab_all": "Tout"
+    "tab_all": "Tout",
+    "pair_created_hint": "A matching collection was also created."
   },
   "collection": {
     "tab_items": "Articles",
@@ -740,18 +741,6 @@
   },
   "lists": {
     "tab_all": "Tous",
-    "type": {
-      "groceries": "Courses",
-      "hardware": "Quincaillerie",
-      "home_goods": "Maison",
-      "wish_list": "Liste de souhaits"
-    },
-    "description": {
-      "groceries": "Articles ajoutés par vous, plus tout ce marqué dépleté.",
-      "hardware": "Fournitures de quincaillerie et de bricolage nécessaires.",
-      "home_goods": "Articles de maison et d’ameublement nécessaires.",
-      "wish_list": "Choses que vous désirez — partagez ou suivez pour les cadeaux."
-    },
     "item_name_placeholder": "Ajouter un article…",
     "wish_url_placeholder": "Lien (facultatif)",
     "wish_priority_any": "Priorité",
@@ -770,7 +759,10 @@
     "add_type_label_placeholder": "Nom (ex. Pièces auto)",
     "add_type_label_label": "Nom",
     "add_type_confirm": "Créer",
-    "add_type_delete_confirm": "Supprimer ce type de liste ? Les éléments existants conservent leur type."
+    "add_type_delete_confirm": "Supprimer ce type de liste ? Les éléments existants conservent leur type.",
+    "new_pair_title": "New list",
+    "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
+    "no_lists": "No lists yet — create one to get started."
   },
   "tasks": {
     "title": "Tasks & Alerts",

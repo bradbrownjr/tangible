@@ -1,8 +1,9 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
-    import { api, type Category, type Collection } from '$lib/api';
+    import { api, type Category, type Collection, type CollectionListPair } from '$lib/api';
     import { loadCategories, rootCategories } from '$lib/categories';
     import Icon from '$lib/Icon.svelte';
 
@@ -80,13 +81,26 @@
         if (!formName.trim()) return;
         creating = true;
         try {
-            await api.post('/collections', {
-                name: formName.trim(),
-                description: formDescription.trim() || null,
-                default_category_slug: chosen?.slug ?? null
-            });
-            cancel();
-            await refresh();
+            if (chosen?.slug) {
+                // Preset: create a paired collection + list type
+                const result = await api.post<CollectionListPair>('/lists/pairs', {
+                    label: formName.trim(),
+                    category_slug: chosen.slug,
+                    description: formDescription.trim() || null
+                });
+                cancel();
+                await refresh();
+                goto(`/collections/${result.collection.id}`);
+            } else {
+                // Custom: collection only, no paired list type
+                await api.post('/collections', {
+                    name: formName.trim(),
+                    description: formDescription.trim() || null,
+                    default_category_slug: null
+                });
+                cancel();
+                await refresh();
+            }
         } catch (e) {
             error = (e as Error).message;
         } finally {

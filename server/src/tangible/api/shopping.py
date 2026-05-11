@@ -35,6 +35,9 @@ from tangible.models import (
 )
 from tangible.models.user import CollectionMembership
 from tangible.schemas import (
+    CollectionRead,
+    PairCreate,
+    PairRead,
     ShoppingAisleCreate,
     ShoppingAisleRead,
     ShoppingAisleUpdate,
@@ -52,6 +55,7 @@ from tangible.schemas import (
     UserListTypeRead,
     UserListTypeUpdate,
 )
+from tangible.api.item_templates import _do_scaffold
 from tangible.services import audit
 from tangible.services.categories import resolve_slug
 
@@ -228,8 +232,6 @@ def shopping_count(
 # Custom user-defined list types
 # ---------------------------------------------------------------------------
 
-_BUILT_IN_SLUGS = {"groceries", "hardware", "home_goods", "wish_list"}
-
 
 def _slugify(label: str) -> str:
     """Convert a human label to a safe slug (lowercase, underscores)."""
@@ -237,6 +239,65 @@ def _slugify(label: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "_", s)
     s = s.strip("_")
     return s[:64] or "list"
+
+
+def _unique_slug(db: DBSession, user_id: str, base_slug: str) -> str:
+    """Return base_slug, or base_slug_2/3/... if already taken."""
+    candidate = base_slug
+    suffix = 2
+    while db.scalar(
+        select(UserListType).where(
+            UserListType.user_id == user_id,
+            UserListType.slug == candidate,
+        )
+    ) is not None:
+        candidate = f"{base_slug}_{suffix}"
+        suffix += 1
+    return candidate
+
+
+@router.post("/pairs", response_model=PairRead, status_code=status.HTTP_201_CREATED)
+def create_pair(
+    payload: PairCreate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> PairRead:
+    """Atomically create a Collection + UserListType pair."""
+    # 1. Create the collection
+    collection = Collection(
+        owner_id=auth.user.id,
+        name=payload.label.strip(),
+        description=payload.description,
+        default_category_slug=payload.category_slug,
+    )
+    db.add(collection)
+    db.flush()  # get collection.id without committing
+
+    # 2. Scaffold item templates
+    _do_scaffold(db, collection.id, payload.category_slug, auth.user.id)
+
+    # 3. Create the list type with a unique slug
+    slug = _unique_slug(db, auth.user.id, _slugify(payload.label))
+    lt = UserListType(
+        user_id=auth.user.id,
+        slug=slug,
+        label=payload.label.strip(),
+        category_slug=payload.category_slug,
+        linked_collection_id=collection.id,
+    )
+    db.add(lt)
+    db.flush()  # get lt.id
+
+    # 4. Link back
+    collection.linked_list_type_slug = lt.slug
+    db.commit()
+    db.refresh(collection)
+    db.refresh(lt)
+
+    return PairRead(
+        collection=CollectionRead.model_validate(collection),
+        list_type=UserListTypeRead.model_validate(lt),
+    )
 
 
 @router.get("/types", response_model=list[UserListTypeRead])
@@ -259,29 +320,15 @@ def create_user_list_type(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> UserListTypeRead:
-    """Create a new custom list type for the current user."""
-    slug = _slugify(payload.label)
-    if slug in _BUILT_IN_SLUGS:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A built-in list type with this name already exists.",
-        )
-    existing = db.scalar(
-        select(UserListType).where(
-            UserListType.user_id == auth.user.id,
-            UserListType.slug == slug,
-        )
-    )
-    if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You already have a list type with this name.",
-        )
+    """Create a standalone custom list type (no paired collection)."""
+    slug = _unique_slug(db, auth.user.id, _slugify(payload.label))
     lt = UserListType(
         user_id=auth.user.id,
         slug=slug,
         label=payload.label.strip(),
         icon=payload.icon,
+        category_slug=payload.category_slug,
+        linked_collection_id=payload.linked_collection_id,
     )
     db.add(lt)
     db.commit()

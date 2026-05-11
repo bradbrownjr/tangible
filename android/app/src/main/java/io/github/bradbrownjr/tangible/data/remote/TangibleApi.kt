@@ -149,6 +149,9 @@ interface TangibleApi {
     @DELETE("lists/types/{id}")
     suspend fun deleteUserListType(@Path("id") id: String)
 
+    @POST("lists/pairs")
+    suspend fun createPair(@Body body: PairCreateRequest): PairReadDto
+
     // Shopping stores
     @GET("lists/stores")
     suspend fun listShoppingStores(): List<ShoppingStoreDto>
