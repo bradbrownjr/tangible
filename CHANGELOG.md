@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.28] — 2026-05-11
+
+### Fixed
+
+- **Android version drift (corrective release):** `v0.25.27` tag was cut before the `build.gradle.kts` version bump landed, so the APK attached to that release still reported `0.25.25`. This release re-tags with the correct `versionCode = 99` / `versionName = "0.25.28"` so Obtainium and Settings → About both reflect the current version.
+
 ## [0.25.27] — 2026-05-11
 
 ### Fixed

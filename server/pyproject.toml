@@ -1,6 +1,6 @@
 [project]
 name = "tangible"
-version = "0.25.27"
+version = "0.25.28"
 description = "Self-hosted personal inventory management"
 readme = "../README.md"
 requires-python = ">=3.12"
