@@ -51,6 +51,16 @@ fun TangibleApp() {
         nav.navigate(Routes.itemDetailEdit(id))
     }
 
+    // When the session token is cleared (e.g. 401 from an expired token),
+    // navigate back to Login regardless of which screen is currently showing.
+    LaunchedEffect(loggedIn) {
+        if (loggedIn == false) {
+            nav.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     Scaffold { padding ->
         NavHost(
             navController = nav,

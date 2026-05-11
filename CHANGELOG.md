@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.29] — 2026-05-11
+
+### Fixed
+
+- **Android 401 / session expiry (Android):** When the server returns 401 (expired token), the app now automatically clears the stored session and redirects to the login screen instead of showing a permanent HTTP 401 error on every screen.
+- **About page cut off (Android):** The About/Info screen content was not scrollable, causing the bottom buttons to be clipped on smaller screens. The column is now vertically scrollable.
+
 ## [0.25.28] — 2026-05-11
 
 ### Fixed
