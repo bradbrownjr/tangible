@@ -11,11 +11,13 @@ All notable changes to **Tangible** are documented here.
 - **Missing H1 headings on collection sub-pages (web):** Bundles, Chores, Locations, Members, and Templates sub-pages had no page-level `<h1>`. Each now renders a heading using the existing `collections.tab_*` i18n key.
 - **Hardcoded inline styles on collection sub-pages (web):** `margin: 1rem 0` and raw `display:grid; gap:.5rem` inline styles replaced with token-aligned `margin-bottom: 1.5rem` and scoped CSS classes (`.member-form-row`, `.share-form-row`).
 - **Missing `svelte-i18n` import in Templates page (web):** `$_` was used but not imported, causing a type error.
+- **Android version drift:** `versionCode` bumped to 98 and `versionName` corrected to `"0.25.27"` (was stuck at `96` / `"0.25.25"` since two releases were incorrectly skipped for Android).
 
 ### Docs
 
 - **Material 3 design contract (`docs/DESIGN.md`):** establishes M3 as the binding standard across web and Android. Covers design tokens, component vocabulary, page anatomy, cross-platform parity table, and a don'ts gallery.
 - **AGENTS.md UI/UX Standards section:** six always/never rules enforce the design contract in future sessions.
+- **AGENTS.md release procedure:** clarified that `build.gradle.kts` must be bumped on every release without exception.
 
 ## [0.25.26] — 2026-05-11
 
