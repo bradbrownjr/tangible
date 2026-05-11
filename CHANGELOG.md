@@ -4,6 +4,21 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.26] — 2026-05-11
+
+### Fixed
+
+- **Healthcheck path (server/Docker):** `HEALTHCHECK` in `Dockerfile` and both Compose files corrected from `/healthz` (SPA fallback, returns 400) to `/api/healthz`. Containers now report healthy correctly.
+- **Navigation list types hardcoded (web):** the nav sidebar had four static links (`/lists/groceries` etc.). It now fetches `GET /lists/types` on mount and after navigation, rendering only the user's actual list types dynamically.
+- **Home tile and grocery-list redirect (web):** the Lists tile on the home page and the `/grocery-list` legacy route were redirecting to `/lists/groceries`. Both now go to `/lists`.
+- **List item page hardcoded types (web):** `lists/[type]/+page.svelte` had hardcoded `VALID_TYPES`, `BACKING_COLLECTION`, `LIST_ICON`, and wish-list special-case branches. The page now fetches `UserListType` dynamically; all custom list type slugs work without code changes.
+- **Lists home anatomy (web):** the Lists home page used a dashed outlined card as the create affordance, while Collections used a standard button above the grid. Both pages now follow the same M3 layout: `+ New <thing>` button above the content grid.
+
+### Docs
+
+- **Material 3 design contract (`docs/DESIGN.md`):** new file establishes Material Design 3 as the binding visual and interaction standard across web and Android. Covers design tokens, component vocabulary, page anatomy rules, cross-platform parity table, and a don'ts gallery of regressions caught in this release.
+- **AGENTS.md UI/UX Standards section:** six always/never rules enforce the design contract in every future AI-assisted session.
+
 ## [0.24.0] — 2026-05-08
 
 ### Internal
