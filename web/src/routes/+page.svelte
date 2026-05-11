@@ -250,7 +250,7 @@
         <Icon name="folder" size={24} />
         <strong>{$_('nav.collections')}</strong>
     </a>
-    <a href="/lists/groceries" class="tile">
+    <a href="/lists" class="tile">
         <Icon name="list" size={24} />
         <strong>{$_('nav.lists')}</strong>
     </a>

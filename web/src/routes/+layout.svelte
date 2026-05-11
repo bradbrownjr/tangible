@@ -4,7 +4,7 @@
     import { goto, afterNavigate } from '$app/navigation';
     import { page } from '$app/state';
     import { me, refreshMe, loadPublicConfig, logout, publicConfig } from '$lib/session';
-    import { userLabel, api, type Collection } from '$lib/api';
+    import { userLabel, api, type Collection, type UserListType } from '$lib/api';
     import { get } from 'svelte/store';
     import { initTheme } from '$lib/theme';
     import { _, locale } from 'svelte-i18n';
@@ -33,6 +33,7 @@
     let listsMenuOpen = $state(false);
     let collectionsMenuOpen = $state(false);
     let navCollections = $state<Collection[]>([]);
+    let navListTypes = $state<UserListType[]>([]);
     let menuOpen = $state(false);
 
     async function refreshNavCollections() {
@@ -41,6 +42,15 @@
             navCollections = await api.get<Collection[]>('/collections', true);
         } catch {
             navCollections = [];
+        }
+    }
+
+    async function refreshNavListTypes() {
+        if (!$me) { navListTypes = []; return; }
+        try {
+            navListTypes = await api.get<UserListType[]>('/lists/types', true);
+        } catch {
+            navListTypes = [];
         }
     }
 
@@ -85,7 +95,7 @@
         }
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
-        await Promise.all([refreshShoppingCount(), refreshNavCollections()]);
+        await Promise.all([refreshShoppingCount(), refreshNavCollections(), refreshNavListTypes()]);
         const path = page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
@@ -129,7 +139,7 @@
         }
     });
 
-    afterNavigate(() => { refreshNavCollections(); });
+    afterNavigate(() => { refreshNavCollections(); refreshNavListTypes(); });
 
     async function doLogout() {
         await logout();
@@ -221,18 +231,11 @@
                         <a href="/lists" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
                             {$_('nav.all_lists')}
                         </a>
-                        <a href="/lists/groceries" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.groceries')}
-                        </a>
-                        <a href="/lists/hardware" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.hardware')}
-                        </a>
-                        <a href="/lists/home_goods" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.home_goods')}
-                        </a>
-                        <a href="/lists/wish_list" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
-                            {$_('lists.type.wish_list')}
-                        </a>
+                        {#each navListTypes as lt (lt.id)}
+                            <a href="/lists/{lt.slug}" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                                {lt.label}
+                            </a>
+                        {/each}
                     </div>
                 {/if}
             </div>
