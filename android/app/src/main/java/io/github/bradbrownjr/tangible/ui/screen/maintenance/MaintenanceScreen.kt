@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,13 +31,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
@@ -275,32 +274,20 @@ fun MaintenanceScreen(
                     }
                 },
                 actions = {
-                    if (selectedTab == TaskTab.CHORES) {
-                        OutlinedButton(
-                            onClick = vm::refresh,
-                            enabled = !s.loading,
-                            modifier = Modifier.padding(end = 8.dp),
-                        ) {
-                            if (s.loading) {
-                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                            } else {
-                                Text(stringResource(R.string.refresh))
-                            }
+                    IconButton(onClick = vm::refresh, enabled = !s.loading) {
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
+                    }
+                    when (selectedTab) {
+                        TaskTab.CHORES -> IconButton(onClick = { showNewChoreDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_chore))
                         }
+                        TaskTab.MY_TASKS -> IconButton(onClick = { showNewTaskDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_new_task))
+                        }
+                        else -> {}
                     }
                 },
             )
-        },
-        floatingActionButton = {
-            when (selectedTab) {
-                TaskTab.CHORES -> FloatingActionButton(onClick = { showNewChoreDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_chore))
-                }
-                TaskTab.MY_TASKS -> FloatingActionButton(onClick = { showNewTaskDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_new_task))
-                }
-                else -> {}
-            }
         },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->

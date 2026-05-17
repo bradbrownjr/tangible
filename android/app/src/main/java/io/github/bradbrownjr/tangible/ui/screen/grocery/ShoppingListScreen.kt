@@ -568,6 +568,8 @@ fun ShoppingListScreen(
         }
     }
 
+    val pagerState = rememberPagerState(pageCount = { 1 + ui.customListTypes.size })
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -623,7 +625,10 @@ fun ShoppingListScreen(
                             contentDescription = stringResource(R.string.cd_scan_barcode_image),
                         )
                     }
-                    IconButton(onClick = { viewModel.showAddDialog() }) {
+                    IconButton(onClick = {
+                        if (pagerState.currentPage == 0) viewModel.openListTypeWizard()
+                        else viewModel.showAddDialog()
+                    }) {
                         Icon(
                             Icons.Default.Add,
                             contentDescription = stringResource(R.string.cd_add_grocery_item),
@@ -634,7 +639,6 @@ fun ShoppingListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        val pagerState = rememberPagerState(pageCount = { 1 + ui.customListTypes.size })
         // Sync pager → ViewModel when user swipes
         LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
             if (!pagerState.isScrollInProgress) {
@@ -722,9 +726,6 @@ fun ShoppingListScreen(
                                     if (idx >= 0) coroutineScope.launch { pagerState.animateScrollToPage(idx + 1) }
                                 },
                             )
-                        }
-                        item {
-                            NewListTypeCard(onClick = { viewModel.openListTypeWizard() })
                         }
                     }
                 } else {
