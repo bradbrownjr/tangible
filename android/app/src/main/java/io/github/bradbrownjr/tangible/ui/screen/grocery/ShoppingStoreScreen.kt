@@ -89,6 +89,7 @@ class ShoppingStoreListViewModel @Inject constructor(
 fun ShoppingStoreListScreen(
     viewModel: ShoppingStoreListViewModel = hiltViewModel(),
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     onOpenStore: (storeId: String) -> Unit,
 ) {
     val ui by viewModel.state.collectAsState()

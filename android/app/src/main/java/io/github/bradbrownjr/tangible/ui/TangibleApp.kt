@@ -86,7 +86,7 @@ fun TangibleApp() {
                     .collectAsState()
                 HomeScreen(
                     onItemEdit = { nav.navigate(Routes.itemDetailEdit(it)) },
-                    onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
+                    onNavigateToStoreAisles = { storeId -> nav.navigate(Routes.groceryStoreAisles(storeId)) },
                     onNavigateToScanner = { nav.navigate(Routes.SCANNER) },
                     onNavigateToChores = { collId, collName ->
                         nav.navigate(Routes.collectionChores(collId, collName))

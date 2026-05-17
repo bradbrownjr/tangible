@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -34,6 +35,7 @@ import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.ui.screen.alerts.AlertsScreen
 import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionsTabsScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
+import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingStoreListScreen
 import io.github.bradbrownjr.tangible.ui.screen.home.HomeTabScreen
 import io.github.bradbrownjr.tangible.ui.screen.maintenance.MaintenanceScreen
 import io.github.bradbrownjr.tangible.ui.screen.settings.SettingsScreen
@@ -48,6 +50,7 @@ private val HOME_SECTIONS = listOf(
     NavSection(R.string.home_tab, Icons.Default.Home),
     NavSection(R.string.collections, Icons.Default.Folder),
     NavSection(R.string.grocery_list, Icons.AutoMirrored.Filled.List),
+    NavSection(R.string.stores, Icons.Default.Store),
     NavSection(R.string.tasks, Icons.Default.AssignmentTurnedIn),
     NavSection(R.string.alerts, Icons.Default.Notifications),
     NavSection(R.string.settings, Icons.Default.Settings),
@@ -56,7 +59,7 @@ private val HOME_SECTIONS = listOf(
 @Composable
 fun HomeScreen(
     onItemEdit: (String) -> Unit = {},
-    onManageStores: () -> Unit,
+    onNavigateToStoreAisles: (storeId: String) -> Unit,
     onNavigateToScanner: () -> Unit,
     onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     onSignOut: () -> Unit,
@@ -153,13 +156,18 @@ fun HomeScreen(
                 2 -> ShoppingListScreen(
                     onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
                     showBackButton = false,
-                    onManageStores = onManageStores,
+                    onManageStores = { scope.launch { pagerState.animateScrollToPage(3) } },
                     onNavigateToScanner = onNavigateToScanner,
                     scannedBarcode = scannedBarcode,
                 )
-                3 -> MaintenanceScreen(onBack = {}, showBackButton = false, onNavigateToChores = onNavigateToChores)
-                4 -> AlertsScreen(onBack = {}, showBackButton = false)
-                5 -> SettingsScreen(
+                3 -> ShoppingStoreListScreen(
+                    onBack = {},
+                    showBackButton = false,
+                    onOpenStore = onNavigateToStoreAisles,
+                )
+                4 -> MaintenanceScreen(onBack = {}, showBackButton = false, onNavigateToChores = onNavigateToChores)
+                5 -> AlertsScreen(onBack = {}, showBackButton = false)
+                6 -> SettingsScreen(
                     onSignOut = onSignOut,
                     onBack = {},
                     onNavigateToAbout = onNavigateToAbout,

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -223,7 +224,7 @@ fun HomeTabScreen(
                             }
                         },
                     ) {
-                        IconButton(onClick = { onJumpTo(4) }) {
+                        IconButton(onClick = { onJumpTo(5) }) {
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = stringResource(R.string.tasks_tab_alerts),
@@ -385,14 +386,14 @@ fun HomeTabScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         JumpToTile(
-                            icon = Icons.Default.AssignmentTurnedIn,
-                            label = stringResource(R.string.tasks),
+                            icon = Icons.Default.Store,
+                            label = stringResource(R.string.stores),
                             onClick = { onJumpTo(3) },
                             modifier = Modifier.weight(1f),
                         )
                         JumpToTile(
-                            icon = Icons.Default.Notifications,
-                            label = stringResource(R.string.alerts),
+                            icon = Icons.Default.AssignmentTurnedIn,
+                            label = stringResource(R.string.tasks),
                             onClick = { onJumpTo(4) },
                             modifier = Modifier.weight(1f),
                         )
@@ -402,12 +403,17 @@ fun HomeTabScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         JumpToTile(
-                            icon = Icons.Default.Settings,
-                            label = stringResource(R.string.settings),
+                            icon = Icons.Default.Notifications,
+                            label = stringResource(R.string.alerts),
                             onClick = { onJumpTo(5) },
                             modifier = Modifier.weight(1f),
                         )
-                        Spacer(Modifier.weight(1f))
+                        JumpToTile(
+                            icon = Icons.Default.Settings,
+                            label = stringResource(R.string.settings),
+                            onClick = { onJumpTo(6) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
