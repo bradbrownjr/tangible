@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -54,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -64,6 +66,7 @@ import io.github.bradbrownjr.tangible.data.remote.ChoreCreateDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.CreateTaskBody
 import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
+import io.github.bradbrownjr.tangible.data.remote.ScoreboardEntryDto
 import io.github.bradbrownjr.tangible.data.remote.StandaloneTaskDto
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,6 +99,11 @@ data class MaintenanceUi(
     val tasksLoaded: Boolean = false,
     // Chores tab
     val choresError: String? = null,
+    // Scoreboard tab
+    val scoreboard: List<ScoreboardEntryDto> = emptyList(),
+    val scoreboardLoading: Boolean = false,
+    val scoreboardError: String? = null,
+    val scoreboardLoaded: Boolean = false,
 )
 
 @HiltViewModel
@@ -205,6 +213,26 @@ class MaintenanceViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadScoreboard() {
+        if (_state.value.scoreboardLoaded || _state.value.scoreboardLoading) return
+        _state.value = _state.value.copy(scoreboardLoading = true, scoreboardError = null)
+        viewModelScope.launch {
+            try {
+                val entries = api.getScoreboard()
+                _state.value = _state.value.copy(
+                    scoreboard = entries,
+                    scoreboardLoaded = true,
+                    scoreboardLoading = false,
+                )
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(
+                    scoreboardError = e.message ?: "Error loading scoreboard",
+                    scoreboardLoading = false,
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -225,7 +253,7 @@ fun MaintenanceScreen(
         when (selectedTab) {
             TaskTab.CHORES -> vm.loadCollections()
             TaskTab.MY_TASKS -> vm.loadTasks()
-            else -> {}
+            TaskTab.SCOREBOARD -> vm.loadScoreboard()
         }
     }
 
@@ -289,7 +317,7 @@ fun MaintenanceScreen(
             when (selectedTab) {
                 TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores)
                 TaskTab.MY_TASKS   -> MyTasksContent(s, vm)
-                TaskTab.SCOREBOARD -> StubTabContent(stringResource(R.string.tasks_scoreboard_empty))
+                TaskTab.SCOREBOARD -> ScoreboardContent(s)
             }
         }
     }
@@ -463,6 +491,108 @@ private fun StubTabContent(message: String) {
         )
     }
 }
+
+@Composable
+private fun ScoreboardContent(s: MaintenanceUi) {
+    when {
+        s.scoreboardLoading -> Box(
+            modifier = Modifier.fillMaxSize().padding(32.dp),
+            contentAlignment = Alignment.Center,
+        ) { CircularProgressIndicator() }
+        s.scoreboardError != null -> Box(
+            modifier = Modifier.fillMaxSize().padding(32.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = s.scoreboardError,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        s.scoreboard.isEmpty() -> Box(
+            modifier = Modifier.fillMaxSize().padding(32.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.tasks_scoreboard_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        else -> LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            itemsIndexed(s.scoreboard, key = { _, e -> e.user_id }) { index, entry ->
+                ScoreboardRow(index = index, entry = entry)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScoreboardRow(index: Int, entry: ScoreboardEntryDto) {
+    val medal = when (index) {
+        0 -> "🥇"
+        1 -> "🥈"
+        2 -> "🥉"
+        else -> "${index + 1}."
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (index < 3) 4.dp else 2.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(text = medal, style = MaterialTheme.typography.titleLarge)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = entry.display_name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (entry.chore_count > 0) {
+                        Text("✨ ${entry.chore_count}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (entry.maintenance_count > 0) {
+                        Text("🔧 ${entry.maintenance_count}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (entry.task_count > 0) {
+                        Text("✓ ${entry.task_count}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                if (entry.achievements.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        entry.achievements.forEach { badge ->
+                            val emoji = when (badge) {
+                                "first_finish"    -> "🏅"
+                                "getting_started" -> "⭐"
+                                "on_a_roll"       -> "🔥"
+                                "power_user"      -> "💪"
+                                "household_hero"  -> "🏆"
+                                "legend"          -> "👑"
+                                else              -> "🎖️"
+                            }
+                            Text(emoji, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+            Text(
+                text = entry.total.toString(),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+}
+
+
 
 @Composable
 private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {

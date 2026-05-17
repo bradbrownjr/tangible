@@ -517,6 +517,17 @@ data class ChoreCompletePayloadDto(
     val technician: String? = null,
 )
 
+@JsonClass(generateAdapter = true)
+data class ScoreboardEntryDto(
+    val user_id: String,
+    val display_name: String,
+    val chore_count: Int,
+    val maintenance_count: Int,
+    val task_count: Int,
+    val total: Int,
+    val achievements: List<String>,
+)
+
 // ---------------------------------------------------------------------------
 // Custom list types
 // ---------------------------------------------------------------------------

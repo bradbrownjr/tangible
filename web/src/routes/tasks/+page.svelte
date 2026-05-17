@@ -191,6 +191,52 @@
             loadScoreboard();
         }
     });
+
+    // ── New Chore form state ──
+    let choreCollections = $state<Collection[]>([]);
+    let choreCollectionsLoading = $state(false);
+    let showNewChoreForm = $state(false);
+    let newChoreName = $state('');
+    let newChoreCollectionId = $state('');
+    let newChoreIntervalDays = $state('');
+    let newChoreNotes = $state('');
+    let choreSaving = $state(false);
+    let choreFormError = $state('');
+
+    $effect(() => {
+        if (tab === 'chores' && choreCollections.length === 0 && !choreCollectionsLoading) {
+            choreCollectionsLoading = true;
+            api.get<Collection[]>('/collections')
+                .then(cols => {
+                    choreCollections = cols;
+                    if (!newChoreCollectionId && cols.length) newChoreCollectionId = cols[0].id;
+                })
+                .catch(() => {})
+                .finally(() => { choreCollectionsLoading = false; });
+        }
+    });
+
+    async function createChore() {
+        if (!newChoreName.trim() || !newChoreCollectionId) return;
+        choreSaving = true;
+        choreFormError = '';
+        try {
+            await api.post(`/collections/${newChoreCollectionId}/chores`, {
+                name: newChoreName.trim(),
+                interval_days: newChoreIntervalDays ? parseInt(newChoreIntervalDays, 10) : null,
+                notes: newChoreNotes.trim() || null,
+            });
+            newChoreName = '';
+            newChoreIntervalDays = '';
+            newChoreNotes = '';
+            showNewChoreForm = false;
+            await load();
+        } catch (e) {
+            choreFormError = (e as Error).message;
+        } finally {
+            choreSaving = false;
+        }
+    }
 </script>
 
 <svelte:head><title>{$_('tasks.title')}</title></svelte:head>
@@ -274,6 +320,69 @@
     <p class="error">{error}</p>
 {:else if tab === 'chores'}
     <!-- ── Chores tab ── -->
+    <div class="my-tasks-header">
+        <p class="tab-hint">{$_('tasks.chores_hint')}</p>
+        <button class="new-task-btn" onclick={() => { showNewChoreForm = !showNewChoreForm; }}>
+            <Icon name="sparkles" size={14} />
+            {$_('tasks.new_chore_button')}
+        </button>
+    </div>
+
+    {#if showNewChoreForm}
+        <form class="new-task-form" onsubmit={(e) => { e.preventDefault(); createChore(); }}>
+            {#if choreFormError}
+                <p class="error">{choreFormError}</p>
+            {/if}
+            <div class="form-row">
+                <input
+                    type="text"
+                    class="form-input"
+                    placeholder={$_('chores.name_placeholder')}
+                    bind:value={newChoreName}
+                    required
+                />
+                <select bind:value={newChoreCollectionId} class="form-select">
+                    {#each choreCollections as col (col.id)}
+                        <option value={col.id}>{col.name}</option>
+                    {/each}
+                </select>
+            </div>
+            <div class="form-row">
+                <input
+                    type="number"
+                    class="form-input"
+                    placeholder={$_('chores.interval_placeholder')}
+                    bind:value={newChoreIntervalDays}
+                    min="1"
+                    max="36500"
+                />
+                <input
+                    type="text"
+                    class="form-input"
+                    placeholder={$_('chores.notes_placeholder')}
+                    bind:value={newChoreNotes}
+                />
+            </div>
+            <div class="form-actions">
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    disabled={choreSaving || !newChoreName.trim() || !newChoreCollectionId}
+                >
+                    {#if choreSaving}
+                        <Icon name="loader" size={14} />
+                    {:else}
+                        <Icon name="sparkles" size={14} />
+                    {/if}
+                    {$_('chores.add_button')}
+                </button>
+                <button type="button" class="btn-ghost" onclick={() => { showNewChoreForm = false; choreFormError = ''; }}>
+                    {$_('tasks.new_task_cancel')}
+                </button>
+            </div>
+        </form>
+    {/if}
+
     {#if choreAlerts.length === 0}
         <EmptyState
             icon="calendar-check"
@@ -281,7 +390,6 @@
             body={$_('tasks.chores_all_clear')}
         />
     {:else}
-        <p class="tab-hint">{$_('tasks.chores_hint')}</p>
         <ul class="alert-list">
             {#each choreAlerts as alert (alert.id)}
                 <li class="alert-card chore-card" class:severity-critical={alert.severity === 'critical'} class:severity-warning={alert.severity !== 'critical'}>

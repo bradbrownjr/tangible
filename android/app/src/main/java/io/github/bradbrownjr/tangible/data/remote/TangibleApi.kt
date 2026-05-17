@@ -273,4 +273,7 @@ interface TangibleApi {
 
     @DELETE("chores/{choreId}")
     suspend fun deleteChore(@Path("choreId") choreId: String)
+
+    @GET("tasks/scoreboard")
+    suspend fun getScoreboard(): List<ScoreboardEntryDto>
 }

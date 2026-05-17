@@ -269,7 +269,7 @@
     <string name="tasks_tab_scoreboard" tools:ignore="MissingTranslation">Scoreboard</string>
     <string name="tasks_no_chore_alerts" tools:ignore="MissingTranslation">No chores due in the next %d days.</string>
     <string name="tasks_my_tasks_empty" tools:ignore="MissingTranslation">No tasks yet. Tap + to create one.</string>
-    <string name="tasks_scoreboard_empty" tools:ignore="MissingTranslation">Scoreboard coming soon.</string>
+    <string name="tasks_scoreboard_empty" tools:ignore="MissingTranslation">No completions yet.</string>
     <string name="tasks_new_task" tools:ignore="MissingTranslation">New Task</string>
     <string name="tasks_new_task_title_label" tools:ignore="MissingTranslation">Title</string>
     <string name="tasks_new_task_collection_label" tools:ignore="MissingTranslation">Collection</string>
