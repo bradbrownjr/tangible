@@ -30,6 +30,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -235,6 +236,16 @@ class MaintenanceViewModel @Inject constructor(
             }
         }
     }
+
+    fun refreshTasks() {
+        _state.value = _state.value.copy(tasksLoaded = false, tasksLoading = false)
+        loadTasks()
+    }
+
+    fun refreshScoreboard() {
+        _state.value = _state.value.copy(scoreboardLoaded = false, scoreboardLoading = false)
+        loadScoreboard()
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -307,7 +318,7 @@ fun MaintenanceScreen(
             when (selectedTab) {
                 TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores)
                 TaskTab.MY_TASKS   -> MyTasksContent(s, vm)
-                TaskTab.SCOREBOARD -> ScoreboardContent(s)
+                TaskTab.SCOREBOARD -> ScoreboardContent(s, vm)
             }
         }
     }
@@ -392,6 +403,11 @@ private fun ChoresAlertsContent(
         .sortedWith(compareBy({ it.severity != "critical" }, { it.due_at ?: "" }))
     val emptyRes = if (choreOnly) R.string.tasks_no_chore_alerts else R.string.no_alerts
 
+    PullToRefreshBox(
+        isRefreshing = s.loading,
+        onRefresh = vm::refresh,
+        modifier = Modifier.fillMaxSize(),
+    ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -440,16 +456,7 @@ private fun ChoresAlertsContent(
             item { HorizontalDivider() }
         }
 
-        if (s.loading && s.alerts.isEmpty()) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-        } else if (visibleAlerts.isEmpty()) {
+        if (visibleAlerts.isEmpty() && !s.loading) {
             item {
                 Text(
                     stringResource(emptyRes, s.withinDays),
@@ -464,6 +471,7 @@ private fun ChoresAlertsContent(
             }
         }
     }
+    } // end PullToRefreshBox
 }
 
 @Composable
@@ -483,39 +491,45 @@ private fun StubTabContent(message: String) {
 }
 
 @Composable
-private fun ScoreboardContent(s: MaintenanceUi) {
-    when {
-        s.scoreboardLoading -> Box(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-            contentAlignment = Alignment.Center,
-        ) { CircularProgressIndicator() }
-        s.scoreboardError != null -> Box(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = s.scoreboardError,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        s.scoreboard.isEmpty() -> Box(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.tasks_scoreboard_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        else -> LazyColumn(
+private fun ScoreboardContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
+    PullToRefreshBox(
+        isRefreshing = s.scoreboardLoading,
+        onRefresh = vm::refreshScoreboard,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            itemsIndexed(s.scoreboard, key = { _, e -> e.user_id }) { index, entry ->
-                ScoreboardRow(index = index, entry = entry)
+            when {
+                s.scoreboardError != null -> item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = s.scoreboardError,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+                s.scoreboard.isEmpty() && !s.scoreboardLoading -> item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.tasks_scoreboard_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                else -> itemsIndexed(s.scoreboard, key = { _, e -> e.user_id }) { index, entry ->
+                    ScoreboardRow(index = index, entry = entry)
+                }
             }
         }
     }
@@ -586,6 +600,11 @@ private fun ScoreboardRow(index: Int, entry: ScoreboardEntryDto) {
 
 @Composable
 private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
+    PullToRefreshBox(
+        isRefreshing = s.tasksLoading,
+        onRefresh = vm::refreshTasks,
+        modifier = Modifier.fillMaxSize(),
+    ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -603,14 +622,7 @@ private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
                 )
             }
         }
-        if (s.tasksLoading && s.myTasks.isEmpty()) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    horizontalArrangement = Arrangement.Center,
-                ) { CircularProgressIndicator() }
-            }
-        } else if (s.myTasks.isEmpty()) {
+        if (s.myTasks.isEmpty() && !s.tasksLoading) {
             item {
                 Text(
                     stringResource(R.string.tasks_my_tasks_empty),
@@ -625,6 +637,7 @@ private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
             }
         }
     }
+    } // end PullToRefreshBox
 }
 
 @Composable
