@@ -419,67 +419,12 @@ fun CollectionsTabsScreen(
     val scope = rememberCoroutineScope()
     val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
 
-    // Empty / loading / error path: no tabs to render. Fall back to the same
-    // FAB + wizard as the legacy list screen so users can still create.
-    if (s.collections.isEmpty()) {
-        Scaffold(
-            topBar = {
-                var emptyAccum by remember { mutableFloatStateOf(0f) }
-                Box(
-                    Modifier.pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onDragEnd = { emptyAccum = 0f },
-                            onDragCancel = { emptyAccum = 0f },
-                            onHorizontalDrag = { _, amount ->
-                                emptyAccum += amount
-                                if (emptyAccum < -dragThresholdPx) { emptyAccum = 0f; onSwipeLeft() }
-                                else if (emptyAccum > dragThresholdPx) { emptyAccum = 0f; onSwipeRight() }
-                            },
-                        )
-                    }
-                ) {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.collections)) },
-                        actions = {
-                            IconButton(onClick = vm::openWizard) {
-                                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
-                            }
-                        },
-                    )
-                }
-            },
-        ) { padding ->
-            Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                when {
-                    s.loading -> CircularProgressIndicator()
-                    s.error != null -> Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(s.error!!, color = MaterialTheme.colorScheme.error)
-                        OutlinedButton(onClick = vm::refresh) { Text(stringResource(R.string.retry)) }
-                    }
-                    else -> Text(stringResource(R.string.no_collections))
-                }
-            }
-            WizardDialogs(s, vm)
-            ConfirmDeleteDialog(s, vm)
-            ConfirmAddToListDialog(s, vm)
-            EditCollectionDialog(s, vm)
-            ConfirmDeleteCollectionDialog(s, vm)
-            CreateItemDialog(s, vm)
-        }
-        return
-    }
-
     // Page 0 = "All", pages 1..N = individual collections.
     val pagerState = rememberPagerState(pageCount = { s.collections.size + 1 })
     val isAllPage = pagerState.currentPage == 0
     val currentColl = if (isAllPage) null else s.collections.getOrNull(pagerState.currentPage - 1)
-    val currentPageLoading = currentColl?.let { s.loadingByCollection[it.id] == true } ?: s.allItemsLoading
+    // Include s.loading so the PTR indicator shows during the initial collection fetch.
+    val currentPageLoading = currentColl?.let { s.loadingByCollection[it.id] == true } ?: (s.allItemsLoading || s.loading)
 
     // ML Kit barcode decoder for the photo-as-barcode picker. Closed in onDispose.
     val context = LocalContext.current
@@ -650,26 +595,36 @@ fun CollectionsTabsScreen(
                     beyondViewportPageCount = 0,
                 ) { page ->
                     if (page == 0) {
-                        // Card grid of all collections.
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            gridItems(s.collections, key = { it.id }) { coll ->
-                                CollectionCard(
-                                    collection = coll,
-                                    itemCount = s.itemCountByCollection[coll.id] ?: 0,
-                                    onClick = {
-                                        val idx = s.collections.indexOfFirst { it.id == coll.id }
-                                        if (idx >= 0) scope.launch { pagerState.animateScrollToPage(idx + 1) }
-                                    },
-                                )
+                        when {
+                            s.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(s.error!!, color = MaterialTheme.colorScheme.error)
+                                    OutlinedButton(onClick = vm::refresh) { Text(stringResource(R.string.retry)) }
+                                }
                             }
-                            item {
-                                NewCollectionCard(onClick = vm::openWizard)
+                            else -> LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                gridItems(s.collections, key = { it.id }) { coll ->
+                                    CollectionCard(
+                                        collection = coll,
+                                        itemCount = s.itemCountByCollection[coll.id] ?: 0,
+                                        onClick = {
+                                            val idx = s.collections.indexOfFirst { it.id == coll.id }
+                                            if (idx >= 0) scope.launch { pagerState.animateScrollToPage(idx + 1) }
+                                        },
+                                    )
+                                }
+                                item {
+                                    NewCollectionCard(onClick = vm::openWizard)
+                                }
                             }
                         }
                     } else {
