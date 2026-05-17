@@ -1,7 +1,9 @@
 package io.github.bradbrownjr.tangible.ui.screen.maintenance
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -22,14 +25,19 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,6 +61,8 @@ private val KIND_LABEL_RES = mapOf(
     "lot_use_by" to R.string.alert_package,
     "low_stock" to R.string.alert_low_stock,
 )
+
+enum class TaskTab { CHORES, ALERTS, MY_TASKS, SCOREBOARD }
 
 data class MaintenanceUi(
     val alerts: List<DueAlertDto> = emptyList(),
@@ -103,19 +113,20 @@ fun MaintenanceScreen(
     vm: MaintenanceViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val selectedTab = TaskTab.values()[selectedTabIndex]
 
-    val visibleAlerts = if (s.selectedKind == null) {
-        s.alerts
-    } else {
-        s.alerts.filter { it.kind == s.selectedKind }
-    }
-
-    val allKinds = s.alerts.map { it.kind }.distinct().sorted()
+    val tabs = listOf(
+        R.string.tasks_tab_chores    to TaskTab.CHORES,
+        R.string.tasks_tab_alerts    to TaskTab.ALERTS,
+        R.string.tasks_tab_my_tasks  to TaskTab.MY_TASKS,
+        R.string.tasks_tab_scoreboard to TaskTab.SCOREBOARD,
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.maintenance_alerts_title)) },
+                title = { Text(stringResource(R.string.tasks)) },
                 navigationIcon = {
                     if (showBackButton) {
                         IconButton(onClick = onBack) {
@@ -124,15 +135,17 @@ fun MaintenanceScreen(
                     }
                 },
                 actions = {
-                    OutlinedButton(
-                        onClick = vm::refresh,
-                        enabled = !s.loading,
-                        modifier = Modifier.padding(end = 8.dp),
-                    ) {
-                        if (s.loading) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text(stringResource(R.string.refresh))
+                    if (selectedTab == TaskTab.CHORES || selectedTab == TaskTab.ALERTS) {
+                        OutlinedButton(
+                            onClick = vm::refresh,
+                            enabled = !s.loading,
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            if (s.loading) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text(stringResource(R.string.refresh))
+                            }
                         }
                     }
                 },
@@ -140,76 +153,21 @@ fun MaintenanceScreen(
         },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // Time window chips
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 8.dp),
-                ) {
-                    listOf(7, 14, 30, 60, 90).forEach { days ->
-                        FilterChip(
-                            selected = s.withinDays == days,
-                            onClick = { vm.setWithinDays(days) },
-                            label = { Text("${days}d") },
-                        )
-                    }
-                }
-            }
-
-            // Kind filter chips
-            if (allKinds.isNotEmpty()) {
-                item {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        FilterChip(
-                            selected = s.selectedKind == null,
-                            onClick = { vm.setKindFilter(null) },
-                            label = { Text(stringResource(R.string.all)) },
-                        )
-                        allKinds.forEach { kind ->
-                            val label = KIND_LABEL_RES[kind]?.let { stringResource(it) } ?: kind
-                            FilterChip(
-                                selected = s.selectedKind == kind,
-                                onClick = { vm.setKindFilter(if (s.selectedKind == kind) null else kind) },
-                                label = { Text(label) },
-                            )
-                        }
-                    }
-                }
-                item { HorizontalDivider() }
-            }
-
-            if (s.loading && s.alerts.isEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-            } else if (visibleAlerts.isEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.no_alerts, s.withinDays),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 24.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            ScrollableTabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, (labelRes, _) ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(stringResource(labelRes)) },
                     )
                 }
-            } else {
-                items(visibleAlerts, key = { it.id }) { alert ->
-                    AlertCard(alert)
-                }
+            }
+            when (selectedTab) {
+                TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true)
+                TaskTab.ALERTS     -> ChoresAlertsContent(s, vm, choreOnly = false)
+                TaskTab.MY_TASKS   -> StubTabContent(stringResource(R.string.tasks_my_tasks_empty))
+                TaskTab.SCOREBOARD -> StubTabContent(stringResource(R.string.tasks_scoreboard_empty))
             }
         }
     }
@@ -219,7 +177,7 @@ fun MaintenanceScreen(
 private fun AlertCard(alert: DueAlertDto) {
     val isOverdue = alert.severity == "critical"
     val kindLabel = KIND_LABEL_RES[alert.kind]?.let { stringResource(it) } ?: alert.kind
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -245,7 +203,7 @@ private fun AlertCard(alert: DueAlertDto) {
                     text = if (isOverdue) stringResource(R.string.alert_overdue, alert.due_at!!.take(10))
                            else stringResource(R.string.alert_due, alert.due_at!!.take(10)),
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isOverdue) Color(0xFFB00020) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (!alert.details.isNullOrBlank()) {
@@ -256,5 +214,108 @@ private fun AlertCard(alert: DueAlertDto) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ChoresAlertsContent(
+    s: MaintenanceUi,
+    vm: MaintenanceViewModel,
+    choreOnly: Boolean,
+) {
+    val baseAlerts = if (choreOnly) s.alerts.filter { it.kind == "chore_due" } else s.alerts
+    val allKinds = if (choreOnly) emptyList() else s.alerts.map { it.kind }.distinct().sorted()
+    val visibleAlerts = (if (choreOnly || s.selectedKind == null) baseAlerts
+                         else baseAlerts.filter { it.kind == s.selectedKind })
+        .sortedWith(compareBy({ it.severity != "critical" }, { it.due_at ?: "" }))
+    val emptyRes = if (choreOnly) R.string.tasks_no_chore_alerts else R.string.no_alerts
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp),
+    ) {
+        // Time window chips
+        item {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 8.dp),
+            ) {
+                listOf(7, 14, 30, 60, 90).forEach { days ->
+                    FilterChip(
+                        selected = s.withinDays == days,
+                        onClick = { vm.setWithinDays(days) },
+                        label = { Text("${days}d") },
+                    )
+                }
+            }
+        }
+
+        // Kind filter chips (Alerts tab only)
+        if (!choreOnly && allKinds.isNotEmpty()) {
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    FilterChip(
+                        selected = s.selectedKind == null,
+                        onClick = { vm.setKindFilter(null) },
+                        label = { Text(stringResource(R.string.all)) },
+                    )
+                    allKinds.forEach { kind ->
+                        val label = KIND_LABEL_RES[kind]?.let { stringResource(it) } ?: kind
+                        FilterChip(
+                            selected = s.selectedKind == kind,
+                            onClick = { vm.setKindFilter(if (s.selectedKind == kind) null else kind) },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            }
+            item { HorizontalDivider() }
+        }
+
+        if (s.loading && s.alerts.isEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else if (visibleAlerts.isEmpty()) {
+            item {
+                Text(
+                    stringResource(emptyRes, s.withinDays),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 24.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            items(visibleAlerts, key = { it.id }) { alert ->
+                AlertCard(alert)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StubTabContent(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

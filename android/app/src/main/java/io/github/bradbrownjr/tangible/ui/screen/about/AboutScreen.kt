@@ -167,7 +167,7 @@ fun AboutScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
-                .padding(24.dp),
+                .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Tangible", style = MaterialTheme.typography.headlineMedium)

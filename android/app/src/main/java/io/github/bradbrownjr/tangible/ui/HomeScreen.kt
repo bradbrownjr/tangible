@@ -8,7 +8,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
@@ -47,7 +47,7 @@ private val HOME_SECTIONS = listOf(
     NavSection(R.string.home_tab, Icons.Default.Home),
     NavSection(R.string.collections, Icons.Default.Folder),
     NavSection(R.string.grocery_list, Icons.AutoMirrored.Filled.List),
-    NavSection(R.string.maintenance, Icons.Default.Build),
+    NavSection(R.string.tasks, Icons.Default.AssignmentTurnedIn),
     NavSection(R.string.settings, Icons.Default.Settings),
     NavSection(R.string.about, Icons.Default.Info),
 )

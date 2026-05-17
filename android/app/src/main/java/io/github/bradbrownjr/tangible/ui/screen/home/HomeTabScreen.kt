@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Settings
@@ -26,7 +26,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -277,7 +278,7 @@ fun HomeTabScreen(
                     Text(stringResource(R.string.loading))
                 }
                 s.searched && s.q.isNotBlank() && s.results.isEmpty() -> {
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 stringResource(R.string.home_empty_title, s.q.trim()),
@@ -348,8 +349,8 @@ fun HomeTabScreen(
                         modifier = Modifier.weight(1f),
                     )
                     JumpToTile(
-                        icon = Icons.Default.Build,
-                        label = stringResource(R.string.maintenance),
+                        icon = Icons.Default.AssignmentTurnedIn,
+                        label = stringResource(R.string.tasks),
                         onClick = { onJumpTo(3) },
                         modifier = Modifier.weight(1f),
                     )
@@ -431,8 +432,9 @@ private fun JumpToTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ElevatedCard(
+    Card(
         modifier = modifier.clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier
@@ -468,10 +470,11 @@ private fun ResultRow(
         item.depleted -> R.string.home_status_depleted
         else -> R.string.home_status_owned
     }
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(

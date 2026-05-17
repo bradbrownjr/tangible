@@ -769,7 +769,7 @@
     "add_button": "+ Nouvelle liste"
   },
   "tasks": {
-    "title": "Tasks & Alerts",
+    "title": "Tâches",
     "description": "Upcoming and overdue tasks, chores, expiry dates, and low stock.",
     "tab_alerts": "Alerts",
     "tab_chores": "Chores",

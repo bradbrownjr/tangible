@@ -43,6 +43,7 @@
     <string name="collections">藏品</string>
     <string name="grocery_list">列表</string>
     <string name="maintenance">维护</string>
+    <string name="tasks">任务</string>
     <string name="settings">设置</string>
     <string name="about">关于</string>
     <string name="cd_new_collection">新建藏品</string>

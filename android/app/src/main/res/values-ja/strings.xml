@@ -43,6 +43,7 @@
     <string name="collections">コレクション</string>
     <string name="grocery_list">リスト</string>
     <string name="maintenance">メンテナンス</string>
+    <string name="tasks">タスク</string>
     <string name="settings">設定</string>
     <string name="about">アプリについて</string>
     <string name="cd_new_collection">新しいコレクション</string>

@@ -16,7 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -210,7 +210,7 @@ fun SettingsScreen(
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { Text(stringResource(R.string.server_prefix, s.baseUrl ?: "—")) }
@@ -233,7 +233,7 @@ fun SettingsScreen(
                     if (s.testResult != null) {
                         Text(
                             text = s.testResult!!,
-                            color = if (s.testOk) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                            color = if (s.testOk) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -346,7 +346,7 @@ fun SettingsScreen(
                 item { Text(stringResource(R.string.no_upcoming_alerts), style = MaterialTheme.typography.bodySmall) }
             } else {
                 items(s.alerts, key = { it.id }) { alert ->
-                    ElevatedCard {
+                    Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(alert.title, style = MaterialTheme.typography.titleSmall)
                             if (!alert.due_at.isNullOrBlank()) {

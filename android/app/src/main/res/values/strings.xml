@@ -261,6 +261,14 @@
     <!-- Maintenance screen -->
     <string name="maintenance_alerts_title">Maintenance &amp; alerts</string>
     <string name="no_alerts">No alerts in the next %d days.</string>
+    <string name="tasks">Tasks</string>
+    <string name="tasks_tab_chores" tools:ignore="MissingTranslation">Chores</string>
+    <string name="tasks_tab_alerts" tools:ignore="MissingTranslation">Alerts</string>
+    <string name="tasks_tab_my_tasks" tools:ignore="MissingTranslation">My Tasks</string>
+    <string name="tasks_tab_scoreboard" tools:ignore="MissingTranslation">Scoreboard</string>
+    <string name="tasks_no_chore_alerts" tools:ignore="MissingTranslation">No chores due in the next %d days.</string>
+    <string name="tasks_my_tasks_empty" tools:ignore="MissingTranslation">Standalone tasks coming soon.</string>
+    <string name="tasks_scoreboard_empty" tools:ignore="MissingTranslation">Scoreboard coming soon.</string>
 
     <!-- Alert kind labels (maintenance screen) -->
     <string name="alert_maintenance">Maintenance</string>
