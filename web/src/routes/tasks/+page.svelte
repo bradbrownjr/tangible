@@ -29,6 +29,7 @@
         return (e as Error).message;
     }
     let taskSaving = $state(false);
+    let tasksFetched = false;
 
     async function load() {
         loading = true;
@@ -111,7 +112,8 @@
     }
 
     $effect(() => {
-        if (tab === 'my-tasks' && !tasksLoading && myTasks.length === 0 && !tasksError) {
+        if (tab === 'my-tasks' && !tasksFetched) {
+            tasksFetched = true;
             loadTasks();
         }
     });
@@ -162,6 +164,7 @@
     let scoreboardLoading = $state(false);
     let scoreboardError = $state('');
     let scoreboardLoaded = $state(false);
+    let scoreboardFetched = false;
 
     const ACHIEVEMENT_EMOJI: Record<string, string> = {
         first_finish:   '🏅',
@@ -187,12 +190,14 @@
     }
 
     $effect(() => {
-        if (tab === 'scoreboard' && !scoreboardLoaded && !scoreboardLoading) {
+        if (tab === 'scoreboard' && !scoreboardFetched) {
+            scoreboardFetched = true;
             loadScoreboard();
         }
     });
 
     // ── New Chore form state ──
+    let choreCollectionsFetched = false;
     let choreCollections = $state<Collection[]>([]);
     let choreCollectionsLoading = $state(false);
     let showNewChoreForm = $state(false);
@@ -204,7 +209,8 @@
     let choreFormError = $state('');
 
     $effect(() => {
-        if (tab === 'chores' && choreCollections.length === 0 && !choreCollectionsLoading) {
+        if (tab === 'chores' && !choreCollectionsFetched) {
+            choreCollectionsFetched = true;
             choreCollectionsLoading = true;
             api.get<Collection[]>('/collections')
                 .then(cols => {
