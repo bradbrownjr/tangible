@@ -44,11 +44,14 @@
     }
 
     onMount(() => {
+        load();
+    });
+
+    $effect(() => {
         const tabParam = page.url.searchParams.get('tab');
-        if (tabParam === 'my-tasks' || tabParam === 'scoreboard') {
+        if (tabParam === 'chores' || tabParam === 'my-tasks' || tabParam === 'scoreboard') {
             tab = tabParam;
         }
-        load();
     });
 
     function daysLabel(isoDate: string | null): string {
