@@ -657,27 +657,6 @@
 
     .tab-hint { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem; }
 
-    .group { margin-bottom: 2rem; }
-    .group-title {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.35rem;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-    .group-count {
-        margin-left: auto;
-        font-size: 0.75rem;
-        font-weight: 400;
-        color: var(--text-muted);
-        background: var(--surface-2);
-        padding: 0.1rem 0.5rem;
-        border-radius: var(--radius-full);
-    }
-
     .alert-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .alert-card {
         padding: 0.75rem 1rem;
