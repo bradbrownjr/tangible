@@ -32,6 +32,7 @@
     // create-store form
     let newStoreName = $state('');
     let creatingStore = $state(false);
+    let showNewStoreForm = $state(false);
 
     // aisle being created/edited  null = none, object = editing
     let editingAisle = $state<Aisle | null>(null);
@@ -60,6 +61,7 @@
                 selectedStoreId = stores[0].id;
             }
             if (focusNew) {
+                showNewStoreForm = true;
                 await tick();
                 newStoreInput?.focus();
             }
@@ -78,6 +80,7 @@
             stores = [...stores, s];
             selectedStoreId = s.id;
             newStoreName = '';
+            showNewStoreForm = false;
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -249,6 +252,7 @@
                             </li>
                         {/each}
                     </ul>
+                    {#if showNewStoreForm}
                     <form class="new-store-form" onsubmit={(e) => { e.preventDefault(); createStore(); }}>
                         <input
                             type="text"
@@ -260,7 +264,16 @@
                         <button type="submit" disabled={creatingStore || !newStoreName.trim()}>
                             {creatingStore ? '…' : '+'}
                         </button>
+                        <button type="button" class="cancel-store-btn" onclick={() => { showNewStoreForm = false; newStoreName = ''; }}>
+                            <Icon name="x" size={12} />
+                        </button>
                     </form>
+                {:else}
+                    <button type="button" class="new-store-card" onclick={() => { showNewStoreForm = true; }}>
+                        <Icon name="plus" size={14} />
+                        {$_('grocery_store.new_store_button')}
+                    </button>
+                {/if}
                 </div>
 
                 <!-- Aisle editor -->
@@ -456,6 +469,26 @@
     }
     .new-store-form input { flex: 1; min-width: 0; font-size: 0.8rem; padding: 0.3rem 0.4rem; }
     .new-store-form button { padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.9rem; }
+    .cancel-store-btn { background: none; border: none; color: var(--muted, #64748b); cursor: pointer; padding: 0.2rem; line-height: 1; }
+    .cancel-store-btn:hover { color: var(--danger, #ef4444); }
+    .new-store-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        width: 100%;
+        padding: 0.5rem;
+        border: none;
+        border-top: 2px dashed var(--border, #334);
+        background: transparent;
+        cursor: pointer;
+        color: var(--accent, #3b82f6);
+        font-size: 0.8rem;
+    }
+    .new-store-card:hover {
+        background: color-mix(in srgb, var(--accent, #3b82f6) 8%, transparent);
+        color: var(--accent, #3b82f6);
+    }
 
     .aisle-editor {
         flex: 1; overflow-y: auto; padding: 1rem;

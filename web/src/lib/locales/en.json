@@ -741,6 +741,7 @@
   "grocery_store": {
     "title": "My Stores",
     "create_store_placeholder": "New store name…",
+    "new_store_button": "New store",
     "no_store": "Create a store to get started.",
     "add_aisle_button": "+ Add aisle",
     "no_aisles": "No aisles yet. Add one to sort your shopping list.",
