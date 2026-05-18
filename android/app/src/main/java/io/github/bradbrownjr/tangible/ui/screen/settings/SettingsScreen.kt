@@ -2,6 +2,8 @@ package io.github.bradbrownjr.tangible.ui.screen.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +37,6 @@ import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.data.remote.PatchMeRequest
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
-import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
 import io.github.bradbrownjr.tangible.data.remote.NotificationPrefDto
 import io.github.bradbrownjr.tangible.data.remote.NotificationPrefUpdate
 import io.github.bradbrownjr.tangible.data.repo.AuthRepository
@@ -70,8 +71,6 @@ data class SettingsUi(
     // "system" | "light" | "dark" — null treated as "system"
     val themeMode: String? = null,
     val locale: String? = null,
-    val alerts: List<DueAlertDto> = emptyList(),
-    val alertsBusy: Boolean = false,
     val notifPrefs: List<NotificationPrefDto> = emptyList(),
     val notifBusy: Boolean = false,
 )
@@ -103,7 +102,6 @@ class SettingsViewModel @Inject constructor(
                 _state.value = _state.value.copy(locale = loc)
             }
         }
-        refreshAlerts()
         loadNotifPrefs()
     }
 
@@ -171,18 +169,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun refreshAlerts() {
-        if (_state.value.alertsBusy) return
-        _state.value = _state.value.copy(alertsBusy = true)
-        viewModelScope.launch {
-            val alerts = try {
-                api.getAlerts(withinDays = 14)
-            } catch (_: Throwable) {
-                emptyList()
-            }
-            _state.value = _state.value.copy(alerts = alerts, alertsBusy = false)
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -195,6 +181,9 @@ fun SettingsScreen(
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -210,165 +199,173 @@ fun SettingsScreen(
         },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item { Text(stringResource(R.string.server_prefix, s.baseUrl ?: "—")) }
-            item { Text(stringResource(R.string.signed_in_as, s.username ?: "—")) }
-            item {
-                Row(
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            TabRow(selectedTabIndex = pagerState.currentPage) {
+                listOf(R.string.appearance, R.string.notifications, R.string.account).forEachIndexed { index, labelRes ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        text = { Text(stringResource(labelRes)) },
+                    )
+                }
+            }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                when (page) {
+                    0 -> SettingsAppearanceTab(s, vm)
+                    1 -> SettingsNotificationsTab(s, vm)
+                    2 -> SettingsAccountTab(s, vm, onSignOut, onNavigateToAbout)
+                    else -> {}
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsAppearanceTab(s: SettingsUi, vm: SettingsViewModel) {
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            Text(stringResource(R.string.appearance), style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            SingleChoiceSegmentedButtonRow {
+                val options = listOf(
+                    "system" to stringResource(R.string.theme_system),
+                    "light"  to stringResource(R.string.theme_light),
+                    "dark"   to stringResource(R.string.theme_dark),
+                )
+                options.forEachIndexed { index, (value, label) ->
+                    SegmentedButton(
+                        selected = (s.themeMode ?: "system") == value,
+                        onClick = { vm.setTheme(value) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                        label = { Text(label) },
+                    )
+                }
+            }
+        }
+        item { HorizontalDivider() }
+        item {
+            Text(stringResource(R.string.language), style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            var langMenuExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = langMenuExpanded,
+                onExpandedChange = { langMenuExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = SUPPORTED_LOCALES.find { it.first == (s.locale ?: "en") }?.second ?: "English",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.language)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = langMenuExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                )
+                ExposedDropdownMenu(
+                    expanded = langMenuExpanded,
+                    onDismissRequest = { langMenuExpanded = false },
+                ) {
+                    SUPPORTED_LOCALES.forEach { (code, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = { vm.setLocale(code); langMenuExpanded = false },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsNotificationsTab(s: SettingsUi, vm: SettingsViewModel) {
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (s.notifPrefs.isEmpty() && !s.notifBusy) {
+            item { Text(stringResource(R.string.no_notification_prefs), style = MaterialTheme.typography.bodySmall) }
+        } else {
+            items(s.notifPrefs, key = { "notif-${it.kind}" }) { pref ->
+                val kindLabel = KIND_LABEL_RES[pref.kind]?.let { stringResource(it) } ?: pref.kind
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(kindLabel, style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Switch(
+                                checked = pref.push_enabled,
+                                onCheckedChange = { checked ->
+                                    vm.saveNotifPref(pref.kind, checked, pref.email_enabled, pref.browser_enabled, pref.lead_days)
+                                },
+                            )
+                            Text(stringResource(R.string.app_label), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsAccountTab(
+    s: SettingsUi,
+    vm: SettingsViewModel,
+    onSignOut: () -> Unit,
+    onNavigateToAbout: () -> Unit,
+) {
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { Text(stringResource(R.string.server_prefix, s.baseUrl ?: "—")) }
+        item { Text(stringResource(R.string.signed_in_as, s.username ?: "—")) }
+        item {
+            Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(
+                    onClick = vm::testConnection,
+                    enabled = !s.testBusy && s.baseUrl != null,
                 ) {
-                    OutlinedButton(
-                        onClick = vm::testConnection,
-                        enabled = !s.testBusy && s.baseUrl != null,
-                    ) {
-                        if (s.testBusy) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text(stringResource(R.string.test_connection))
-                        }
-                    }
-                    if (s.testResult != null) {
-                        Text(
-                            text = s.testResult!!,
-                            color = if (s.testOk) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                    if (s.testBusy) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(R.string.test_connection))
                     }
                 }
-            }
-            item { HorizontalDivider() }
-            item {
-                Text(stringResource(R.string.appearance), style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            item {
-                @OptIn(ExperimentalMaterial3Api::class)
-                SingleChoiceSegmentedButtonRow {
-                    val options = listOf(
-                        "system" to stringResource(R.string.theme_system),
-                        "light" to stringResource(R.string.theme_light),
-                        "dark" to stringResource(R.string.theme_dark),
+                if (s.testResult != null) {
+                    Text(
+                        text = s.testResult!!,
+                        color = if (s.testOk) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
                     )
-                    options.forEachIndexed { index, (value, label) ->
-                        SegmentedButton(
-                            selected = (s.themeMode ?: "system") == value,
-                            onClick = { vm.setTheme(value) },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                            label = { Text(label) },
-                        )
-                    }
                 }
             }
-            item { HorizontalDivider() }
-            item {
-                Text(stringResource(R.string.language), style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            item {
-                @OptIn(ExperimentalMaterial3Api::class)
-                var langMenuExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = langMenuExpanded,
-                    onExpandedChange = { langMenuExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = SUPPORTED_LOCALES.find { it.first == (s.locale ?: "en") }?.second ?: "English",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.language)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = langMenuExpanded) },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = langMenuExpanded,
-                        onDismissRequest = { langMenuExpanded = false },
-                    ) {
-                        SUPPORTED_LOCALES.forEach { (code, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = { vm.setLocale(code); langMenuExpanded = false },
-                            )
-                        }
-                    }
-                }
-            }
-            item { HorizontalDivider() }
-            item {
-                Text(stringResource(R.string.notifications), style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (s.notifPrefs.isEmpty() && !s.notifBusy) {
-                item { Text(stringResource(R.string.no_notification_prefs), style = MaterialTheme.typography.bodySmall) }
-            } else {
-                items(s.notifPrefs, key = { "notif-${it.kind}" }) { pref ->
-                    val kindLabel = KIND_LABEL_RES[pref.kind]?.let { stringResource(it) } ?: pref.kind
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(kindLabel, style = MaterialTheme.typography.bodyMedium)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Switch(
-                                    checked = pref.push_enabled,
-                                    onCheckedChange = { checked ->
-                                        vm.saveNotifPref(pref.kind, checked, pref.email_enabled, pref.browser_enabled, pref.lead_days)
-                                    },
-                                )
-                                Text(stringResource(R.string.app_label), style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
-            item { HorizontalDivider() }
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(stringResource(R.string.due_soon), style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = vm::refreshAlerts, enabled = !s.alertsBusy) {
-                        if (s.alertsBusy) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text(stringResource(R.string.refresh))
-                        }
-                    }
-                }
-            }
-            if (s.alerts.isEmpty()) {
-                item { Text(stringResource(R.string.no_upcoming_alerts), style = MaterialTheme.typography.bodySmall) }
-            } else {
-                items(s.alerts, key = { it.id }) { alert ->
-                    Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(alert.title, style = MaterialTheme.typography.titleSmall)
-                            if (!alert.due_at.isNullOrBlank()) {
-                                Text(alert.due_at!!, style = MaterialTheme.typography.bodySmall)
-                            }
-                            if (!alert.details.isNullOrBlank()) {
-                                Text(alert.details!!, style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
-            item { HorizontalDivider() }
-            item { Button(onClick = { vm.signOut(onSignOut) }) { Text(stringResource(R.string.sign_out)) } }
-            item {
-                TextButton(
-                    onClick = onNavigateToAbout,
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                ) {
-                    Text(stringResource(R.string.about))
-                }
+        }
+        item { HorizontalDivider() }
+        item { Button(onClick = { vm.signOut(onSignOut) }) { Text(stringResource(R.string.sign_out)) } }
+        item {
+            TextButton(
+                onClick = onNavigateToAbout,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+            ) {
+                Text(stringResource(R.string.about))
             }
         }
     }

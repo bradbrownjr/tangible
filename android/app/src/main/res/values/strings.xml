@@ -246,6 +246,7 @@
     <string name="theme_dark">Dark</string>
     <string name="language">Language</string>
     <string name="notifications">Notifications</string>
+    <string name="account">Account</string>
     <string name="no_notification_prefs">No notification preferences.</string>
     <string name="app_label">App</string>
     <string name="due_soon">Due soon</string>
