@@ -127,7 +127,7 @@
             <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
         </p>
     </div>
-{:else}
+{:else if pickerOpen && chosen}
     <form onsubmit={create} class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">
             {$_('collections.new_form_heading_preset', { values: { name: chosen.name } })}

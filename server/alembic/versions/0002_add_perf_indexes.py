@@ -18,14 +18,14 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.create_index("ix_items_expires_at", "items", ["expires_at"])
-    op.create_index("ix_items_use_by_date", "items", ["use_by_date"])
-    op.create_index("ix_items_archived_at", "items", ["archived_at"])
-    op.create_index("ix_standalone_tasks_completed_at", "standalone_tasks", ["completed_at"])
+    op.create_index("ix_items_expires_at", "items", ["expires_at"], if_not_exists=True)
+    op.create_index("ix_items_use_by_date", "items", ["use_by_date"], if_not_exists=True)
+    op.create_index("ix_items_archived_at", "items", ["archived_at"], if_not_exists=True)
+    op.create_index("ix_standalone_tasks_completed_at", "standalone_tasks", ["completed_at"], if_not_exists=True)
 
 
 def downgrade() -> None:
-    op.drop_index("ix_standalone_tasks_completed_at", table_name="standalone_tasks")
-    op.drop_index("ix_items_archived_at", table_name="items")
-    op.drop_index("ix_items_use_by_date", table_name="items")
-    op.drop_index("ix_items_expires_at", table_name="items")
+    op.drop_index("ix_standalone_tasks_completed_at", table_name="standalone_tasks", if_exists=True)
+    op.drop_index("ix_items_archived_at", table_name="items", if_exists=True)
+    op.drop_index("ix_items_use_by_date", table_name="items", if_exists=True)
+    op.drop_index("ix_items_expires_at", table_name="items", if_exists=True)
