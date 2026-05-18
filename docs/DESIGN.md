@@ -78,7 +78,7 @@ For every UI affordance in the product, this is the canonical mapping.
 
 | Affordance | M3 component | Web (Svelte) | Android (Compose) |
 | --- | --- | --- | --- |
-| Primary screen action ("create new X") | Filled Button (web) / Extended FAB (Android) | `Button.svelte` (variant `primary`) | `ExtendedFloatingActionButton` |
+| Primary screen action on index pages ("create new X") | Inline New card — Outlined Card, dashed stroke, last item in grid | `<button class="card new-card">` | `OutlinedCard(border = dashed)` |
 | Secondary action | Outlined Button | `Button.svelte` (variant `secondary`) | `OutlinedButton` |
 | Tertiary / cancel / inline link | Text Button | `Button.svelte` (variant `text`) or `<button class="link">` | `TextButton` |
 | Destructive action | Outlined or Filled Button (error color) + confirm | `Button.svelte` + `ConfirmDialog.svelte` | `OutlinedButton` + `AlertDialog` |
@@ -99,8 +99,8 @@ in the same PR. Do not invent variants in-page.
 
 ### Button labels
 
-- Primary action labels start with `+ New <thing>` for create actions
-  (e.g., `+ New collection`, `+ New list`). The `+` is part of the label.
+- New-card labels read `New <thing>` (e.g., `New collection`, `New list`).
+  The `+` icon is rendered separately in the card; do not duplicate it in the label.
 - Use sentence case, not Title Case. (`Mark as purchased`, not
   `Mark As Purchased`.)
 - Destructive labels are explicit verbs (`Delete`, `Remove`), never `OK`
@@ -114,23 +114,43 @@ Every **index page** (any route that lists a collection of things) follows
 this structure, in this order:
 
 1. **H1 page title** — single `<h1>{$_('section.title')}</h1>`.
-2. **Primary action slot** — a single filled Button labeled `+ New <thing>`
-   in a `<div style="margin-bottom: 1.5rem">` directly under the H1.
-3. **Wizard / form region** — when the primary action is engaged, the
-   wizard or creation form replaces the action button (not the content).
-4. **Content region** — one of:
+2. **Wizard / form region** — when a create action is in progress, the
+   wizard or form appears *above the grid* (not replacing it).
+3. **Content region** — a `.presets` / `.grid` of filled Cards, followed
+   by a single **New card** as the last item (see below). One of:
    - Loading: `<p class="muted">{$_('common.loading')}</p>`
-   - Empty: `<p class="muted">No <things> yet — click <action> to get started.</p>`
-   - Populated: a `.presets` / `.grid` of items (filled Cards).
+   - Otherwise: always render the grid (even when empty) so the New card
+     is always visible.
 
-The dashed Outlined Card is **only** used when:
-- The content region is empty, AND
-- We want to use the empty state itself as the create affordance (no
-  separate primary button at the top).
+**New card** — The canonical create affordance on index pages. Always the
+last item in the grid. Use `<button class="card new-card">` (dashed
+`OutlinedCard`) with a `+` icon and a `New <thing>` label. There is no
+separate top-of-page button. This pattern matches Android's `OutlinedCard`
+with dashed border as the last grid item.
 
-We never use both a top primary button **and** a dashed empty-state card on
-the same page. Pick one. The current standard for index pages is the top
-primary button + plain empty-state text.
+```html
+<button type="button" class="card new-card" onclick={openPicker}>
+    <Icon name="plus" size={24} />
+    <span>{$_('section.add_button')}</span>
+</button>
+```
+
+```css
+.new-card {
+    border-style: dashed;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0.5rem; cursor: pointer;
+    color: var(--accent); background: transparent;
+    min-height: 7rem; font-size: 0.875rem;
+}
+.new-card:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: var(--accent); }
+```
+
+**UX levels — index vs. detail:**
+- Index page New card → creates a new top-level thing (collection, list, store).
+- Detail page inline form → adds an *item inside* an existing thing.
+These are on different routes; there is no visual ambiguity.
 
 **Canonical reference:** `web/src/routes/collections/+page.svelte`. When in
 doubt, make the new page look like Collections.

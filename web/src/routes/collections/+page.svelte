@@ -116,11 +116,7 @@
 
 <h1>{$_('collections.title')}</h1>
 
-{#if !pickerOpen}
-    <div style="margin-bottom: 1.5rem">
-        <button type="button" onclick={openPicker}>{$_('collections.add_button')}</button>
-    </div>
-{:else if !chosen}
+{#if pickerOpen && !chosen}
     <div class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">{$_('collections.wizard_heading')}</h3>
         <p class="muted" style="margin-top:0; margin-bottom:1rem">
@@ -144,7 +140,7 @@
             <button type="button" class="link" onclick={cancel}>{$_('common.cancel')}</button>
         </p>
     </div>
-{:else}
+{:else if pickerOpen && chosen}
     <form onsubmit={create} class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">
             {chosen.slug ? $_('collections.new_form_heading_preset', { values: { name: chosen.name } }) : $_('collections.new_form_heading_custom')}
@@ -172,8 +168,6 @@
 
 {#if loading}
     <p class="muted">{$_('common.loading')}</p>
-{:else if collections.length === 0}
-    <p class="muted">{$_('collections.empty')}</p>
 {:else}
     <div class="grid">
         {#each collections as c (c.id)}
@@ -186,6 +180,10 @@
                 {/if}
             </a>
         {/each}
+        <button type="button" class="card new-card" onclick={openPicker}>
+            <Icon name="plus" size={24} />
+            <span>{$_('collections.add_button')}</span>
+        </button>
     </div>
 {/if}
 
@@ -255,5 +253,22 @@
         padding: 0;
         color: var(--accent);
         cursor: pointer;
+    }
+    .new-card {
+        border-style: dashed;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        color: var(--accent);
+        background: transparent;
+        min-height: 7rem;
+        font-size: 0.875rem;
+    }
+    .new-card:hover {
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
+        border-color: var(--accent);
     }
 </style>

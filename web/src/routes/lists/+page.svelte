@@ -108,11 +108,7 @@
 
 <h1>{$_('nav.lists')}</h1>
 
-{#if !pickerOpen}
-    <div style="margin-bottom: 1.5rem">
-        <button type="button" onclick={openPicker}>{$_('lists.add_button')}</button>
-    </div>
-{:else if !chosen}
+{#if pickerOpen && !chosen}
     <div class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">{$_('lists.new_pair_title')}</h3>
         <p class="muted" style="margin-top:0; margin-bottom:1rem">
@@ -156,8 +152,6 @@
 
 {#if loading}
     <p class="muted">{$_('common.loading')}</p>
-{:else if listTypes.length === 0}
-    <p class="muted">{$_('lists.no_lists')}</p>
 {:else}
     <div class="presets">
         {#each listTypes as lt (lt.id)}
@@ -171,6 +165,10 @@
                 {/if}
             </a>
         {/each}
+        <button type="button" class="preset preset-new" onclick={openPicker}>
+            <span class="preset-icon"><Icon name="plus" size={24} /></span>
+            <strong>{$_('lists.add_button')}</strong>
+        </button>
     </div>
 {/if}
 
@@ -249,6 +247,16 @@
         padding: 0;
         color: var(--accent);
         cursor: pointer;
+    }
+    .preset-new {
+        align-items: center;
+        justify-content: center;
+        border-style: dashed;
+        color: var(--accent);
+        background: transparent;
+    }
+    .preset-new:hover {
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
     }
     .error {
         color: var(--danger, #e53e3e);

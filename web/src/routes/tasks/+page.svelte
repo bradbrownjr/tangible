@@ -320,180 +320,118 @@
     <p class="error">{error}</p>
 {:else if tab === 'chores'}
     <!-- ── Chores tab ── -->
-    <div class="my-tasks-header">
-        <p class="tab-hint">{$_('tasks.chores_hint')}</p>
-        <button class="new-task-btn" onclick={() => { showNewChoreForm = !showNewChoreForm; }}>
-            <Icon name="sparkles" size={14} />
-            {$_('tasks.new_chore_button')}
-        </button>
-    </div>
-
-    {#if showNewChoreForm}
-        <form class="new-task-form" onsubmit={(e) => { e.preventDefault(); createChore(); }}>
-            {#if choreFormError}
-                <p class="error">{choreFormError}</p>
-            {/if}
-            <div class="form-row">
-                <input
-                    type="text"
-                    class="form-input"
-                    placeholder={$_('chores.name_placeholder')}
-                    bind:value={newChoreName}
-                    required
-                />
-                <select bind:value={newChoreCollectionId} class="form-select">
-                    {#each choreCollections as col (col.id)}
-                        <option value={col.id}>{col.name}</option>
-                    {/each}
-                </select>
-            </div>
-            <div class="form-row">
-                <input
-                    type="number"
-                    class="form-input"
-                    placeholder={$_('chores.interval_placeholder')}
-                    bind:value={newChoreIntervalDays}
-                    min="1"
-                    max="36500"
-                />
-                <input
-                    type="text"
-                    class="form-input"
-                    placeholder={$_('chores.notes_placeholder')}
-                    bind:value={newChoreNotes}
-                />
-            </div>
-            <div class="form-actions">
-                <button
-                    type="submit"
-                    class="btn-primary"
-                    disabled={choreSaving || !newChoreName.trim() || !newChoreCollectionId}
-                >
-                    {#if choreSaving}
-                        <Icon name="loader" size={14} />
-                    {:else}
-                        <Icon name="sparkles" size={14} />
-                    {/if}
-                    {$_('chores.add_button')}
-                </button>
-                <button type="button" class="btn-ghost" onclick={() => { showNewChoreForm = false; choreFormError = ''; }}>
-                    {$_('tasks.new_task_cancel')}
-                </button>
-            </div>
-        </form>
-    {/if}
-
-    {#if choreAlerts.length === 0}
-        <EmptyState
-            icon="calendar-check"
-            heading={$_('tasks.chores_empty', { values: { days: withinDays } })}
-            body={$_('tasks.chores_all_clear')}
-        />
-    {:else}
-        <ul class="alert-list">
-            {#each choreAlerts as alert (alert.id)}
-                <li class="alert-card chore-card" class:severity-critical={alert.severity === 'critical'} class:severity-warning={alert.severity !== 'critical'}>
-                    <div class="alert-left">
-                        <Icon name="sparkles" size={16} class="sev-icon {alert.severity === 'critical' ? 'sev-critical' : 'sev-warning'}" />
-                    </div>
-                    <div class="alert-body">
-                        <div class="alert-main">
-                            <span class="alert-title">{alert.title}</span>
-                            {#if alert.due_at}
-                                <span class="due-badge" class:critical={alert.severity === 'critical'}>
-                                    <time datetime={alert.due_at}>{daysLabel(alert.due_at)}</time>
-                                </span>
-                            {/if}
-                        </div>
-                        {#if alert.details}
-                            <p class="alert-detail">{alert.details}</p>
+    <p class="tab-hint">{$_('tasks.chores_hint')}</p>
+    <ul class="alert-list">
+        {#each choreAlerts as alert (alert.id)}
+            <li class="alert-card chore-card" class:severity-critical={alert.severity === 'critical'} class:severity-warning={alert.severity !== 'critical'}>
+                <div class="alert-left">
+                    <Icon name="sparkles" size={16} class="sev-icon {alert.severity === 'critical' ? 'sev-critical' : 'sev-warning'}" />
+                </div>
+                <div class="alert-body">
+                    <div class="alert-main">
+                        <span class="alert-title">{alert.title}</span>
+                        {#if alert.due_at}
+                            <span class="due-badge" class:critical={alert.severity === 'critical'}>
+                                <time datetime={alert.due_at}>{daysLabel(alert.due_at)}</time>
+                            </span>
                         {/if}
-                        <div class="alert-links">
-                            <a href="/collections/{alert.collection_id}/chores">
-                                <Icon name="sparkles" size={12} />
-                                {$_('tasks.manage_chores_link')}
-                            </a>
-                            <a href="/collections/{alert.collection_id}">{$_('maintenance.collection_link')}</a>
-                        </div>
                     </div>
-                    <div class="chore-actions">
+                    {#if alert.details}
+                        <p class="alert-detail">{alert.details}</p>
+                    {/if}
+                    <div class="alert-links">
+                        <a href="/collections/{alert.collection_id}/chores">
+                            <Icon name="sparkles" size={12} />
+                            {$_('tasks.manage_chores_link')}
+                        </a>
+                        <a href="/collections/{alert.collection_id}">{$_('maintenance.collection_link')}</a>
+                    </div>
+                </div>
+                <div class="chore-actions">
+                    <button
+                        class="done-btn"
+                        title={$_('tasks.mark_done_tooltip')}
+                        onclick={launchConfetti}
+                    >
+                        <Icon name="calendar-check" size={16} />
+                        <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
+                    </button>
+                </div>
+            </li>
+        {/each}
+        {#if showNewChoreForm}
+            <li class="new-form-li">
+                <form class="new-task-form" onsubmit={(e) => { e.preventDefault(); createChore(); }}>
+                    {#if choreFormError}
+                        <p class="error">{choreFormError}</p>
+                    {/if}
+                    <div class="form-row">
+                        <input
+                            type="text"
+                            class="form-input"
+                            placeholder={$_('chores.name_placeholder')}
+                            bind:value={newChoreName}
+                            required
+                        />
+                        <select bind:value={newChoreCollectionId} class="form-select">
+                            {#each choreCollections as col (col.id)}
+                                <option value={col.id}>{col.name}</option>
+                            {/each}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input
+                            type="number"
+                            class="form-input"
+                            placeholder={$_('chores.interval_placeholder')}
+                            bind:value={newChoreIntervalDays}
+                            min="1"
+                            max="36500"
+                        />
+                        <input
+                            type="text"
+                            class="form-input"
+                            placeholder={$_('chores.notes_placeholder')}
+                            bind:value={newChoreNotes}
+                        />
+                    </div>
+                    <div class="form-actions">
                         <button
-                            class="done-btn"
-                            title={$_('tasks.mark_done_tooltip')}
-                            onclick={launchConfetti}
+                            type="submit"
+                            class="btn-primary"
+                            disabled={choreSaving || !newChoreName.trim() || !newChoreCollectionId}
                         >
-                            <Icon name="calendar-check" size={16} />
-                            <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
+                            {#if choreSaving}
+                                <Icon name="loader" size={14} />
+                            {:else}
+                                <Icon name="sparkles" size={14} />
+                            {/if}
+                            {$_('chores.add_button')}
+                        </button>
+                        <button type="button" class="btn-ghost" onclick={() => { showNewChoreForm = false; choreFormError = ''; }}>
+                            {$_('tasks.new_task_cancel')}
                         </button>
                     </div>
-                </li>
-            {/each}
-        </ul>
-    {/if}
+                </form>
+            </li>
+        {:else}
+            <li>
+                <button class="new-card-li" onclick={() => { showNewChoreForm = true; }}>
+                    <Icon name="plus" size={16} />
+                    {$_('tasks.new_chore_button')}
+                </button>
+            </li>
+        {/if}
+    </ul>
 {:else if tab === 'my-tasks'}
     <!-- ── My Tasks tab ── -->
     {#if tasksError}
         <p class="error">{tasksError}</p>
     {/if}
-    <div class="my-tasks-header">
-        <p class="tab-hint">{$_('tasks.my_tasks_hint')}</p>
-        <button class="new-task-btn" onclick={() => { showNewTaskForm = !showNewTaskForm; }}>
-            <Icon name="check-circle" size={14} />
-            {$_('tasks.new_task_button')}
-        </button>
-    </div>
-
-    {#if showNewTaskForm}
-        <form class="new-task-form" onsubmit={(e) => { e.preventDefault(); createTask(); }}>
-            <div class="form-row">
-                <input
-                    type="text"
-                    class="form-input"
-                    placeholder={$_('tasks.new_task_title_placeholder')}
-                    bind:value={newTitle}
-                    required
-                />
-                <select bind:value={newCollectionId} class="form-select">
-                    {#each taskCollections as col (col.id)}
-                        <option value={col.id}>{col.name}</option>
-                    {/each}
-                </select>
-            </div>
-            <div class="form-row">
-                <input
-                    type="text"
-                    class="form-input"
-                    placeholder={$_('tasks.new_task_notes_placeholder')}
-                    bind:value={newNotes}
-                />
-                <label class="due-label">
-                    <span>{$_('tasks.new_task_due_label')}</span>
-                    <input type="datetime-local" class="form-input" bind:value={newDueAt} />
-                </label>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-primary" disabled={taskSaving || !newTitle.trim()}>
-                    {#if taskSaving}
-                        <Icon name="loader" size={14} />
-                    {:else}
-                        <Icon name="check-circle" size={14} />
-                    {/if}
-                    {$_('tasks.new_task_save')}
-                </button>
-                <button type="button" class="btn-ghost" onclick={() => { showNewTaskForm = false; }}>
-                    {$_('tasks.new_task_cancel')}
-                </button>
-            </div>
-        </form>
-    {/if}
+    <p class="tab-hint">{$_('tasks.my_tasks_hint')}</p>
 
     {#if tasksLoading}
         <EmptyState icon="loader" heading={$_('common.loading')} />
-    {:else if myTasks.length === 0 && !showNewTaskForm}
-        <EmptyState
-            icon="check-circle"
-            heading={$_('tasks.my_tasks_empty')}
-        />
     {:else}
         <ul class="alert-list">
             {#each myTasks as task (task.id)}
@@ -552,6 +490,58 @@
                     </div>
                 </li>
             {/each}
+            {#if showNewTaskForm}
+                <li class="new-form-li">
+                    <form class="new-task-form" onsubmit={(e) => { e.preventDefault(); createTask(); }}>
+                        <div class="form-row">
+                            <input
+                                type="text"
+                                class="form-input"
+                                placeholder={$_('tasks.new_task_title_placeholder')}
+                                bind:value={newTitle}
+                                required
+                            />
+                            <select bind:value={newCollectionId} class="form-select">
+                                {#each taskCollections as col (col.id)}
+                                    <option value={col.id}>{col.name}</option>
+                                {/each}
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <input
+                                type="text"
+                                class="form-input"
+                                placeholder={$_('tasks.new_task_notes_placeholder')}
+                                bind:value={newNotes}
+                            />
+                            <label class="due-label">
+                                <span>{$_('tasks.new_task_due_label')}</span>
+                                <input type="datetime-local" class="form-input" bind:value={newDueAt} />
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" disabled={taskSaving || !newTitle.trim()}>
+                                {#if taskSaving}
+                                    <Icon name="loader" size={14} />
+                                {:else}
+                                    <Icon name="check-circle" size={14} />
+                                {/if}
+                                {$_('tasks.new_task_save')}
+                            </button>
+                            <button type="button" class="btn-ghost" onclick={() => { showNewTaskForm = false; }}>
+                                {$_('tasks.new_task_cancel')}
+                            </button>
+                        </div>
+                    </form>
+                </li>
+            {:else}
+                <li>
+                    <button class="new-card-li" onclick={() => { showNewTaskForm = true; loadTasks(); }}>
+                        <Icon name="plus" size={16} />
+                        {$_('tasks.new_task_button')}
+                    </button>
+                </li>
+            {/if}
         </ul>
     {/if}
 {:else if tab === 'scoreboard'}
@@ -766,24 +756,32 @@
         100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
     }
 
-    /* My Tasks tab */
-    .my-tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
-    .my-tasks-header .tab-hint { margin: 0; }
-    .new-task-btn {
+    /* New card / inline form at bottom of list */
+    .new-card-li {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-md);
+        border: 2px dashed var(--border);
+        background: transparent;
+        cursor: pointer;
+        color: var(--accent);
         display: flex;
         align-items: center;
-        gap: 0.35rem;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        padding: 0.4rem 0.85rem;
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 600;
-        transition: opacity 0.15s;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
     }
-    .new-task-btn:hover { opacity: 0.88; }
+    .new-card-li:hover {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+    .new-form-li {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+    }
+    .new-form-li .new-task-form { background: none; border: none; border-radius: 0; padding: 0; margin-bottom: 0; }
 
     .new-task-form {
         background: var(--surface-2);
