@@ -185,7 +185,7 @@
     <string name="cd_add_grocery_item">Add grocery item</string>
 
     <!-- Grocery stores -->
-    <string name="my_stores">My Stores</string>
+    <string name="my_stores">Stores</string>
     <string name="cd_add_store">Add store</string>
     <string name="no_stores">No stores yet.</string>
     <string name="no_stores_hint">Add a store to sort your shopping list by aisle.</string>

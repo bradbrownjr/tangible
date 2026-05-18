@@ -487,7 +487,7 @@ fun CollectionsTabsScreen(
             ) {
                 TopAppBar(
                     title = {
-                        Text(if (isAllPage) stringResource(R.string.tab_all)
+                        Text(if (isAllPage) stringResource(R.string.collections)
                              else currentColl?.name ?: stringResource(R.string.collections))
                     },
                     actions = {
