@@ -158,6 +158,7 @@
 
     <!-- Grocery stores -->
     <string name="my_stores">Mes magasins</string>
+    <string name="cd_add_list_type">Nouveau type de liste</string>
     <string name="cd_add_store">Ajouter un magasin</string>
     <string name="no_stores">Aucun magasin pour l\'instant.</string>
     <string name="no_stores_hint">Ajoutez un magasin pour trier votre liste par rayon.</string>

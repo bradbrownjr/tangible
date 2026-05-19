@@ -156,6 +156,7 @@
 
     <!-- Grocery stores -->
     <string name="my_stores">マイストア</string>
+    <string name="cd_add_list_type">新しいリストタイプ</string>
     <string name="cd_add_store">店舗を追加</string>
     <string name="no_stores">店舗がありません。</string>
     <string name="no_stores_hint">店舗を追加してリストを売り場順に並べましょう。</string>

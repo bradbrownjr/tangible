@@ -156,6 +156,7 @@
 
     <!-- Grocery stores -->
     <string name="my_stores">我的商店</string>
+    <string name="cd_add_list_type">新建列表类型</string>
     <string name="cd_add_store">添加商店</string>
     <string name="no_stores">暂无商店。</string>
     <string name="no_stores_hint">添加商店以按货架排序您的清单。</string>
