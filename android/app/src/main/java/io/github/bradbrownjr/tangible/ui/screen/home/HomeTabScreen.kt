@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -214,25 +215,51 @@ fun HomeTabScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.home_tab)) },
-                actions = {
-                    BadgedBox(
-                        badge = {
-                            if (s.alertCount > 0) {
-                                Badge { Text(s.alertCount.toString()) }
+            Column {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.home_tab)) },
+                    actions = {
+                        BadgedBox(
+                            badge = {
+                                if (s.alertCount > 0) {
+                                    Badge { Text(s.alertCount.toString()) }
+                                }
+                            },
+                        ) {
+                            IconButton(onClick = { onJumpTo(5) }) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = stringResource(R.string.tasks_tab_alerts),
+                                )
+                            }
+                        }
+                    },
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    OutlinedTextField(
+                        value = s.q,
+                        onValueChange = vm::onQueryChange,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
+                        singleLine = true,
+                        trailingIcon = {
+                            if (s.q.isNotEmpty()) {
+                                IconButton(onClick = { vm.onQueryChange("") }) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.cd_clear_search),
+                                    )
+                                }
                             }
                         },
-                    ) {
-                        IconButton(onClick = { onJumpTo(5) }) {
-                            Icon(
-                                Icons.Default.Notifications,
-                                contentDescription = stringResource(R.string.tasks_tab_alerts),
-                            )
-                        }
-                    }
-                },
-            )
+                    )
+                }
+            }
         },
     ) { padding ->
         Column(
@@ -242,23 +269,6 @@ fun HomeTabScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedTextField(
-                value = s.q,
-                onValueChange = vm::onQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
-                singleLine = true,
-                trailingIcon = {
-                    if (s.q.isNotEmpty()) {
-                        IconButton(onClick = { vm.onQueryChange("") }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = stringResource(R.string.cd_clear_search),
-                            )
-                        }
-                    }
-                },
-            )
             // Filter row: [Archived checkbox] [spacer] [field dropdown]
             Row(
                 verticalAlignment = Alignment.CenterVertically,

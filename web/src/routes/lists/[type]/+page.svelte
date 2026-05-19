@@ -123,6 +123,23 @@
     let scanningBarcode = $state(false);
     let barcodeImageInput: HTMLInputElement | undefined;
 
+    // Store selection (per list type, persisted in localStorage)
+    interface Store { id: string; name: string; }
+    let stores = $state<Store[]>([]);
+    let selectedStoreId = $state<string | null>(null);
+    let selectedStore = $derived(stores.find((s) => s.id === selectedStoreId) ?? null);
+    let showStorePicker = $state(false);
+
+    function selectStore(id: string | null) {
+        selectedStoreId = id;
+        if (id === null) {
+            localStorage.removeItem(`tangible:store:${listType}`);
+        } else {
+            localStorage.setItem(`tangible:store:${listType}`, id);
+        }
+        showStorePicker = false;
+    }
+
     async function decodeBarcodeFromImage(file: File): Promise<string> {
         const { BrowserMultiFormatReader } = await import('@zxing/browser');
         const reader = new BrowserMultiFormatReader();
@@ -341,10 +358,22 @@
         listCategoryFilter = '';
         listSortBy = 'name';
         listSortDir = 'asc';
+        // Restore per-type store selection
+        selectedStoreId = localStorage.getItem(`tangible:store:${_type}`) ?? null;
+        showStorePicker = false;
         untrack(() => load());
     });
 
-    onMount(() => {});
+    onMount(async () => {
+        try {
+            stores = await api.get<Store[]>('/grocery/stores');
+            // Restore after stores load in case they arrived after the effect ran
+            const saved = localStorage.getItem(`tangible:store:${listType}`);
+            if (saved && stores.some((s) => s.id === saved)) {
+                selectedStoreId = saved;
+            }
+        } catch (_) { /* non-fatal — store picker just stays empty */ }
+    });
 </script>
 
 <svelte:head>
@@ -352,6 +381,31 @@
 </svelte:head>
 
 
+
+<div class="store-bar">
+    <button type="button" class="store-btn" class:active={selectedStoreId !== null} onclick={() => (showStorePicker = !showStorePicker)}>
+        <Icon name="store" size={14} />
+        <span>{selectedStore?.name ?? $_('lists.store_any')}</span>
+        <Icon name="chevron-down" size={14} />
+    </button>
+    {#if showStorePicker}
+        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+        <div class="store-backdrop" onclick={() => (showStorePicker = false)}></div>
+        <div class="store-picker" role="listbox" aria-label={$_('lists.store_label')}>
+            <button type="button" class="store-pick-item" class:selected={selectedStoreId === null} role="option" aria-selected={selectedStoreId === null} onclick={() => selectStore(null)}>
+                {$_('lists.store_any')}
+            </button>
+            {#each stores as store (store.id)}
+                <button type="button" class="store-pick-item" class:selected={store.id === selectedStoreId} role="option" aria-selected={store.id === selectedStoreId} onclick={() => selectStore(store.id)}>
+                    {store.name}
+                </button>
+            {/each}
+            {#if stores.length === 0}
+                <span class="store-empty">{$_('common.loading')}</span>
+            {/if}
+        </div>
+    {/if}
+</div>
 
 <form class="add-form" onsubmit={addItem}>
     <input
@@ -633,6 +687,61 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+
+    /* --- store selector --- */
+    .store-bar {
+        position: relative;
+        display: flex;
+        margin-bottom: 0.5rem;
+    }
+    .store-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 99px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+        min-height: unset;
+    }
+    .store-btn:hover { border-color: var(--accent); color: var(--text); }
+    .store-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+    .store-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 99;
+    }
+    .store-picker {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 100;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 8px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.12);
+        min-width: 12rem;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .store-pick-item {
+        padding: 0.5rem 0.9rem;
+        text-align: left;
+        font-size: 0.875rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text);
+        min-height: unset;
+    }
+    .store-pick-item:hover { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+    .store-pick-item.selected { color: var(--accent); font-weight: 600; }
+    .store-empty { padding: 0.5rem 0.9rem; font-size: 0.8rem; color: var(--text-muted); }
 
     /* --- add form --- */
     .add-form {

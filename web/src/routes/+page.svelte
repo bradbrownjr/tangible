@@ -254,9 +254,17 @@
         <Icon name="list" size={24} />
         <strong>{$_('nav.lists')}</strong>
     </a>
+    <a href="/stores" class="tile">
+        <Icon name="store" size={24} />
+        <strong>{$_('nav.stores')}</strong>
+    </a>
     <a href="/tasks" class="tile">
         <Icon name="calendar-clock" size={24} />
         <strong>{$_('nav.tasks')}</strong>
+    </a>
+    <a href="/alerts" class="tile">
+        <Icon name="bell" size={24} />
+        <strong>{$_('nav.alerts')}</strong>
     </a>
     <a href="/import" class="tile">
         <Icon name="upload" size={24} />

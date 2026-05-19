@@ -85,7 +85,7 @@ data class ShoppingListUi(
     val items: List<ShoppingFeedEntryDto> = emptyList(),
     val collections: Map<String, CollectionDto> = emptyMap(),
     val stores: List<ShoppingStoreDto> = emptyList(),
-    val selectedStoreId: String? = null,
+    val selectedStoreByType: Map<String, String?> = emptyMap(),
     val loading: Boolean = false,
     val refreshing: Boolean = false,
     val error: String? = null,
@@ -182,7 +182,11 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     fun selectStore(storeId: String?) {
-        _state.value = _state.value.copy(selectedStoreId = storeId, showStoreSelector = false)
+        val type = _state.value.listType
+        _state.value = _state.value.copy(
+            selectedStoreByType = _state.value.selectedStoreByType + (type to storeId),
+            showStoreSelector = false,
+        )
     }
 
     fun toggleStoreSelector() {
@@ -509,9 +513,7 @@ fun ShoppingListScreen(
     onSwipeRight: () -> Unit = {},
 ) {
     val ui by viewModel.state.collectAsState()
-    val selectedStore = ui.stores.find { it.id == ui.selectedStoreId }
     val otherLabel = stringResource(R.string.other)
-    val aisleGroups = if (selectedStore != null) groupByAisle(ui.items, selectedStore.aisles, otherLabel) else null
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
@@ -595,16 +597,7 @@ fun ShoppingListScreen(
             ) {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(stringResource(R.string.grocery_list))
-                        if (selectedStore != null) {
-                            Text(
-                                selectedStore.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
+                    Text(stringResource(R.string.grocery_list))
                 },
                 navigationIcon = {
                     if (showBackButton) {
@@ -614,16 +607,6 @@ fun ShoppingListScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.toggleStoreSelector() }) {
-                        Icon(
-                            Icons.Default.Store,
-                            contentDescription = stringResource(R.string.cd_select_store),
-                            tint = if (ui.selectedStoreId != null)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                LocalContentColor.current,
-                        )
-                    }
                     IconButton(onClick = viewModel::toggleViewMode) {
                         Icon(
                             if (ui.viewMode == ShoppingViewMode.LIST) Icons.Default.GridView
@@ -632,27 +615,6 @@ fun ShoppingListScreen(
                                 if (ui.viewMode == ShoppingViewMode.LIST) R.string.cd_grid_view
                                 else R.string.cd_list_view,
                             ),
-                        )
-                    }
-                    IconButton(onClick = onNavigateToScanner) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = stringResource(R.string.cd_scan_barcode),
-                        )
-                    }
-                    IconButton(onClick = { imagePicker.launch("image/*") }) {
-                        Icon(
-                            Icons.Default.Image,
-                            contentDescription = stringResource(R.string.cd_scan_barcode_image),
-                        )
-                    }
-                    IconButton(onClick = {
-                        if (pagerState.currentPage == 0) viewModel.openListTypeWizard()
-                        else viewModel.showAddDialog()
-                    }) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(R.string.cd_add_grocery_item),
                         )
                     }
                 },
@@ -696,38 +658,82 @@ fun ShoppingListScreen(
                 }
             }
             // List type tabs
-            ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                edgePadding = 0.dp,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-            Tab(
-                selected = pagerState.currentPage == 0,
-                onClick = {
-                    viewModel.loadAllItems()
-                    coroutineScope.launch { pagerState.animateScrollToPage(0) }
-                },
-                text = { Text(stringResource(R.string.tab_all)) },
-            )
-            ui.customListTypes.forEachIndexed { index, customType ->
-                Tab(
-                    selected = pagerState.currentPage == 1 + index,
-                    onClick = {
-                        viewModel.setListType(customType.slug)
-                        coroutineScope.launch { pagerState.animateScrollToPage(1 + index) }
-                    },
-                    text = { Text(customType.label) },
-                )
-            }
+                ScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    edgePadding = 0.dp,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Tab(
+                        selected = pagerState.currentPage == 0,
+                        onClick = {
+                            viewModel.loadAllItems()
+                            coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                        },
+                        text = { Text(stringResource(R.string.tab_all)) },
+                    )
+                    ui.customListTypes.forEachIndexed { index, customType ->
+                        Tab(
+                            selected = pagerState.currentPage == 1 + index,
+                            onClick = {
+                                viewModel.setListType(customType.slug)
+                                coroutineScope.launch { pagerState.animateScrollToPage(1 + index) }
+                            },
+                            text = { Text(customType.label) },
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = { viewModel.openListTypeWizard() },
+                    modifier = Modifier.padding(end = 4.dp),
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_list_type))
+                }
             }
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.weight(1f),
             beyondViewportPageCount = 0,
         ) { page ->
+        val pageListType = if (page == 0) "" else ui.customListTypes.getOrNull(page - 1)?.slug ?: ""
+        val pageSelectedStoreId = ui.selectedStoreByType[pageListType]
+        val pageSelectedStore = ui.stores.find { it.id == pageSelectedStoreId }
+        val pageAisleGroups = if (pageSelectedStore != null) groupByAisle(ui.items, pageSelectedStore.aisles, otherLabel) else null
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (page != 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { viewModel.toggleStoreSelector() }) {
+                        Icon(
+                            Icons.Default.Store,
+                            contentDescription = stringResource(R.string.cd_select_store),
+                            tint = if (pageSelectedStoreId != null)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                LocalContentColor.current,
+                        )
+                    }
+                    IconButton(onClick = onNavigateToScanner) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.cd_scan_barcode))
+                    }
+                    IconButton(onClick = { imagePicker.launch("image/*") }) {
+                        Icon(Icons.Default.Image, contentDescription = stringResource(R.string.cd_scan_barcode_image))
+                    }
+                    IconButton(onClick = { viewModel.showAddDialog() }) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_grocery_item))
+                    }
+                }
+            }
         PullToRefreshBox(
                 isRefreshing = if (page == 0) ui.allItemsLoading else ui.refreshing,
                 onRefresh = { if (page == 0) viewModel.loadAllItems() else viewModel.pullRefresh() },
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
             ) {
                 if (page == 0) {
                     // Home page: card grid of list types
@@ -749,9 +755,7 @@ fun ShoppingListScreen(
                                 },
                             )
                         }
-                        item(key = "new_list") {
-                            NewListTypeCard(onClick = { viewModel.openListTypeWizard() })
-                        }
+
                     }
                 } else {
                 // Empty/loading branches must be inside a LazyColumn so PullToRefreshBox
@@ -791,8 +795,8 @@ fun ShoppingListScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                if (aisleGroups != null) {
-                                    aisleGroups.forEach { group ->
+                                if (pageAisleGroups != null) {
+                                    pageAisleGroups.forEach { group ->
                                         item(key = "header-${group.name}", span = { GridItemSpan(maxLineSpan) }) {
                                             AisleHeader(group.name)
                                         }
@@ -822,8 +826,8 @@ fun ShoppingListScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(vertical = 8.dp),
                         ) {
-                            if (aisleGroups != null) {
-                                aisleGroups.forEach { group ->
+                            if (pageAisleGroups != null) {
+                                pageAisleGroups.forEach { group ->
                                     item(key = "header-${group.name}") {
                                         AisleHeader(group.name)
                                     }
@@ -863,12 +867,13 @@ fun ShoppingListScreen(
             if (ui.showStoreSelector) {
                 StoreSelectorDialog(
                     stores = ui.stores,
-                    selectedStoreId = ui.selectedStoreId,
+                    selectedStoreId = pageSelectedStoreId,
                     onSelect = { viewModel.selectStore(it) },
                     onManageStores = { viewModel.dismissStoreSelector(); onManageStores() },
                     onDismiss = { viewModel.dismissStoreSelector() },
                 )
             }
+        } // end page Column
         } // end HorizontalPager
         } // end Column
     }

@@ -183,6 +183,7 @@
     <string name="aisle_group_other">Other</string>
     <string name="other">Other</string>
     <string name="cd_add_grocery_item">Add grocery item</string>
+    <string name="cd_add_list_type">New list type</string>
 
     <!-- Grocery stores -->
     <string name="my_stores">Stores</string>

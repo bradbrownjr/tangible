@@ -165,10 +165,7 @@
                 {/if}
             </a>
         {/each}
-        <button type="button" class="preset preset-new" onclick={openPicker}>
-            <span class="preset-icon"><Icon name="plus" size={24} /></span>
-            <strong>{$_('lists.add_button')}</strong>
-        </button>
+
     </div>
 {/if}
 

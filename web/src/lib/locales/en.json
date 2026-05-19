@@ -824,7 +824,9 @@
     "new_pair_title": "New list",
     "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
     "no_lists": "No lists yet — create one to get started.",
-    "add_button": "+ New list"
+    "add_button": "New list",
+    "store_any": "Any store",
+    "store_label": "Store"
   },
   "tasks": {
     "title": "Tasks",

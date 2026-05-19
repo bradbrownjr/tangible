@@ -766,7 +766,9 @@
     "new_pair_title": "New list",
     "new_pair_subtitle": "Pick a category to create a paired shopping list and collection.",
     "no_lists": "No lists yet — create one to get started.",
-    "add_button": "+ Nueva lista"
+    "add_button": "Nueva lista",
+    "store_any": "Cualquier tienda",
+    "store_label": "Tienda"
   },
   "tasks": {
     "title": "Tareas",

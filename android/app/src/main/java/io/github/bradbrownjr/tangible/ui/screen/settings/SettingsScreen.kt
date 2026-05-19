@@ -223,7 +223,7 @@ fun SettingsScreen(
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            TabRow(selectedTabIndex = pagerState.currentPage) {
+            ScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
                 listOf(R.string.appearance, R.string.notifications, R.string.account, R.string.about).forEachIndexed { index, labelRes ->
                     Tab(
                         selected = pagerState.currentPage == index,

@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -110,32 +111,51 @@ fun AlertsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.alerts)) },
-                navigationIcon = {
-                    if (showBackButton) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_back),
+            Column {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.alerts)) },
+                    navigationIcon = {
+                        if (showBackButton) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.cd_back),
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        OutlinedButton(
+                            onClick = vm::refresh,
+                            enabled = !s.loading,
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            if (s.loading) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text(stringResource(R.string.refresh))
+                            }
+                        }
+                    },
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        listOf(7, 14, 30, 60, 90).forEach { days ->
+                            FilterChip(
+                                selected = s.withinDays == days,
+                                onClick = { vm.setWithinDays(days) },
+                                label = { Text("${days}d") },
                             )
                         }
                     }
-                },
-                actions = {
-                    OutlinedButton(
-                        onClick = vm::refresh,
-                        enabled = !s.loading,
-                        modifier = Modifier.padding(end = 8.dp),
-                    ) {
-                        if (s.loading) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text(stringResource(R.string.refresh))
-                        }
-                    }
-                },
-            )
+                }
+            }
         },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
@@ -146,22 +166,6 @@ fun AlertsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Time window chips
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 8.dp),
-                ) {
-                    listOf(7, 14, 30, 60, 90).forEach { days ->
-                        FilterChip(
-                            selected = s.withinDays == days,
-                            onClick = { vm.setWithinDays(days) },
-                            label = { Text("${days}d") },
-                        )
-                    }
-                }
-            }
-
             // Kind filter chips
             if (allKinds.isNotEmpty()) {
                 item {

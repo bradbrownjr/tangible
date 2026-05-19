@@ -136,6 +136,13 @@
                 >×</span>
             </button>
         {/each}
+        <button
+            type="button"
+            class="tab tab-add"
+            aria-label={$_('lists.add_button')}
+            title={$_('lists.add_button')}
+            onclick={() => goto('/lists?new=1')}
+        >+</button>
     </div>
 
     <div
@@ -201,6 +208,15 @@
         cursor: pointer;
     }
     .tab-del:hover { opacity: 1; color: var(--danger, #e53e3e); }
+
+    .tab-add {
+        margin-left: auto;
+        color: var(--accent);
+        font-size: 1.2rem;
+        padding: 0 var(--space-3);
+        opacity: 0.7;
+    }
+    .tab-add:hover { opacity: 1; }
 
     .tab-content {
         touch-action: pan-y;
