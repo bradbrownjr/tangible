@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -38,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,8 +50,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -210,6 +215,11 @@ fun HomeTabScreen(
     var addCollectionId by remember { mutableStateOf("") }
     var addAsWishlist by remember { mutableStateOf(true) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val searchState = remember { TextFieldState(initialText = s.q) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { searchState.text.toString() }
+            .collect { vm.onQueryChange(it) }
+    }
 
     Scaffold(
         topBar = {
@@ -222,17 +232,22 @@ fun HomeTabScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     OutlinedTextField(
-                        value = s.q,
-                        onValueChange = vm::onQueryChange,
+                        state = searchState,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         textStyle = MaterialTheme.typography.bodySmall,
                         placeholder = { Text(stringResource(R.string.home_search_placeholder), style = MaterialTheme.typography.bodySmall) },
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        contentPadding = OutlinedTextFieldDefaults.contentPadding(
+                            top = 14.dp,
+                            bottom = 14.dp,
+                        ),
                         trailingIcon = {
-                            if (s.q.isNotEmpty()) {
-                                IconButton(onClick = { vm.onQueryChange("") }) {
+                            if (searchState.text.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    searchState.edit { replace(0, length, "") }
+                                }) {
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = stringResource(R.string.cd_clear_search),
