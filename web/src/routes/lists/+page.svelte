@@ -32,12 +32,23 @@
     let loading = $state(true);
     let error = $state('');
 
-    // Wizard state
-    let pickerOpen = $state(false);
+    // Wizard state — pickerOpen is derived from the URL so the + tab and All tab
+    // are always in sync without requiring a page remount.
+    const pickerOpen = $derived(page.url.searchParams.get('new') === '1');
     let chosen = $state<{ slug: string | null; name: string; description: string } | null>(null);
     let formName = $state('');
     let formDescription = $state('');
     let creating = $state(false);
+
+    // Reset wizard state whenever the picker closes (URL no longer has ?new=1)
+    $effect(() => {
+        if (!pickerOpen) {
+            chosen = null;
+            formName = '';
+            formDescription = '';
+            error = '';
+        }
+    });
 
     const roots = $derived(rootCategories(categories));
 
@@ -59,11 +70,7 @@
     }
 
     function openPicker() {
-        pickerOpen = true;
-        chosen = null;
-        formName = '';
-        formDescription = '';
-        error = '';
+        goto('/lists?new=1');
     }
 
     function pickPreset(root: Category) {
@@ -73,11 +80,7 @@
     }
 
     function cancel() {
-        pickerOpen = false;
-        chosen = null;
-        formName = '';
-        formDescription = '';
-        error = '';
+        goto('/lists', { replaceState: true });
     }
 
     async function create(e: Event) {
@@ -90,7 +93,6 @@
                 category_slug: chosen?.slug ?? null,
                 description: formDescription.trim() || null,
             });
-            cancel();
             listTypes = [...listTypes, result.list_type];
             goto(`/lists/${result.list_type.slug}`);
         } catch (e) {
@@ -102,7 +104,6 @@
 
     onMount(async () => {
         await refresh();
-        if (page.url.searchParams.get('new') === '1') openPicker();
     });
 </script>
 

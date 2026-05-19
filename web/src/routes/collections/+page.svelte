@@ -31,12 +31,23 @@
     let error = $state('');
     let loading = $state(true);
 
-    // Wizard state
-    let pickerOpen = $state(false);
+    // Wizard state — pickerOpen is derived from the URL so the + tab and All tab
+    // are always in sync without requiring a page remount.
+    const pickerOpen = $derived(page.url.searchParams.get('new') === '1');
     let chosen = $state<{ slug: string | null; name: string; description: string } | null>(null);
     let formName = $state('');
     let formDescription = $state('');
     let creating = $state(false);
+
+    // Reset wizard state whenever the picker closes (URL no longer has ?new=1)
+    $effect(() => {
+        if (!pickerOpen) {
+            chosen = null;
+            formName = '';
+            formDescription = '';
+            error = '';
+        }
+    });
 
     const roots = $derived(rootCategories(categories));
 
@@ -52,8 +63,7 @@
     }
 
     function openPicker() {
-        pickerOpen = true;
-        chosen = null;
+        goto('/collections?new=1');
     }
 
     function pickPreset(root: Category) {
@@ -69,11 +79,7 @@
     }
 
     function cancel() {
-        pickerOpen = false;
-        chosen = null;
-        formName = '';
-        formDescription = '';
-        error = '';
+        goto('/collections', { replaceState: true });
     }
 
     async function create(e: Event) {
@@ -88,7 +94,6 @@
                     category_slug: chosen.slug,
                     description: formDescription.trim() || null
                 });
-                cancel();
                 await refresh();
                 goto(`/collections/${result.collection.id}`);
             } else {
@@ -98,8 +103,8 @@
                     description: formDescription.trim() || null,
                     default_category_slug: null
                 });
-                cancel();
                 await refresh();
+                goto('/collections', { replaceState: true });
             }
         } catch (e) {
             error = (e as Error).message;
@@ -110,7 +115,6 @@
 
     onMount(async () => {
         await refresh();
-        if (page.url.searchParams.get('new') === '1') openPicker();
     });
 </script>
 
