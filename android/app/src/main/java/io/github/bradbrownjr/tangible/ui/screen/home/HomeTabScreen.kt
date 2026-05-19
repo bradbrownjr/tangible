@@ -231,12 +231,13 @@ fun HomeTabScreen(
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .height(40.dp),
+                        .height(48.dp),
                 ) {
                     OutlinedTextField(
                         state = searchState,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                         textStyle = MaterialTheme.typography.bodySmall,
                         placeholder = { Text(stringResource(R.string.home_search_placeholder), style = MaterialTheme.typography.bodySmall) },
                         lineLimits = TextFieldLineLimits.SingleLine,

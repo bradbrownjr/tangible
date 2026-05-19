@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.68] — 2026-05-19
+
+### Fixed
+
+- **Home search box header background (Android):** v0.25.67 placed `padding` on the `Surface` modifier, which shrank the Surface's drawn background and exposed the Scaffold's dark background color in the gaps. Moved `padding(horizontal=8dp, vertical=4dp)` to the `TextField` modifier instead — the Surface keeps `height=48dp` and fills the full header bar, while the padding reduces the constraints passed to the TextField (40dp), keeping the outline border inset within the header-colored background.
+
 ## [0.25.67] — 2026-05-19
 
 ### Changed
