@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.67] — 2026-05-19
+
+### Changed
+
+- **Home search box outer padding (Android):** Added `padding(horizontal=8dp, vertical=4dp)` to the search `Surface` so the outline border has breathing room on all sides (8dp from screen edges, 4dp gap above and below). Reduced `Surface.height` from 48dp to 40dp and set `contentPadding(top=12dp, bottom=12dp)` so the text (`bodySmall` line-height 16dp: 12+16+12=40dp) fills the field exactly. Total topBar height remains 112dp (64dp TopAppBar + 48dp row).
+
 ## [0.25.66] — 2026-05-19
 
 ### Fixed

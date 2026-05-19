@@ -40,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -230,16 +231,19 @@ fun HomeTabScreen(
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .height(40.dp),
                 ) {
                     OutlinedTextField(
                         state = searchState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         textStyle = MaterialTheme.typography.bodySmall,
                         placeholder = { Text(stringResource(R.string.home_search_placeholder), style = MaterialTheme.typography.bodySmall) },
                         lineLimits = TextFieldLineLimits.SingleLine,
+                        contentPadding = OutlinedTextFieldDefaults.contentPadding(
+                            top = 12.dp,
+                            bottom = 12.dp,
+                        ),
                         trailingIcon = {
                             if (searchState.text.isNotEmpty()) {
                                 IconButton(onClick = {
