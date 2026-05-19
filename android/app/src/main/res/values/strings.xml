@@ -391,6 +391,7 @@
     <string name="chore_interval_label" tools:ignore="MissingTranslation">Every %d days</string>
     <string name="chore_last_done_label" tools:ignore="MissingTranslation">Last done: %s</string>
     <string name="add_chore" tools:ignore="MissingTranslation">Add chore</string>
+    <string name="chore_no_collection" tools:ignore="MissingTranslation">— No collection (standalone)</string>
     <string name="cd_chores" tools:ignore="MissingTranslation">Chores</string>
     <string name="delete_chore_confirm" tools:ignore="MissingTranslation">Delete \"%s\"? This cannot be undone.</string>
 </resources>

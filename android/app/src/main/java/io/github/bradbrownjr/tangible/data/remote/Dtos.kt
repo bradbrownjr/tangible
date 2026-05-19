@@ -274,7 +274,7 @@ data class DueAlertDto(
     val kind: String,
     val severity: String,
     val title: String,
-    val collection_id: String,
+    val collection_id: String? = null,
     val item_id: String? = null,
     val lot_id: String? = null,
     val due_at: String? = null,
@@ -491,7 +491,7 @@ data class ShoppingAislePatch(
 @JsonClass(generateAdapter = true)
 data class ChoreDto(
     val id: String,
-    val collection_id: String,
+    val collection_id: String? = null,
     val name: String,
     val notes: String? = null,
     val interval_days: Int? = null,

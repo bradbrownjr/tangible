@@ -36,6 +36,15 @@ def _require_role(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
+def _check_chore_auth(db: DBSession, auth: AuthContext, chore: Chore, allowed: set[str]) -> None:
+    """Authorise access to a chore, supporting both collection-scoped and standalone chores."""
+    if chore.collection_id is not None:
+        _require_role(db, auth, chore.collection_id, allowed)
+    else:
+        if chore.owner_user_id != auth.user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
 def _compute_next_due(chore: Chore) -> None:
     if chore.next_due_at is not None:
         return
@@ -43,6 +52,35 @@ def _compute_next_due(chore: Chore) -> None:
         return
     base = chore.last_completed_at or datetime.now(UTC)
     chore.next_due_at = base + timedelta(days=chore.interval_days)
+
+
+@router.get("/chores", response_model=list[ChoreRead])
+def list_standalone_chores(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ChoreRead]:
+    """List chores owned by the current user that are not tied to any collection."""
+    rows = db.scalars(
+        select(Chore)
+        .where(Chore.owner_user_id == auth.user.id, Chore.collection_id.is_(None))
+        .order_by(Chore.next_due_at.nullslast())
+    ).all()
+    return [ChoreRead.model_validate(r) for r in rows]
+
+
+@router.post("/chores", response_model=ChoreRead, status_code=status.HTTP_201_CREATED)
+def create_standalone_chore(
+    payload: ChoreCreate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ChoreRead:
+    """Create a standalone chore not tied to any collection."""
+    chore = Chore(owner_user_id=auth.user.id, **payload.model_dump())
+    _compute_next_due(chore)
+    db.add(chore)
+    db.commit()
+    db.refresh(chore)
+    return ChoreRead.model_validate(chore)
 
 
 @router.get("/collections/{collection_id}/chores", response_model=list[ChoreRead])
@@ -91,7 +129,7 @@ def get_chore(
     chore = db.get(Chore, chore_id)
     if chore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    _require_role(db, auth, chore.collection_id, _VIEWER_ROLES)
+    _check_chore_auth(db, auth, chore, _VIEWER_ROLES)
     return ChoreRead.model_validate(chore)
 
 
@@ -105,7 +143,7 @@ def update_chore(
     chore = db.get(Chore, chore_id)
     if chore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    _require_role(db, auth, chore.collection_id, _EDITOR_ROLES)
+    _check_chore_auth(db, auth, chore, _EDITOR_ROLES)
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(chore, k, v)
     db.commit()
@@ -122,7 +160,7 @@ def delete_chore(
     chore = db.get(Chore, chore_id)
     if chore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    _require_role(db, auth, chore.collection_id, _EDITOR_ROLES)
+    _check_chore_auth(db, auth, chore, _EDITOR_ROLES)
     db.delete(chore)
     db.commit()
 
@@ -137,7 +175,7 @@ def complete_chore(
     chore = db.get(Chore, chore_id)
     if chore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    _require_role(db, auth, chore.collection_id, _EDITOR_ROLES)
+    _check_chore_auth(db, auth, chore, _EDITOR_ROLES)
     now = datetime.now(UTC)
     p = payload or ChoreCompletePayload()
     completion = ChoreCompletion(
@@ -171,7 +209,7 @@ def chore_history(
     chore = db.get(Chore, chore_id)
     if chore is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    _require_role(db, auth, chore.collection_id, _VIEWER_ROLES)
+    _check_chore_auth(db, auth, chore, _VIEWER_ROLES)
     rows = db.scalars(
         select(ChoreCompletion)
         .where(ChoreCompletion.chore_id == chore_id)

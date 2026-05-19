@@ -265,6 +265,12 @@ interface TangibleApi {
         @Body body: ChoreCreateDto,
     ): ChoreDto
 
+    @GET("chores")
+    suspend fun listStandaloneChores(): List<ChoreDto>
+
+    @POST("chores")
+    suspend fun createStandaloneChore(@Body body: ChoreCreateDto): ChoreDto
+
     @POST("chores/{choreId}/complete")
     suspend fun completeChore(
         @Path("choreId") choreId: String,

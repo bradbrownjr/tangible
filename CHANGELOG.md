@@ -4,6 +4,19 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.72] — 2026-05-19
+
+### Added
+
+- **Standalone chores (no collection required):** Chores like "Take out trash" can now be created without belonging to any collection. A `— No collection (standalone)` option appears first in the collection picker on both the web Tasks page and the Android global Tasks screen. Standalone chores are owned by the creating user and surface in the personal alerts feed.
+- **New API endpoints:** `GET /chores` (list user's standalone chores) and `POST /chores` (create standalone chore) added to the backend.
+
+### Changed
+
+- `chores.collection_id` is now nullable in the database (migration `0003_standalone_chores`). Existing chores are unaffected.
+- Web chore form no longer auto-selects the first collection; Save is enabled as soon as a chore name is entered.
+- Android `NewChoreDialog` collection picker always visible, with "— No collection (standalone)" as the default choice. "Manage Chores" shortcut on alert cards is hidden for standalone chore alerts.
+
 ## [0.25.71] — 2026-05-19
 
 ### Fixed

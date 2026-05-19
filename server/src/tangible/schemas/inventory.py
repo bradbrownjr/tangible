@@ -59,7 +59,7 @@ class DueAlertRead(BaseModel):
     kind: str
     severity: str
     title: str
-    collection_id: str
+    collection_id: str | None = None
     item_id: str | None = None
     lot_id: str | None = None
     due_at: datetime | None = None

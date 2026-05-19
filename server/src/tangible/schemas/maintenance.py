@@ -91,7 +91,8 @@ class ChoreRead(ChoreBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    collection_id: str
+    collection_id: str | None
+    owner_user_id: str | None = None
     created_at: datetime
     updated_at: datetime
 

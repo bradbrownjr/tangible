@@ -232,14 +232,19 @@ class MaintenanceViewModel @Inject constructor(
         }
     }
 
-    fun createChore(collectionId: String, name: String, notes: String?, intervalDays: Int?) {
+    fun createChore(collectionId: String?, name: String, notes: String?, intervalDays: Int?) {
         viewModelScope.launch {
             try {
-                api.createChore(collectionId, ChoreCreateDto(name, notes, intervalDays))
+                val dto = ChoreCreateDto(name, notes, intervalDays)
+                if (collectionId.isNullOrBlank()) {
+                    api.createStandaloneChore(dto)
+                } else {
+                    api.createChore(collectionId, dto)
+                }
                 _state.value = _state.value.copy(choresError = null)
             } catch (e: IOException) {
                 val payload = JSONObject().apply {
-                    put("collection_id", collectionId)
+                    if (!collectionId.isNullOrBlank()) put("collection_id", collectionId) else put("collection_id", JSONObject.NULL)
                     put("name", name)
                     if (notes != null) put("notes", notes) else put("notes", JSONObject.NULL)
                     if (intervalDays != null) put("interval_days", intervalDays) else put("interval_days", JSONObject.NULL)
@@ -425,9 +430,9 @@ private fun AlertCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (onNavigateToChores != null && alert.kind == "chore_due") {
+            if (onNavigateToChores != null && alert.kind == "chore_due" && !alert.collection_id.isNullOrBlank()) {
                 TextButton(
-                    onClick = { onNavigateToChores(alert.collection_id, alert.title) },
+                    onClick = { onNavigateToChores(alert.collection_id!!, alert.title) },
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
                 ) {
                     Text(
@@ -876,7 +881,7 @@ private fun NewChoreDialog(
     var name by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
     var intervalDays by remember { mutableStateOf("") }
-    var selectedCollectionId by remember { mutableStateOf(s.taskCollections.firstOrNull()?.id ?: "") }
+    var selectedCollectionId by remember { mutableStateOf("") }
     var menuOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(s.taskCollections) {
@@ -944,9 +949,9 @@ private fun NewChoreDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (name.isNotBlank() && selectedCollectionId.isNotBlank()) {
+                    if (name.isNotBlank()) {
                         vm.createChore(
-                            collectionId = selectedCollectionId,
+                            collectionId = selectedCollectionId.ifBlank { null },
                             name = name.trim(),
                             notes = notes.trim().ifBlank { null },
                             intervalDays = intervalDays.toIntOrNull(),
@@ -954,8 +959,8 @@ private fun NewChoreDialog(
                         onDismiss()
                     }
                 },
-                enabled = name.isNotBlank() && selectedCollectionId.isNotBlank(),
-            ) { Text(stringResource(R.string.save)) }
+                enabled = name.isNotBlank(),
+                ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }

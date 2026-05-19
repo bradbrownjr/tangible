@@ -350,9 +350,15 @@ def _build_alerts(
     chore_rows = db.execute(
         select(Chore)
         .where(
-            Chore.collection_id.in_(readable_collection_ids),
             Chore.next_due_at.isnot(None),
             Chore.next_due_at <= horizon,
+            (
+                Chore.collection_id.in_(readable_collection_ids)
+                | (
+                    Chore.collection_id.is_(None)
+                    & (Chore.owner_user_id == auth.user.id)
+                )
+            ),
         )
     ).scalars()
     for chore in chore_rows:

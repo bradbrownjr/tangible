@@ -15,6 +15,7 @@ from tangible.models.base import TimestampMixin, ULIDPrimaryKey
 if TYPE_CHECKING:
     from tangible.models.collection import Collection
     from tangible.models.item import Item
+    from tangible.models.user import User
 
 
 class MaintenanceTask(ULIDPrimaryKey, TimestampMixin, Base):
@@ -74,10 +75,16 @@ class Chore(ULIDPrimaryKey, TimestampMixin, Base):
 
     __tablename__ = "chores"
 
-    collection_id: Mapped[str] = mapped_column(
+    collection_id: Mapped[str | None] = mapped_column(
         String(26),
-        ForeignKey("collections.id", ondelete="CASCADE"),
-        nullable=False,
+        ForeignKey("collections.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    owner_user_id: Mapped[str | None] = mapped_column(
+        String(26),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
     name: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -90,7 +97,8 @@ class Chore(ULIDPrimaryKey, TimestampMixin, Base):
         DateTime(timezone=True), nullable=True, index=True
     )
 
-    collection: Mapped[Collection] = relationship()
+    collection: Mapped[Collection | None] = relationship()
+    owner: Mapped[User | None] = relationship(foreign_keys=[owner_user_id])
     completions: Mapped[list[ChoreCompletion]] = relationship(
         back_populates="chore", cascade="all, delete-orphan"
     )

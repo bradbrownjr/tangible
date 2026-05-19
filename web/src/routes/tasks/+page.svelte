@@ -218,7 +218,7 @@
             api.get<Collection[]>('/collections')
                 .then(cols => {
                     choreCollections = cols;
-                    if (!newChoreCollectionId && cols.length) newChoreCollectionId = cols[0].id;
+                    // don't auto-select; let the user choose (or leave blank for standalone)
                 })
                 .catch(() => {})
                 .finally(() => { choreCollectionsLoading = false; });
@@ -226,15 +226,20 @@
     });
 
     async function createChore() {
-        if (!newChoreName.trim() || !newChoreCollectionId) return;
+        if (!newChoreName.trim()) return;
         choreSaving = true;
         choreFormError = '';
         try {
-            await api.post(`/collections/${newChoreCollectionId}/chores`, {
+            const body = {
                 name: newChoreName.trim(),
                 interval_days: newChoreIntervalDays ? parseInt(newChoreIntervalDays, 10) : null,
                 notes: newChoreNotes.trim() || null,
-            });
+            };
+            if (newChoreCollectionId) {
+                await api.post(`/collections/${newChoreCollectionId}/chores`, body);
+            } else {
+                await api.post('/chores', body);
+            }
             newChoreName = '';
             newChoreIntervalDays = '';
             newChoreNotes = '';
@@ -349,11 +354,13 @@
                         <p class="alert-detail">{alert.details}</p>
                     {/if}
                     <div class="alert-links">
+                        {#if alert.collection_id}
                         <a href="/collections/{alert.collection_id}/chores">
                             <Icon name="sparkles" size={12} />
                             {$_('tasks.manage_chores_link')}
                         </a>
                         <a href="/collections/{alert.collection_id}">{$_('maintenance.collection_link')}</a>
+                        {/if}
                     </div>
                 </div>
                 <div class="chore-actions">
@@ -375,40 +382,56 @@
                         <p class="error">{choreFormError}</p>
                     {/if}
                     <div class="form-row">
-                        <input
-                            type="text"
-                            class="form-input"
-                            placeholder={$_('chores.name_placeholder')}
-                            bind:value={newChoreName}
-                            required
-                        />
-                        <select bind:value={newChoreCollectionId} class="form-select">
-                            {#each choreCollections as col (col.id)}
-                                <option value={col.id}>{col.name}</option>
-                            {/each}
-                        </select>
+                        <div class="form-group">
+                            <label class="form-group-label" for="chore-name">{$_('chores.name_label')}</label>
+                            <input
+                                id="chore-name"
+                                type="text"
+                                class="form-input"
+                                placeholder={$_('chores.name_placeholder')}
+                                bind:value={newChoreName}
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-group-label" for="chore-collection">{$_('chores.collection_label')}</label>
+                            <select id="chore-collection" bind:value={newChoreCollectionId} class="form-select">
+                                <option value="" disabled>{$_('chores.collection_none')}</option>
+                                {#each choreCollections as col (col.id)}
+                                    <option value={col.id}>{col.name}</option>
+                                {/each}
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
-                        <input
-                            type="number"
-                            class="form-input"
-                            placeholder={$_('chores.interval_placeholder')}
-                            bind:value={newChoreIntervalDays}
-                            min="1"
-                            max="36500"
-                        />
-                        <input
-                            type="text"
-                            class="form-input"
-                            placeholder={$_('chores.notes_placeholder')}
-                            bind:value={newChoreNotes}
-                        />
+                        <div class="form-group">
+                            <label class="form-group-label" for="chore-interval">{$_('chores.interval_label')}</label>
+                            <input
+                                id="chore-interval"
+                                type="number"
+                                class="form-input"
+                                placeholder={$_('chores.interval_placeholder')}
+                                bind:value={newChoreIntervalDays}
+                                min="1"
+                                max="36500"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-group-label" for="chore-notes">{$_('chores.notes_label')}</label>
+                            <input
+                                id="chore-notes"
+                                type="text"
+                                class="form-input"
+                                placeholder={$_('chores.notes_placeholder')}
+                                bind:value={newChoreNotes}
+                            />
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button
                             type="submit"
                             class="btn-primary"
-                            disabled={choreSaving || !newChoreName.trim() || !newChoreCollectionId}
+                            disabled={choreSaving || !newChoreName.trim()}
                         >
                             {#if choreSaving}
                                 <Icon name="loader" size={14} />
@@ -782,6 +805,9 @@
         gap: 0.65rem;
     }
     .form-row { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
+    .form-group-label { font-size: 0.75rem; color: var(--text-muted); }
+    .form-group .form-input, .form-group .form-select { flex: unset; width: 100%; }
     .form-input, .form-select {
         flex: 1;
         min-width: 0;
