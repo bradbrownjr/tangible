@@ -8,7 +8,6 @@ no matter what kind of thing you're tracking:
 | Built-in field | What it's for |
 |---|---|
 | **Title** | The name of the item |
-| **Subtitle** | A secondary title or edition line — the add-item form shows this only for music, books, movies, and games |
 | **Notes** | Free-text notes |
 | **Condition** | e.g. Mint, Good, Poor |
 | **Quantity** | How many you have |
@@ -17,6 +16,8 @@ no matter what kind of thing you're tracking:
 | **Currency** | Currency for the prices above |
 | **Acquired date** | When you got it |
 | **Location** | Where it's stored |
+
+> **Note:** A **Subtitle** field also exists on every item (it's stored in the database and always editable), but the add-item form only surfaces it for music, books, movies, and games — it won't clutter the form for groceries, hardware, or other non-media categories.
 
 These fields exist on **every** item automatically — you will always see them
 in the edit form regardless of category or template.
