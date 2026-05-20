@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.75] — 2026-05-20
+
+### Fixed
+
+- **Migration `0003_standalone_chores` crash on startup:** The inline `sa.ForeignKey(...)` inside `batch_alter_table.add_column()` was anonymous, which Alembic's SQLite batch mode rejects with `ValueError: Constraint must have a name`. Moved the FK out of the `Column()` definition and replaced it with `batch_op.create_foreign_key("fk_chores_owner_user_id", ...)`. The server was crash-looping on every start since v0.25.72.
+
 ## [0.25.74] — 2026-05-19
 
 ### Fixed

@@ -29,15 +29,21 @@ def upgrade() -> None:
             sa.Column(
                 "owner_user_id",
                 sa.String(26),
-                sa.ForeignKey("users.id", ondelete="SET NULL"),
                 nullable=True,
-                index=True,
             )
+        )
+        batch_op.create_foreign_key(
+            "fk_chores_owner_user_id",
+            "users",
+            ["owner_user_id"],
+            ["id"],
+            ondelete="SET NULL",
         )
 
 
 def downgrade() -> None:
     with op.batch_alter_table("chores") as batch_op:
+        batch_op.drop_constraint("fk_chores_owner_user_id", type_="foreignkey")
         batch_op.drop_column("owner_user_id")
         batch_op.alter_column(
             "collection_id",
