@@ -7,7 +7,7 @@ import io
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session as DBSession
 
 from tangible.auth.deps import AuthContext, collection_role, require_user
@@ -62,7 +62,11 @@ def list_standalone_chores(
     """List chores owned by the current user that are not tied to any collection."""
     rows = db.scalars(
         select(Chore)
-        .where(Chore.owner_user_id == auth.user.id, Chore.collection_id.is_(None))
+        .where(
+            Chore.owner_user_id == auth.user.id,
+            Chore.collection_id.is_(None),
+            or_(Chore.interval_days.isnot(None), Chore.last_completed_at.is_(None)),
+        )
         .order_by(Chore.next_due_at.nullslast())
     ).all()
     return [ChoreRead.model_validate(r) for r in rows]
@@ -92,7 +96,10 @@ def list_chores(
     _require_role(db, auth, collection_id, _VIEWER_ROLES)
     rows = db.scalars(
         select(Chore)
-        .where(Chore.collection_id == collection_id)
+        .where(
+            Chore.collection_id == collection_id,
+            or_(Chore.interval_days.isnot(None), Chore.last_completed_at.is_(None)),
+        )
         .order_by(Chore.next_due_at.nullslast())
     ).all()
     return [ChoreRead.model_validate(r) for r in rows]
@@ -177,6 +184,18 @@ def complete_chore(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _check_chore_auth(db, auth, chore, _EDITOR_ROLES)
     now = datetime.now(UTC)
+    # One-time chore already completed — prevent duplicate scoreboard credit
+    if chore.interval_days is None and chore.last_completed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Chore already completed",
+        )
+    # Recurring chore not yet due
+    if chore.next_due_at is not None and chore.next_due_at > now:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Not due until {chore.next_due_at.date().isoformat()}",
+        )
     p = payload or ChoreCompletePayload()
     completion = ChoreCompletion(
         chore_id=chore_id,

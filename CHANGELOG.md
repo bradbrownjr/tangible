@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.79] — 2026-05-20
+
+### Fixed
+
+- **Chore completion — prevent gaming the scoreboard:** `POST /chores/{id}/complete` now returns 409 if:
+  - A one-time chore (no `interval_days`) has already been completed (`last_completed_at` is set).
+  - A recurring chore has a `next_due_at` still in the future.
+  Previously, every click created a new `ChoreCompletion` record counted toward the scoreboard.
+- **`GET /chores` and `GET /collections/{id}/chores`** now filter out completed one-time chores from the list response. One-time chores drop off the UI once done; recurring chores stay visible until their next due date.
+- **Web Chores tab:** Standalone chore card done button is disabled and the card grayed out (50% opacity) when the chore is not yet completable (recurring and not due). Tooltip changes to "Not due yet — check back later".
+- **Android Chores tab (Tasks screen):** Same treatment — `ChoreCard` is dimmed (0.5 alpha) and the done `IconButton` is disabled when `isCompletable` is false.
+
 ## [0.25.78] — 2026-05-20
 
 ### Fixed

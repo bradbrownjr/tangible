@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -394,7 +395,12 @@ private fun ChoreCard(
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val isCompletable: Boolean = if (chore.interval_days == null) {
+        chore.last_completed_at == null
+    } else {
+        chore.next_due_at == null || chore.next_due_at <= java.time.Instant.now().toString()
+    }
+    Card(modifier = Modifier.fillMaxWidth().alpha(if (isCompletable) 1f else 0.5f)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -418,7 +424,7 @@ private fun ChoreCard(
                     )
                 }
             }
-            IconButton(onClick = onComplete) {
+            IconButton(onClick = onComplete, enabled = isCompletable) {
                 Icon(Icons.Default.Check, contentDescription = stringResource(R.string.chore_complete), tint = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onDelete) {

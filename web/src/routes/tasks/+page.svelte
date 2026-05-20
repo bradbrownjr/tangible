@@ -245,6 +245,12 @@
         }
     }
 
+    function isChoreCompletable(chore: Chore): boolean {
+        if (chore.interval_days === null) return chore.last_completed_at === null;
+        if (!chore.next_due_at) return true;
+        return new Date(chore.next_due_at) <= new Date();
+    }
+
     async function createChore() {
         if (!newChoreName.trim()) return;
         choreSaving = true;
@@ -397,7 +403,8 @@
             </li>
         {/each}
         {#each chores as chore (chore.id)}
-            <li class="alert-card chore-card">
+            {@const completable = isChoreCompletable(chore)}
+            <li class="alert-card chore-card" class:chore-not-due={!completable}>
                 <div class="alert-left">
                     <Icon name="sparkles" size={16} class="sev-icon" />
                 </div>
@@ -417,7 +424,8 @@
                 <div class="chore-actions">
                     <button
                         class="done-btn"
-                        title={$_('tasks.mark_done_tooltip')}
+                        title={completable ? $_('tasks.mark_done_tooltip') : $_('tasks.chore_not_due_tooltip')}
+                        disabled={!completable}
                         onclick={() => completeChore(chore.id)}
                     >
                         <Icon name="calendar-check" size={16} />
@@ -790,6 +798,12 @@
         border-color: var(--success);
         background: color-mix(in srgb, var(--success) 8%, transparent);
     }
+    .done-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    .chore-not-due { opacity: 0.55; }
 
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
