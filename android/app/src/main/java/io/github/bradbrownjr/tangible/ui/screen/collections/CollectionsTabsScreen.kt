@@ -100,6 +100,7 @@ data class CollectionsTabsUi(
     val pendingDeleteCollection: CollectionDto? = null,
     val createItemForCollection: CollectionDto? = null,
     val newItemTitle: String = "",
+    val newItemSubtitle: String = "",
     val newItemAttrs: Map<String, String> = emptyMap(),
     val templatesByCollection: Map<String, List<ItemTemplateDto>> = emptyMap(),
     val viewMode: ViewMode = ViewMode.LIST,
@@ -368,6 +369,7 @@ class CollectionsTabsViewModel @Inject constructor(
         _state.value = _state.value.copy(
             createItemForCollection = coll,
             newItemTitle = "",
+            newItemSubtitle = "",
             newItemAttrs = emptyMap(),
         )
         // Fetch templates for this collection if not yet loaded
@@ -386,10 +388,12 @@ class CollectionsTabsViewModel @Inject constructor(
         _state.value = _state.value.copy(
             createItemForCollection = null,
             newItemTitle = "",
+            newItemSubtitle = "",
             newItemAttrs = emptyMap(),
         )
     }
     fun setNewItemTitle(v: String) { _state.value = _state.value.copy(newItemTitle = v) }
+    fun setNewItemSubtitle(v: String) { _state.value = _state.value.copy(newItemSubtitle = v) }
     fun setAttrValue(key: String, value: String) {
         _state.value = _state.value.copy(newItemAttrs = _state.value.newItemAttrs + (key to value))
     }
@@ -423,12 +427,14 @@ class CollectionsTabsViewModel @Inject constructor(
                     collectionId = coll.id,
                     categorySlug = slug,
                     title = title,
+                    subtitle = _state.value.newItemSubtitle.trim().ifEmpty { null },
                     attrs = typedAttrs,
                     templateId = activeTemplate?.id,
                 )
                 _state.value = _state.value.copy(
                     createItemForCollection = null,
                     newItemTitle = "",
+                    newItemSubtitle = "",
                     newItemAttrs = emptyMap(),
                 )
                 loadItems(coll.id, force = true)
@@ -1035,6 +1041,16 @@ private fun CreateItemDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel)
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                val rootCat = slug.split('.').first()
+                if (rootCat in setOf("music", "books", "movies", "games")) {
+                    OutlinedTextField(
+                        value = s.newItemSubtitle,
+                        onValueChange = vm::setNewItemSubtitle,
+                        label = { Text(stringResource(R.string.subtitle)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 templateFields.forEach { field ->
                     val label = field.label + if (field.required) " *" else ""
                     when (field.type) {

@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.83] — 2026-05-20
+
+### Changed
+
+- **Subtitle field scoped to media categories (Web + Android):** The subtitle input now appears in the add-item form only for collections whose root category is `music`, `books`, `movies`, or `games`. Non-media collections (hardware, groceries, home goods, etc.) no longer show a subtitle field when adding items. The subtitle DB column is unchanged — existing data is unaffected, and the edit form still exposes it for all item types.
+
 ## [0.25.82] — 2026-05-20
 
 ### Added

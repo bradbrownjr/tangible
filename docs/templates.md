@@ -8,7 +8,7 @@ no matter what kind of thing you're tracking:
 | Built-in field | What it's for |
 |---|---|
 | **Title** | The name of the item |
-| **Subtitle** | A secondary name or edition line *(mainly useful for media: books, movies, music, games)* |
+| **Subtitle** | A secondary title or edition line — the add-item form shows this only for music, books, movies, and games |
 | **Notes** | Free-text notes |
 | **Condition** | e.g. Mint, Good, Poor |
 | **Quantity** | How many you have |

@@ -87,8 +87,8 @@
         return null;
     });
     const subtitleLabel = $derived.by(() => {
-        if (activeTemplate) return null;
-        if (newLeaf.startsWith('books.') || newLeaf.startsWith('movies.') || newLeaf.startsWith('games.'))
+        const root = newLeaf.split('.')[0];
+        if (['music', 'books', 'movies', 'games'].includes(root))
             return $_('collection.subtitle_placeholder');
         return null;
     });
