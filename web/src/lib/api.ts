@@ -419,7 +419,7 @@ export interface MaintenanceCompletion {
 
 export interface Chore {
     id: string;
-    collection_id: string;
+    collection_id: string | null;
     name: string;
     notes: string | null;
     interval_days: number | null;

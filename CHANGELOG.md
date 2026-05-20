@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.78] — 2026-05-20
+
+### Fixed
+
+- **Web Chores tab — standalone chores not displayed:** The Chores tab was rendering only `chore_due` alerts from `GET /alerts`. Standalone chores with no `interval_days` (and thus no `next_due_at`) never generate an alert and were invisible even after creation. The tab now fetches `GET /chores` directly on first activation and re-fetches after creating a chore, rendering standalone chores in the same list. Marking a standalone chore done calls `POST /chores/{id}/complete` and refreshes the list. This mirrors the fix applied to the Android Chores tab in v0.25.73.
+- **`Chore.collection_id` TypeScript type:** Was typed as `string`; corrected to `string | null` to match the server response for standalone chores.
+
 ## [0.25.77] — 2026-05-20
 
 ### Changed

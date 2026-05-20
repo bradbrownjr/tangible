@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { api, ApiError, type DueAlert, type StandaloneTask, type Collection, type ScoreboardEntry } from '$lib/api';
+    import { api, ApiError, type DueAlert, type Chore, type StandaloneTask, type Collection, type ScoreboardEntry } from '$lib/api';
     import { _ } from 'svelte-i18n';
     import { EmptyState } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
@@ -211,19 +211,39 @@
     let choreSaving = $state(false);
     let choreFormError = $state('');
 
+    // ── Standalone chores state ──
+    let chores = $state<Chore[]>([]);
+    let choresLoaded = false;
+
     $effect(() => {
-        if (tab === 'chores' && !choreCollectionsFetched) {
-            choreCollectionsFetched = true;
-            choreCollectionsLoading = true;
-            api.get<Collection[]>('/collections')
-                .then(cols => {
-                    choreCollections = cols;
-                    // don't auto-select; let the user choose (or leave blank for standalone)
-                })
-                .catch(() => {})
-                .finally(() => { choreCollectionsLoading = false; });
+        if (tab === 'chores') {
+            if (!choreCollectionsFetched) {
+                choreCollectionsFetched = true;
+                choreCollectionsLoading = true;
+                api.get<Collection[]>('/collections')
+                    .then(cols => {
+                        choreCollections = cols;
+                        // don't auto-select; let the user choose (or leave blank for standalone)
+                    })
+                    .catch(() => {})
+                    .finally(() => { choreCollectionsLoading = false; });
+            }
+            if (!choresLoaded) {
+                choresLoaded = true;
+                api.get<Chore[]>('/chores').then(c => { chores = c; }).catch(() => {});
+            }
         }
     });
+
+    async function completeChore(id: string) {
+        try {
+            await api.post(`/chores/${id}/complete`, {});
+            chores = await api.get<Chore[]>('/chores');
+            launchConfetti();
+        } catch (e) {
+            // silently ignore
+        }
+    }
 
     async function createChore() {
         if (!newChoreName.trim()) return;
@@ -245,6 +265,7 @@
             newChoreNotes = '';
             showNewChoreForm = false;
             await load();
+            chores = await api.get<Chore[]>('/chores');
         } catch (e) {
             choreFormError = (e as Error).message;
         } finally {
@@ -281,8 +302,8 @@
     >
         <Icon name="sparkles" size={15} />
         {$_('tasks.tab_chores')}
-        {#if choreAlerts.length > 0}
-            <span class="tab-badge">{choreAlerts.length}</span>
+        {#if choreAlerts.length + chores.length > 0}
+            <span class="tab-badge">{choreAlerts.length + chores.length}</span>
         {/if}
     </button>
     <button
@@ -368,6 +389,36 @@
                         class="done-btn"
                         title={$_('tasks.mark_done_tooltip')}
                         onclick={launchConfetti}
+                    >
+                        <Icon name="calendar-check" size={16} />
+                        <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
+                    </button>
+                </div>
+            </li>
+        {/each}
+        {#each chores as chore (chore.id)}
+            <li class="alert-card chore-card">
+                <div class="alert-left">
+                    <Icon name="sparkles" size={16} class="sev-icon" />
+                </div>
+                <div class="alert-body">
+                    <div class="alert-main">
+                        <span class="alert-title">{chore.name}</span>
+                        {#if chore.next_due_at}
+                            <span class="due-badge">
+                                <time datetime={chore.next_due_at}>{daysLabel(chore.next_due_at)}</time>
+                            </span>
+                        {/if}
+                    </div>
+                    {#if chore.notes}
+                        <p class="alert-detail">{chore.notes}</p>
+                    {/if}
+                </div>
+                <div class="chore-actions">
+                    <button
+                        class="done-btn"
+                        title={$_('tasks.mark_done_tooltip')}
+                        onclick={() => completeChore(chore.id)}
                     >
                         <Icon name="calendar-check" size={16} />
                         <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
