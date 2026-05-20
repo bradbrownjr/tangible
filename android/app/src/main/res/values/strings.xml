@@ -381,9 +381,9 @@
     <!-- Chores -->
     <string name="chores" tools:ignore="MissingTranslation">Chores</string>
     <string name="chores_empty" tools:ignore="MissingTranslation">No chores yet. Tap + to add one.</string>
-    <string name="chore_name_hint" tools:ignore="MissingTranslation">Chore name</string>
-    <string name="chore_notes_hint" tools:ignore="MissingTranslation">Notes (optional)</string>
-    <string name="chore_interval_hint" tools:ignore="MissingTranslation">Repeat every N days (optional)</string>
+    <string name="chore_name_hint" tools:ignore="MissingTranslation">Chore name *</string>
+    <string name="chore_notes_hint" tools:ignore="MissingTranslation">Notes</string>
+    <string name="chore_interval_hint" tools:ignore="MissingTranslation">Repeat every N days</string>
     <string name="chore_next_due_hint" tools:ignore="MissingTranslation">Next due date (optional, YYYY-MM-DD)</string>
     <string name="chore_complete" tools:ignore="MissingTranslation">Mark complete</string>
     <string name="chore_complete_notes_hint" tools:ignore="MissingTranslation">Completion notes (optional)</string>

@@ -192,6 +192,17 @@ SideEffect {
 
 Where `dark` is derived from the current `MaterialTheme.colorScheme.isLight` or the resolved palette mode. This must be updated whenever the theme changes so dark themes get white icons and light themes get dark icons. **Never** rely on the system default — it may not match the app palette.
 
+### Form fields: required vs. optional
+
+Never append `(optional)` to a field label — it bloats the label string and causes word-wrap in compact dialogs. Instead:
+
+- **Required fields** — append ` *` to the label string (e.g., `"Chore name *"`).
+- **Optional fields** — plain label only (e.g., `"Notes"`, `"Repeat every N days"`). Optionality is implied by the absence of `*`.
+
+This applies to both Android (`strings.xml` hint strings) and web (`OutlinedTextField` / `<label>` text in locale JSON). On the web, the `*` is part of the translated string, not added in template markup.
+
+---
+
 ### Android: `OutlinedTextField` height
 
 The `OutlinedTextField(value, onValueChange, ...)` overload has no `contentPadding` parameter and defaults to ~56dp height. Section headers target 48dp (matching `TabRow` / `FilterChip` touch targets). For any search field in a `topBar`:

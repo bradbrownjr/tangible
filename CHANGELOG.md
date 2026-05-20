@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.77] — 2026-05-20
+
+### Changed
+
+- **Android Add Chore dialog — field labels:** Removed `(optional)` suffix from "Notes" and "Repeat every N days" labels to eliminate word-wrap in the compact dialog. Required field "Chore name" now shows `*` suffix per the new design-spec convention.
+- **DESIGN.md:** Added *Form fields: required vs. optional* section documenting the `*`-for-required / plain-label-for-optional rule for both platforms.
+
 ## [0.25.76] — 2026-05-20
 
 ### Fixed
