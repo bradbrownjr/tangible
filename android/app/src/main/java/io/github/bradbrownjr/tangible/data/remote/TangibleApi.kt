@@ -38,6 +38,9 @@ interface TangibleApi {
     @GET("collections/{id}")
     suspend fun getCollection(@Path("id") id: String): CollectionDto
 
+    @GET("collections/{id}/templates")
+    suspend fun getTemplates(@Path("id") collectionId: String): List<ItemTemplateDto>
+
     @PATCH("collections/{id}")
     suspend fun patchCollection(@Path("id") id: String, @Body body: CollectionPatch): CollectionDto
 

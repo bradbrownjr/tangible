@@ -68,12 +68,17 @@
     let newQuery = $state('');
     let newCreator = $state('');
     let newSubtitle = $state('');
+    let newAttrs = $state<Record<string, unknown>>({});
     let scraping = $state(false);
 
     let searchInputEl: HTMLInputElement | undefined = $state();
     let addCardRef: { focusTitle?: () => void } | undefined = $state();
 
+    const activeTemplate = $derived(templates.find(t => t.category_slug === newLeaf) ?? null);
+
+    // Fallback labels shown only when no matching template exists for the active leaf
     const creatorLabel = $derived.by(() => {
+        if (activeTemplate) return null;
         if (newLeaf.startsWith('music.')) return $_('collection.creator_artist');
         if (newLeaf.startsWith('books.')) return $_('collection.creator_author');
         if (newLeaf.startsWith('movies.')) return $_('collection.creator_director');
@@ -82,6 +87,7 @@
         return null;
     });
     const subtitleLabel = $derived.by(() => {
+        if (activeTemplate) return null;
         if (newLeaf.startsWith('books.') || newLeaf.startsWith('movies.') || newLeaf.startsWith('games.'))
             return $_('collection.subtitle_placeholder');
         return null;
@@ -599,19 +605,26 @@
         const orig_kind = detectKind(q);
         if (orig_kind === 'isbn') identifiers.isbn = original;
         else if (orig_kind === 'ean') identifiers.ean = original;
-        const attrs: Record<string, string> = {};
-        if (newCreator.trim()) attrs.creator = newCreator.trim();
+        // Merge template attrs, dropping empty values
+        const attrs: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(newAttrs)) {
+            if (v !== '' && v !== null && v !== undefined) attrs[k] = v;
+        }
+        // Fallback creator field when no template is active for this category
+        if (!activeTemplate && newCreator.trim()) attrs.creator = newCreator.trim();
         await api.post('/items', {
             collection_id: cid,
             category: newLeaf,
             title,
             subtitle: newSubtitle.trim() || undefined,
             attrs: Object.keys(attrs).length ? attrs : undefined,
+            template_id: activeTemplate?.id ?? undefined,
             identifiers
         });
         newQuery = '';
         newCreator = '';
         newSubtitle = '';
+        newAttrs = {};
         await load();
         await tick();
         addCardRef?.focusTitle?.();
@@ -843,6 +856,8 @@
             bind:this={addCardRef}
             {creatorLabel}
             {subtitleLabel}
+            {activeTemplate}
+            {newAttrs}
             bind:newRoot
             bind:newLeaf
             bind:newQuery

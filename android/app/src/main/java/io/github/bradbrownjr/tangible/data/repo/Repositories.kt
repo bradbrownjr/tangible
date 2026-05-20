@@ -170,6 +170,8 @@ class ItemRepository @Inject constructor(
         categorySlug: String,
         title: String,
         identifiers: Map<String, String> = emptyMap(),
+        attrs: Map<String, Any?> = emptyMap(),
+        templateId: String? = null,
     ): ItemDto {
         val created = api.createItem(
             ItemCreate(
@@ -177,6 +179,8 @@ class ItemRepository @Inject constructor(
                 category = categorySlug,
                 title = title,
                 identifiers = identifiers,
+                attrs = attrs,
+                template_id = templateId,
             ),
         )
         dao.upsertAll(listOf(created.toEntity(moshi)))

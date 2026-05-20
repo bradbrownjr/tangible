@@ -159,6 +159,26 @@ data class ItemDto(
 )
 
 @JsonClass(generateAdapter = true)
+data class TemplateFieldDto(
+    val key: String,
+    val label: String,
+    val type: String = "text",  // text|number|boolean|date|url|select|multi_value|relation
+    val required: Boolean = false,
+    val default: @JvmSuppressWildcards Any? = null,
+    val options: List<String>? = null,
+    val help: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ItemTemplateDto(
+    val id: String,
+    val collection_id: String,
+    val name: String,
+    val category_slug: String,
+    val fields: List<TemplateFieldDto> = emptyList(),
+)
+
+@JsonClass(generateAdapter = true)
 data class ItemCreate(
     val collection_id: String,
     val category: String,       // leaf slug, e.g. "music.vinyl"
@@ -166,6 +186,8 @@ data class ItemCreate(
     val subtitle: String? = null,
     val notes: String? = null,
     val identifiers: Map<String, String> = emptyMap(),
+    val attrs: Map<String, @JvmSuppressWildcards Any?> = emptyMap(),
+    val template_id: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

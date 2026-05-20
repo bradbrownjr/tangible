@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.82] — 2026-05-20
+
+### Added
+
+- **Web + Android — template fields in add-item form:** When adding an item to a collection, the form now dynamically renders all fields from the matching item template (matched by the collection's default category slug). Text, number, date, URL, multi-value, select, and boolean fields are all supported. Relation-type fields are skipped at add-time since the item doesn't exist yet. On web, required fields are visually marked and the "More options" section auto-expands when template fields are present. On Android, the create-item dialog renders the same fields in a scrollable column; templates are fetched from `GET /collections/{id}/templates` when the dialog opens. Both platforms pass `attrs` and `template_id` in `POST /items`.
+
 ## [0.25.81] — 2026-05-21
 
 ### Added

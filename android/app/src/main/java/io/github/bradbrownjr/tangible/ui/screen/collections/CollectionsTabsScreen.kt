@@ -43,6 +43,7 @@ import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ItemDto
+import io.github.bradbrownjr.tangible.data.remote.ItemTemplateDto
 import io.github.bradbrownjr.tangible.data.remote.PairCreateRequest
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CategoryRepository
@@ -60,6 +61,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Task
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.text.input.KeyboardType
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 
 enum class ViewMode { LIST, GRID }
@@ -96,6 +100,8 @@ data class CollectionsTabsUi(
     val pendingDeleteCollection: CollectionDto? = null,
     val createItemForCollection: CollectionDto? = null,
     val newItemTitle: String = "",
+    val newItemAttrs: Map<String, String> = emptyMap(),
+    val templatesByCollection: Map<String, List<ItemTemplateDto>> = emptyMap(),
     val viewMode: ViewMode = ViewMode.LIST,
     val allItemsLoading: Boolean = false,
 )
@@ -359,24 +365,72 @@ class CollectionsTabsViewModel @Inject constructor(
 
     // ---- Create item ----
     fun showCreateItem(coll: CollectionDto) {
-        _state.value = _state.value.copy(createItemForCollection = coll, newItemTitle = "")
+        _state.value = _state.value.copy(
+            createItemForCollection = coll,
+            newItemTitle = "",
+            newItemAttrs = emptyMap(),
+        )
+        // Fetch templates for this collection if not yet loaded
+        if (!_state.value.templatesByCollection.containsKey(coll.id)) {
+            viewModelScope.launch {
+                try {
+                    val templates = api.getTemplates(coll.id)
+                    _state.value = _state.value.copy(
+                        templatesByCollection = _state.value.templatesByCollection + (coll.id to templates)
+                    )
+                } catch (_: Throwable) { /* templates unavailable — fallback to title-only */ }
+            }
+        }
     }
     fun dismissCreateItem() {
-        _state.value = _state.value.copy(createItemForCollection = null, newItemTitle = "")
+        _state.value = _state.value.copy(
+            createItemForCollection = null,
+            newItemTitle = "",
+            newItemAttrs = emptyMap(),
+        )
     }
     fun setNewItemTitle(v: String) { _state.value = _state.value.copy(newItemTitle = v) }
+    fun setAttrValue(key: String, value: String) {
+        _state.value = _state.value.copy(newItemAttrs = _state.value.newItemAttrs + (key to value))
+    }
     fun createItem() {
         val coll = _state.value.createItemForCollection ?: return
         val title = _state.value.newItemTitle.trim()
         if (title.isEmpty()) return
-        // Fall back to the collection's default category, then to the first preset, then to "general".
         val slug = coll.default_category_slug
             ?: _state.value.presets.firstOrNull()?.slug
             ?: "general"
+        val templates = _state.value.templatesByCollection[coll.id] ?: emptyList()
+        val activeTemplate = templates.find { it.category_slug == slug }
+        // Build typed attrs: convert number/boolean from string state
+        val rawAttrs = _state.value.newItemAttrs
+        val typedAttrs: Map<String, Any?> = if (activeTemplate != null) {
+            rawAttrs.entries
+                .filter { (_, v) -> v.isNotBlank() }
+                .associate { (key, value) ->
+                    val fieldType = activeTemplate.fields.find { it.key == key }?.type ?: "text"
+                    val typed: Any? = when (fieldType) {
+                        "number" -> value.toDoubleOrNull() ?: value
+                        "boolean" -> value == "true"
+                        else -> value
+                    }
+                    key to typed
+                }
+        } else emptyMap()
         viewModelScope.launch {
             try {
-                itemsRepo.create(coll.id, slug, title)
-                _state.value = _state.value.copy(createItemForCollection = null, newItemTitle = "")
+                itemsRepo.create(
+                    collectionId = coll.id,
+                    categorySlug = slug,
+                    title = title,
+                    attrs = typedAttrs,
+                    templateId = activeTemplate?.id,
+                )
+                _state.value = _state.value.copy(
+                    createItemForCollection = null,
+                    newItemTitle = "",
+                    newItemAttrs = emptyMap(),
+                )
                 loadItems(coll.id, force = true)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -958,19 +1012,94 @@ private fun ConfirmDeleteCollectionDialog(s: CollectionsTabsUi, vm: CollectionsT
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateItemDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
     s.createItemForCollection ?: return
+    val coll = s.createItemForCollection
+    val slug = coll.default_category_slug ?: ""
+    val templates = s.templatesByCollection[coll.id] ?: emptyList()
+    val activeTemplate = templates.find { it.category_slug == slug }
+    val templateFields = (activeTemplate?.fields ?: emptyList()).filter { it.type != "relation" }
+    val dropdownExpanded = remember(activeTemplate?.id) { mutableStateMapOf<String, Boolean>() }
+
     AlertDialog(
         onDismissRequest = vm::dismissCreateItem,
         title = { Text(stringResource(R.string.add_item)) },
         text = {
-            OutlinedTextField(
-                value = s.newItemTitle,
-                onValueChange = vm::setNewItemTitle,
-                label = { Text(stringResource(R.string.title)) },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = s.newItemTitle,
+                    onValueChange = vm::setNewItemTitle,
+                    label = { Text(stringResource(R.string.title)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                templateFields.forEach { field ->
+                    val label = field.label + if (field.required) " *" else ""
+                    when (field.type) {
+                        "boolean" -> Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Checkbox(
+                                checked = s.newItemAttrs[field.key] == "true",
+                                onCheckedChange = { checked ->
+                                    vm.setAttrValue(field.key, if (checked) "true" else "false")
+                                },
+                            )
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        "select" -> {
+                            val expanded = dropdownExpanded[field.key] ?: false
+                            ExposedDropdownMenuBox(
+                                expanded = expanded,
+                                onExpandedChange = { dropdownExpanded[field.key] = it },
+                            ) {
+                                OutlinedTextField(
+                                    value = s.newItemAttrs[field.key] ?: "",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text(label) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { dropdownExpanded[field.key] = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("—") },
+                                        onClick = {
+                                            vm.setAttrValue(field.key, "")
+                                            dropdownExpanded[field.key] = false
+                                        },
+                                    )
+                                    field.options?.forEach { opt ->
+                                        DropdownMenuItem(
+                                            text = { Text(opt) },
+                                            onClick = {
+                                                vm.setAttrValue(field.key, opt)
+                                                dropdownExpanded[field.key] = false
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        else -> OutlinedTextField(
+                            value = s.newItemAttrs[field.key] ?: "",
+                            onValueChange = { vm.setAttrValue(field.key, it) },
+                            label = { Text(label) },
+                            singleLine = field.type != "multi_value",
+                            keyboardOptions = if (field.type == "number")
+                                KeyboardOptions(keyboardType = KeyboardType.Number)
+                            else KeyboardOptions.Default,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = vm::createItem, enabled = s.newItemTitle.isNotBlank()) {

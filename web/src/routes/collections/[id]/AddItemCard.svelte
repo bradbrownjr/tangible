@@ -1,9 +1,12 @@
 <script lang="ts">
     import { _ } from 'svelte-i18n';
+    import type { ItemTemplate } from '$lib/api';
 
     interface Props {
         creatorLabel: string | null;
         subtitleLabel: string | null;
+        activeTemplate: ItemTemplate | null;
+        newAttrs: Record<string, unknown>;
         newRoot: string;
         newLeaf: string;
         newQuery: string;
@@ -20,6 +23,8 @@
     let {
         creatorLabel,
         subtitleLabel,
+        activeTemplate,
+        newAttrs,
         newRoot = $bindable(),
         newLeaf = $bindable(),
         newQuery = $bindable(),
@@ -39,10 +44,13 @@
     let titleInput: HTMLInputElement | undefined;
     let subtitleInput: HTMLInputElement | undefined = $state();
 
-    // Parity with Lists Add card: form is always visible. Extra fields live
-    // inside the inner "+ More options" details. The outer collapse wrapper
-    // (previously a "+ Add an item" details) has been removed for visual
-    // parity between /collections/[id] and /lists/[type].
+    const templateFields = $derived(
+        (activeTemplate?.fields ?? []).filter(f => f.type !== 'relation')
+    );
+    const hasMoreOptions = $derived(
+        !!(creatorLabel || subtitleLabel || templateFields.length)
+    );
+
     export function focusTitle() {
         queueMicrotask(() => (creatorLabel ? creatorInput : titleInput)?.focus());
     }
@@ -82,8 +90,8 @@
         <button type="submit" disabled={scraping || !newQuery.trim()}>{$_('collection.add_button')}</button>
     </div>
 
-    {#if creatorLabel || subtitleLabel}
-        <details class="more-options">
+    {#if hasMoreOptions}
+        <details class="more-options" open={templateFields.length > 0}>
             <summary>{$_('common.more_options')}</summary>
             <div class="more-options-grid">
                 {#if creatorLabel}
@@ -104,6 +112,51 @@
                         class="subtitle-field"
                     />
                 {/if}
+                {#each templateFields as field (field.key)}
+                    <label class="template-field" class:required={field.required}>
+                        <span class="field-label">{field.label}{field.required ? ' *' : ''}</span>
+                        {#if field.type === 'boolean'}
+                            <input
+                                type="checkbox"
+                                checked={Boolean(newAttrs[field.key])}
+                                onchange={(e) => { newAttrs[field.key] = (e.currentTarget as HTMLInputElement).checked; }}
+                            />
+                        {:else if field.type === 'number'}
+                            <input
+                                type="number"
+                                value={newAttrs[field.key] != null ? String(newAttrs[field.key]) : ''}
+                                placeholder={field.help ?? ''}
+                                oninput={(e) => {
+                                    const v = (e.currentTarget as HTMLInputElement).value;
+                                    newAttrs[field.key] = v === '' ? undefined : Number(v);
+                                }}
+                            />
+                        {:else if field.type === 'date'}
+                            <input
+                                type="date"
+                                value={newAttrs[field.key] != null ? String(newAttrs[field.key]) : ''}
+                                oninput={(e) => { newAttrs[field.key] = (e.currentTarget as HTMLInputElement).value || undefined; }}
+                            />
+                        {:else if field.type === 'select'}
+                            <select
+                                value={newAttrs[field.key] != null ? String(newAttrs[field.key]) : ''}
+                                onchange={(e) => { newAttrs[field.key] = (e.currentTarget as HTMLSelectElement).value || undefined; }}
+                            >
+                                <option value="">—</option>
+                                {#each field.options ?? [] as opt}
+                                    <option value={opt}>{opt}</option>
+                                {/each}
+                            </select>
+                        {:else}
+                            <input
+                                type={field.type === 'url' ? 'url' : 'text'}
+                                value={newAttrs[field.key] != null ? String(newAttrs[field.key]) : ''}
+                                placeholder={field.help ?? ''}
+                                oninput={(e) => { newAttrs[field.key] = (e.currentTarget as HTMLInputElement).value || undefined; }}
+                            />
+                        {/if}
+                    </label>
+                {/each}
             </div>
         </details>
     {/if}
@@ -159,5 +212,28 @@
         flex-wrap: wrap;
         padding: 0.75rem;
         border-top: 1px solid var(--border);
+    }
+    .template-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1 1 160px;
+        min-width: 120px;
+    }
+    .template-field.required .field-label {
+        font-weight: 600;
+    }
+    .field-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        user-select: none;
+    }
+    .template-field input,
+    .template-field select {
+        width: 100%;
+    }
+    .template-field input[type='checkbox'] {
+        width: auto;
+        align-self: flex-start;
     }
 </style>
