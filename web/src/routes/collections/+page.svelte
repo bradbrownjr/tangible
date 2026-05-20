@@ -184,10 +184,12 @@
                 {/if}
             </a>
         {/each}
-        <button type="button" class="card new-card" onclick={openPicker}>
-            <Icon name="plus" size={24} />
-            <span>{$_('collections.add_button')}</span>
-        </button>
+        {#if !pickerOpen}
+            <button type="button" class="card new-card" onclick={openPicker}>
+                <Icon name="plus" size={24} />
+                <span>{$_('collections.add_button')}</span>
+            </button>
+        {/if}
     </div>
 {/if}
 

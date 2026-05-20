@@ -369,6 +369,8 @@
     "next_due_label": "Nächste Fälligkeit",
     "notes_label": "Notizen",
     "notes_placeholder": "Optionale Notizen",
+    "collection_label": "Sammlung",
+    "collection_none": "— keine —",
     "add_button": "Aufgabe hinzufügen",
     "no_chores": "Noch keine Aufgaben.",
     "mark_done_button": "Als erledigt markieren",

@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.76] — 2026-05-20
+
+### Fixed
+
+- **Web Add Chore form — i18n keys shown as raw text:** `chores.collection_label` and `chores.collection_none` were present in `en.json` locally but had never been committed, so the deployed Docker image was missing them. Added those keys to all 7 locale files (en, de, es, fr, it, ja, zh). Also renamed `chores.name_label` from `"Name"` to `"Chore name"` for clarity.
+- **Android Add Chore dialog — collection picker not visible when no collections exist:** The `ExposedDropdownMenuBox` was wrapped in `if (s.taskCollections.isNotEmpty())`, hiding it entirely for new users with no collections. Removed the guard — the picker now always shows, displaying only "— No collection (standalone)" when no collections exist.
+
+### Changed
+
+- **Web Collections page:** "Add collection" button is now hidden while the add-collection picker is already open, preventing duplicate UI.
+- **Web Lists page:** Same fix — "Add list" button hides while the add-list picker is open.
+
 ## [0.25.75] — 2026-05-20
 
 ### Fixed

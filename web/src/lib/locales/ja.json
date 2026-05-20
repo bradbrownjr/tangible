@@ -369,6 +369,8 @@
     "next_due_label": "次の予定",
     "notes_label": "メモ",
     "notes_placeholder": "オプションのメモ",
+    "collection_label": "コレクション",
+    "collection_none": "— なし —",
     "add_button": "家事を追加",
     "no_chores": "家事がまだありません。",
     "mark_done_button": "完了とマーク",

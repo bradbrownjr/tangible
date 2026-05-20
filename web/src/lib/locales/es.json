@@ -369,6 +369,8 @@
     "next_due_label": "Próxima fecha",
     "notes_label": "Notas",
     "notes_placeholder": "Notas opcionales",
+    "collection_label": "Colección",
+    "collection_none": "— ninguna —",
     "add_button": "Añadir tarea",
     "no_chores": "Sin tareas.",
     "mark_done_button": "Marcar como hecha",

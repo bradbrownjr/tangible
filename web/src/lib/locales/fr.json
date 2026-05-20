@@ -369,6 +369,8 @@
     "next_due_label": "Prochaine échéance",
     "notes_label": "Notes",
     "notes_placeholder": "Notes optionnelles",
+    "collection_label": "Collection",
+    "collection_none": "— aucune —",
     "add_button": "Ajouter la tâche",
     "no_chores": "Aucune tâche.",
     "mark_done_button": "Marquer comme fait",

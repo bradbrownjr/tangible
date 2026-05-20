@@ -369,6 +369,8 @@
     "next_due_label": "下次到期",
     "notes_label": "备注",
     "notes_placeholder": "可选备注",
+    "collection_label": "收藏",
+    "collection_none": "— 无 —",
     "add_button": "添加任务",
     "no_chores": "暂无任务。",
     "mark_done_button": "标记完成",

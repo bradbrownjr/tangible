@@ -369,6 +369,8 @@
     "next_due_label": "Prossima scadenza",
     "notes_label": "Note",
     "notes_placeholder": "Note opzionali",
+    "collection_label": "Raccolta",
+    "collection_none": "— nessuna —",
     "add_button": "Aggiungi attività",
     "no_chores": "Nessuna attività.",
     "mark_done_button": "Segna come fatto",

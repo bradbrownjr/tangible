@@ -849,29 +849,27 @@ private fun NewChoreDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
-                if (s.taskCollections.isNotEmpty()) {
-                    ExposedDropdownMenuBox(expanded = menuOpen, onExpandedChange = { menuOpen = it }) {
-                        val selectedName = s.taskCollections.firstOrNull { it.id == selectedCollectionId }?.name
-                            ?: stringResource(R.string.chore_no_collection)
-                        OutlinedTextField(
-                            value = selectedName,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.tasks_new_task_collection_label)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuOpen) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                ExposedDropdownMenuBox(expanded = menuOpen, onExpandedChange = { menuOpen = it }) {
+                    val selectedName = s.taskCollections.firstOrNull { it.id == selectedCollectionId }?.name
+                        ?: stringResource(R.string.chore_no_collection)
+                    OutlinedTextField(
+                        value = selectedName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.tasks_new_task_collection_label)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuOpen) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.chore_no_collection)) },
+                            onClick = { selectedCollectionId = ""; menuOpen = false },
                         )
-                        ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        s.taskCollections.forEach { col ->
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.chore_no_collection)) },
-                                onClick = { selectedCollectionId = ""; menuOpen = false },
+                                text = { Text(col.name) },
+                                onClick = { selectedCollectionId = col.id; menuOpen = false },
                             )
-                            s.taskCollections.forEach { col ->
-                                DropdownMenuItem(
-                                    text = { Text(col.name) },
-                                    onClick = { selectedCollectionId = col.id; menuOpen = false },
-                                )
-                            }
                         }
                     }
                 }
