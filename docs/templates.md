@@ -17,8 +17,6 @@ no matter what kind of thing you're tracking:
 | **Acquired date** | When you got it |
 | **Location** | Where it's stored |
 
-> **Note:** A **Subtitle** field also exists on every item (it's stored in the database and always editable), but the add-item form only surfaces it for music, books, movies, and games — it won't clutter the form for groceries, hardware, or other non-media categories.
-
 These fields exist on **every** item automatically — you will always see them
 in the edit form regardless of category or template.
 
@@ -45,6 +43,11 @@ points. Fields marked **\*** are required when using the template.
 
 Seeded for collections with root category `music`.
 
+In addition to the universal built-in fields, every item in a **Music** collection also has:
+
+| Field | What it's for |
+|---|---|
+| **Subtitle** | Secondary title, series name, or subtitle of the release |
 ### Vinyl
 `music.vinyl`
 
@@ -107,6 +110,11 @@ Seeded for collections with root category `music`.
 
 Seeded for collections with root category `movies`.
 
+In addition to the universal built-in fields, every item in a **Movies** collection also has:
+
+| Field | What it's for |
+|---|---|
+| **Subtitle** | Secondary title or subtitle of the film or series |
 ### Blu-ray / 4K UHD
 `movies.bluray`
 
@@ -166,6 +174,11 @@ Seeded for collections with root category `movies`.
 
 Seeded for collections with root category `books`.
 
+In addition to the universal built-in fields, every item in a **Books** collection also has:
+
+| Field | What it's for |
+|---|---|
+| **Subtitle** | Subtitle or series name of the book |
 ### Book
 `books.print`
 
@@ -199,6 +212,11 @@ Seeded for collections with root category `books`.
 
 Seeded for collections with root category `games`.
 
+In addition to the universal built-in fields, every item in a **Games** collection also has:
+
+| Field | What it's for |
+|---|---|
+| **Subtitle** | Subtitle or secondary title of the game |
 ### Game
 `games.software`
 

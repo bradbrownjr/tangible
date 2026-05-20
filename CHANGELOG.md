@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.84] — 2026-05-20
+
+### Changed
+- Subtitle field is now scoped to media categories only (music, books, movies, games) — it no longer appears in the add-item form, item edit panel, or item detail/edit sheet for non-media categories (groceries, hardware, tabletop, collectibles, etc.)
+- Fixed music collections missing the subtitle field (previously only books, movies, and games had it)
+- Docs: removed misleading "subtitle is always editable on every item" note; each media section in the template reference now lists Subtitle as a category-scoped built-in field
+
 ## [0.25.83] — 2026-05-20
 
 ### Changed

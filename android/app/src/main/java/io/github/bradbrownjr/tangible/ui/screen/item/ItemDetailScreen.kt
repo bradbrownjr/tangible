@@ -330,8 +330,11 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, onAddPhoto: () 
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             (item.attrs["brand"] as? String)?.takeIf { it.isNotBlank() }?.let { Field(stringResource(R.string.brand), it) }
-            item.subtitle?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val isMediaItem = item.category_slug?.split('.')?.firstOrNull() in setOf("music", "books", "movies", "games")
+            if (isMediaItem) {
+                item.subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             item.category_slug?.let { Field(stringResource(R.string.category), it) }
             Field(stringResource(R.string.quantity), item.quantity.toString())
@@ -586,13 +589,16 @@ private fun EditItemSheet(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
-                value = s.subtitle,
-                onValueChange = { vm.update { copy(subtitle = it) } },
-                label = { Text(stringResource(R.string.subtitle)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            val isMediaCategory = s.item?.category_slug?.split('.')?.firstOrNull() in setOf("music", "books", "movies", "games")
+            if (isMediaCategory) {
+                OutlinedTextField(
+                    value = s.subtitle,
+                    onValueChange = { vm.update { copy(subtitle = it) } },
+                    label = { Text(stringResource(R.string.subtitle)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             OutlinedTextField(
                 value = s.notes,
                 onValueChange = { vm.update { copy(notes = it) } },

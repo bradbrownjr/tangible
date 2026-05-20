@@ -176,7 +176,7 @@
     });
     const showCollectionSubtitle = $derived.by(() => {
         const root = (collection?.default_category_slug ?? '').split('.')[0];
-        return root === 'books' || root === 'movies' || root === 'games';
+        return root === 'music' || root === 'books' || root === 'movies' || root === 'games';
     });
     const templateById = $derived.by(() => {
         const byId = new Map<string, ItemTemplate>();
