@@ -10,6 +10,14 @@ from tangible.importers.clz import (
     CLZMovieImporter,
     CLZMusicImporter,
 )
+from tangible.importers.clz_csv import (
+    CLZ_CSV_IMPORTERS,
+    CLZCSVBooksImporter,
+    CLZCSVComicsImporter,
+    CLZCSVGamesImporter,
+    CLZCSVMoviesImporter,
+    CLZCSVMusicImporter,
+)
 from tangible.importers.csv_importer import CSVImporter
 from tangible.importers.json_backup import (
     BACKUP_VERSION,
@@ -21,10 +29,16 @@ from tangible.importers.json_backup import (
 
 __all__ = [
     "BACKUP_VERSION",
+    "CLZ_CSV_IMPORTERS",
     "CLZ_IMPORTERS",
     "BackupStats",
     "CLZBookImporter",
     "CLZComicImporter",
+    "CLZCSVBooksImporter",
+    "CLZCSVComicsImporter",
+    "CLZCSVGamesImporter",
+    "CLZCSVMoviesImporter",
+    "CLZCSVMusicImporter",
     "CLZGameImporter",
     "CLZImporter",
     "CLZMovieImporter",

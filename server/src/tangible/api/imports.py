@@ -16,7 +16,7 @@ from tangible.auth.deps import (
     require_user,
 )
 from tangible.db import get_session
-from tangible.importers import CLZ_IMPORTERS, BackupStats, CSVImporter, export_user, import_backup
+from tangible.importers import CLZ_CSV_IMPORTERS, CLZ_IMPORTERS, BackupStats, CSVImporter, export_user, import_backup
 from tangible.models import Category, Item
 from tangible.services.categories import resolve_slug
 
@@ -229,6 +229,66 @@ async def import_csv(
             detail="mapping must be a JSON object",
         )
     importer = CSVImporter(default_category_slug=category, mapping=column_map)
+    result = importer.parse(file.file)
+    inserted = _persist_items(
+        db,
+        collection_id=collection_id,
+        items_data=[
+            {
+                "category_slug": i.category_slug,
+                "title": i.title,
+                "subtitle": i.subtitle,
+                "notes": i.notes,
+                "condition": i.condition,
+                "quantity": i.quantity,
+                "purchase_price": i.purchase_price,
+                "current_value": i.current_value,
+                "currency": i.currency,
+                "location": i.location,
+                "identifiers": i.identifiers,
+                "attrs": i.attrs,
+            }
+            for i in result.items
+        ],
+    )
+    return {"imported": inserted, "warnings": result.warnings}
+
+
+@router.post("/clz-csv", status_code=status.HTTP_200_OK)
+async def import_clz_csv(
+    collection_id: Annotated[str, Form(...)],
+    flavor: Annotated[
+        str,
+        Form(
+            ...,
+            description=(
+                "One of: clz-csv-games / clz-csv-movies / clz-csv-music "
+                "/ clz-csv-books / clz-csv-comics"
+            ),
+        ),
+    ],
+    file: Annotated[UploadFile, File(...)],
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> dict:
+    """Import a CLZ CSV export using a pre-built column mapping.
+
+    Accepts the CSV file that CLZ apps produce via their built-in CSV export
+    (not the XML export — use ``/imports/clz`` for XML).  No manual mapping
+    is required; the flavor parameter selects the appropriate pre-wired
+    mapping for the CLZ product that generated the file.
+    """
+    _check_collection(db, auth, collection_id)
+    importer_cls = CLZ_CSV_IMPORTERS.get(flavor)
+    if importer_cls is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Unknown CLZ CSV flavor: {flavor!r}. "
+                f"Valid values: {', '.join(sorted(CLZ_CSV_IMPORTERS))}"
+            ),
+        )
+    importer = importer_cls()
     result = importer.parse(file.file)
     inserted = _persist_items(
         db,
