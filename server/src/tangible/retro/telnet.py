@@ -195,6 +195,18 @@ class TelnetSession:
             elif choice == "6":
                 await self._list_collections()
             elif choice == "7":
+                await self._shopping_lists()
+            elif choice == "8":
+                await self._tasks_menu()
+            elif choice == "9":
+                await self._chores_menu()
+            elif choice == "10":
+                await self._maintenance_menu()
+            elif choice == "11":
+                await self._locations_menu()
+            elif choice == "12":
+                await self._loans_menu()
+            elif choice == "0":
                 await self._writeln("\r\n   SIGNING OUT. THANK YOU.\r\n")
                 return
             else:
@@ -752,6 +764,839 @@ class TelnetSession:
                 await self._browse_items(coll_data[idx][0], coll_data[idx][1])
         except ValueError:
             pass
+
+    # ------------------------------------------------------------------
+    # Shopping lists
+    # ------------------------------------------------------------------
+
+    _LIST_TYPE_LABELS = {
+        "groceries": "GROCERIES",
+        "hardware": "HARDWARE",
+        "home_goods": "HOME GOODS",
+        "wish_list": "WISH LIST",
+    }
+
+    async def _shopping_lists(self) -> None:
+        from tangible.retro.terminal import clear_screen, box_top, box_bottom, hr, WIDTH
+
+        while True:
+            lines = [
+                clear_screen(),
+                box_top("SHOPPING LISTS", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                "   1. GROCERIES",
+                "   2. HARDWARE",
+                "   3. HOME GOODS",
+                "   4. WISH LIST",
+                "",
+                hr(),
+                "   ENTER NUMBER OR [B]ack: ",
+            ]
+            await self._write("\r\n".join(lines))
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            lt_map = {"1": "groceries", "2": "hardware", "3": "home_goods", "4": "wish_list"}
+            if sel in lt_map:
+                await self._shopping_list(lt_map[sel])
+
+    async def _shopping_list(self, list_type: str) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr, table_header,
+            table_row as trow, table_footer, paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.shopping import ShoppingItem
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+
+        label = self._LIST_TYPE_LABELS.get(list_type, list_type.upper())
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        show_done = False
+        page = 0
+
+        while True:
+            with Session() as db:
+                user = db.scalar(select(User).where(User.username == self.username))
+                if user is None:
+                    return
+                coll_ids = [c.id for c in db.scalars(
+                    select(Collection).where(
+                        (Collection.owner_id == user.id) |
+                        Collection.memberships.any(user_id=user.id)
+                    )
+                ).all()]
+                stmt = select(ShoppingItem).where(
+                    ShoppingItem.list_type == list_type,
+                    ShoppingItem.collection_id.in_(coll_ids),
+                )
+                if show_done:
+                    stmt = stmt.where(ShoppingItem.purchased_at.isnot(None))
+                else:
+                    stmt = stmt.where(ShoppingItem.purchased_at.is_(None))
+                all_items = db.scalars(stmt.order_by(ShoppingItem.name)).all()
+
+            page_items, total_pages = paginate(list(all_items), page, 18)
+
+            if list_type == "wish_list":
+                cols = [("  #", 3), ("NAME", 35), ("PRI", 6), ("NOTES", 26)]
+            else:
+                cols = [("  #", 3), ("NAME", 32), ("QTY", 6), ("BRAND", 16), ("NOTES", 13)]
+
+            lines = [
+                clear_screen(),
+                box_top(f"{label} ({'PURCHASED' if show_done else 'ACTIVE'})", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, it in enumerate(page_items, page * 18 + 1):
+                if list_type == "wish_list":
+                    pri = {1: "LOW", 2: "MED", 3: "HIGH"}.get(it.wish_priority or 0, "")
+                    lines.append(trow(
+                        (str(i), 3), (it.name[:35], 35), (pri, 6), ((it.notes or "")[:26], 26)
+                    ))
+                else:
+                    qty = f"{it.quantity} {it.unit or ''}".strip()[:6]
+                    lines.append(trow(
+                        (str(i), 3), (it.name[:32], 32), (qty, 6),
+                        ((it.brand or "")[:16], 16), ((it.notes or "")[:13], 13),
+                    ))
+            lines.append(table_footer(*cols))
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)
+                + "  [A]dd  [M]ark#  [T]oggle",
+            ]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            elif sel == "T":
+                show_done = not show_done
+                page = 0
+            elif sel == "A":
+                await self._add_shopping_item(list_type)
+            elif sel.startswith("M"):
+                # Mark purchased: "M3" or just enter number after prompt
+                rest = sel[1:].strip()
+                if not rest:
+                    await self._write("   ENTER ITEM NUMBER: ")
+                    rest = (await self._readline()).strip()
+                try:
+                    idx = int(rest) - 1 - (page * 18)
+                    if 0 <= idx < len(page_items):
+                        await self._mark_purchased(page_items[idx].id, label)
+                except ValueError:
+                    pass
+            else:
+                try:
+                    idx = int(sel) - 1 - (page * 18)
+                    if 0 <= idx < len(page_items):
+                        await self._mark_purchased(page_items[idx].id, label)
+                except ValueError:
+                    pass
+
+    async def _add_shopping_item(self, list_type: str) -> None:
+        from tangible.retro.terminal import clear_screen, box_top, box_bottom, hr, WIDTH
+        from tangible.models.shopping import ShoppingItem
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+        from tangible.models.base import ulid_str
+
+        label = self._LIST_TYPE_LABELS.get(list_type, list_type.upper())
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+        with Session() as db:
+            user = db.scalar(select(User).where(User.username == self.username))
+            if user is None:
+                return
+            colls = db.scalars(
+                select(Collection).where(
+                    (Collection.owner_id == user.id) |
+                    Collection.memberships.any(user_id=user.id)
+                ).order_by(Collection.name)
+            ).all()
+            coll_list = list(colls)
+
+        lines = [
+            clear_screen(),
+            box_top(f"ADD TO {label}", WIDTH),
+            box_bottom(WIDTH),
+            "",
+        ]
+        for i, c in enumerate(coll_list, 1):
+            lines.append(f"   {i:2}. {c.name[:50]}")
+        lines += ["", hr(), "   SELECT COLLECTION (or [B]ack): "]
+        await self._write("\r\n".join(lines))
+        sel = (await self._readline()).strip().upper()
+        if sel == "B":
+            return
+        try:
+            coll_idx = int(sel) - 1
+            if not (0 <= coll_idx < len(coll_list)):
+                return
+        except ValueError:
+            return
+        chosen_coll = coll_list[coll_idx]
+
+        await self._write("\r\n")
+        await self._write("   NAME: ")
+        name = (await self._readline()).strip()
+        if not name:
+            return
+        await self._write("   QUANTITY (enter=1): ")
+        qty_raw = (await self._readline()).strip()
+        try:
+            qty = int(qty_raw) if qty_raw else 1
+        except ValueError:
+            qty = 1
+        await self._write("   UNIT (e.g. lbs, pcs, enter=skip): ")
+        unit = (await self._readline()).strip() or None
+        if list_type != "wish_list":
+            await self._write("   BRAND (enter=skip): ")
+            brand = (await self._readline()).strip() or None
+        else:
+            brand = None
+        await self._write("   NOTES (enter=skip): ")
+        notes = (await self._readline()).strip() or None
+
+        await self._write(f"\r\n   ADD \"{name}\" TO {label}? (Y/N): ")
+        if (await self._readline()).strip().upper() != "Y":
+            await self._writeln("   CANCELLED.")
+            await self._pause()
+            return
+
+        with Session() as db:
+            item = ShoppingItem(
+                id=ulid_str(),
+                name=name,
+                quantity=qty,
+                unit=unit,
+                brand=brand,
+                notes=notes,
+                list_type=list_type,
+                collection_id=chosen_coll.id,
+            )
+            db.add(item)
+            db.commit()
+
+        await self._writeln("   ITEM ADDED.")
+        await self._pause()
+
+    async def _mark_purchased(self, item_id: str, label: str) -> None:
+        from tangible.models.shopping import ShoppingItem
+        from tangible.models.user import User
+
+        await self._write(f"\r\n   MARK AS PURCHASED? (Y/N): ")
+        if (await self._readline()).strip().upper() != "Y":
+            return
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        with Session() as db:
+            user = db.scalar(select(User).where(User.username == self.username))
+            item = db.get(ShoppingItem, item_id)
+            if item:
+                item.purchased_at = datetime.utcnow()
+                if user:
+                    item.purchased_by_user_id = user.id
+                db.commit()
+        await self._writeln("   MARKED PURCHASED.")
+        await self._pause()
+
+    # ------------------------------------------------------------------
+    # Tasks
+    # ------------------------------------------------------------------
+
+    async def _tasks_menu(self) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr,
+            table_header, table_row as trow, table_footer,
+            paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.maintenance import StandaloneTask
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        show_done = False
+        page = 0
+
+        while True:
+            with Session() as db:
+                user = db.scalar(select(User).where(User.username == self.username))
+                if user is None:
+                    return
+                coll_ids = [c.id for c in db.scalars(
+                    select(Collection).where(
+                        (Collection.owner_id == user.id) |
+                        Collection.memberships.any(user_id=user.id)
+                    )
+                ).all()]
+                stmt = select(StandaloneTask).where(StandaloneTask.collection_id.in_(coll_ids))
+                if show_done:
+                    stmt = stmt.where(StandaloneTask.completed_at.isnot(None))
+                else:
+                    stmt = stmt.where(StandaloneTask.completed_at.is_(None))
+                stmt = stmt.order_by(StandaloneTask.due_at.nullslast())
+                all_tasks = db.scalars(stmt).all()
+
+            page_items, total_pages = paginate(list(all_tasks), page, 18)
+            cols = [("  #", 3), ("TITLE", 38), ("DUE", 10), ("COLLECTION", 18)]
+
+            lines = [
+                clear_screen(),
+                box_top(f"TASKS ({'COMPLETED' if show_done else 'OPEN'})", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, t in enumerate(page_items, page * 18 + 1):
+                due = str(t.due_at.date()) if t.due_at else ""
+                coll_name = (t.collection.name[:18] if t.collection else "")
+                lines.append(trow(
+                    (str(i), 3), ((t.title or "")[:38], 38), (due, 10), (coll_name, 18)
+                ))
+            lines.append(table_footer(*cols))
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  "
+                + pagination_prompt(page, total_pages)
+                + "  [A]dd  [C]omplete#  [T]oggle",
+            ]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            elif sel == "T":
+                show_done = not show_done
+                page = 0
+            elif sel == "A":
+                await self._add_task()
+            elif sel.startswith("C"):
+                rest = sel[1:].strip()
+                if not rest:
+                    await self._write("   ENTER TASK NUMBER: ")
+                    rest = (await self._readline()).strip()
+                try:
+                    idx = int(rest) - 1 - (page * 18)
+                    if 0 <= idx < len(page_items):
+                        await self._complete_task(page_items[idx].id)
+                except ValueError:
+                    pass
+
+    async def _add_task(self) -> None:
+        from tangible.models.maintenance import StandaloneTask
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+        from tangible.models.base import ulid_str
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+        with Session() as db:
+            user = db.scalar(select(User).where(User.username == self.username))
+            if user is None:
+                return
+            coll_list = list(db.scalars(
+                select(Collection).where(
+                    (Collection.owner_id == user.id) |
+                    Collection.memberships.any(user_id=user.id)
+                ).order_by(Collection.name)
+            ).all())
+            user_id = user.id
+
+        from tangible.retro.terminal import clear_screen, box_top, box_bottom, hr, WIDTH
+        lines = [clear_screen(), box_top("ADD TASK", WIDTH), box_bottom(WIDTH), ""]
+        for i, c in enumerate(coll_list, 1):
+            lines.append(f"   {i:2}. {c.name[:50]}")
+        lines += ["", hr(), "   SELECT COLLECTION (or [B]ack): "]
+        await self._write("\r\n".join(lines))
+        sel = (await self._readline()).strip().upper()
+        if sel == "B":
+            return
+        try:
+            coll_idx = int(sel) - 1
+            if not (0 <= coll_idx < len(coll_list)):
+                return
+        except ValueError:
+            return
+        chosen_coll = coll_list[coll_idx]
+
+        await self._write("\r\n   TITLE: ")
+        title = (await self._readline()).strip()
+        if not title:
+            return
+        await self._write("   DUE DATE (YYYY-MM-DD, enter=skip): ")
+        due_raw = (await self._readline()).strip()
+        due_at = None
+        if due_raw:
+            try:
+                from datetime import date
+                due_at = datetime.combine(date.fromisoformat(due_raw), datetime.min.time())
+            except ValueError:
+                pass
+        await self._write("   NOTES (enter=skip): ")
+        notes = (await self._readline()).strip() or None
+
+        with Session() as db:
+            db.add(StandaloneTask(
+                id=ulid_str(),
+                title=title,
+                notes=notes,
+                due_at=due_at,
+                collection_id=chosen_coll.id,
+                created_by_user_id=user_id,
+            ))
+            db.commit()
+        await self._writeln("   TASK CREATED.")
+        await self._pause()
+
+    async def _complete_task(self, task_id: str) -> None:
+        from tangible.models.maintenance import StandaloneTask
+        from tangible.models.user import User
+
+        await self._write("\r\n   MARK TASK COMPLETE? (Y/N): ")
+        if (await self._readline()).strip().upper() != "Y":
+            return
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        with Session() as db:
+            user = db.scalar(select(User).where(User.username == self.username))
+            task = db.get(StandaloneTask, task_id)
+            if task:
+                task.completed_at = datetime.utcnow()
+                if user:
+                    task.completed_by_user_id = user.id
+                db.commit()
+        await self._writeln("   TASK MARKED COMPLETE.")
+        await self._pause()
+
+    # ------------------------------------------------------------------
+    # Chores
+    # ------------------------------------------------------------------
+
+    async def _chores_menu(self) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr,
+            table_header, table_row as trow, table_footer,
+            paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.maintenance import Chore, ChoreCompletion
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+        from tangible.models.base import ulid_str
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        page = 0
+
+        while True:
+            with Session() as db:
+                user = db.scalar(select(User).where(User.username == self.username))
+                if user is None:
+                    return
+                coll_ids = [c.id for c in db.scalars(
+                    select(Collection).where(
+                        (Collection.owner_id == user.id) |
+                        Collection.memberships.any(user_id=user.id)
+                    )
+                ).all()]
+                all_chores = db.scalars(
+                    select(Chore).where(
+                        (Chore.collection_id.in_(coll_ids)) | (Chore.owner_user_id == user.id)
+                    ).order_by(Chore.next_due_at.nullslast(), Chore.name)
+                ).all()
+
+            page_items, total_pages = paginate(list(all_chores), page, 18)
+            cols = [("  #", 3), ("CHORE", 32), ("INTERVAL", 8), ("LAST DONE", 10), ("NEXT DUE", 10)]
+
+            lines = [
+                clear_screen(),
+                box_top("CHORES", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, c in enumerate(page_items, page * 18 + 1):
+                last = str(c.last_completed_at.date()) if c.last_completed_at else "NEVER"
+                due = str(c.next_due_at.date()) if c.next_due_at else ""
+                lines.append(trow(
+                    (str(i), 3), (c.name[:32], 32),
+                    (str(c.interval_days or ""), 8), (last, 10), (due, 10),
+                ))
+            lines.append(table_footer(*cols))
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  "
+                + pagination_prompt(page, total_pages)
+                + "  ENTER # TO COMPLETE: ",
+            ]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            else:
+                try:
+                    idx = int(sel) - 1 - (page * 18)
+                    if 0 <= idx < len(page_items):
+                        chore = page_items[idx]
+                        await self._write(f"\r\n   MARK '{chore.name[:40]}' COMPLETE? (Y/N): ")
+                        if (await self._readline()).strip().upper() == "Y":
+                            with Session() as db:
+                                c = db.get(Chore, chore.id)
+                                if c:
+                                    now = datetime.utcnow()
+                                    db.add(ChoreCompletion(
+                                        id=ulid_str(), chore_id=c.id, completed_at=now
+                                    ))
+                                    c.last_completed_at = now
+                                    if c.interval_days:
+                                        from datetime import timedelta
+                                        c.next_due_at = now + timedelta(days=c.interval_days)
+                                    db.commit()
+                            await self._writeln("   CHORE COMPLETED.")
+                            await self._pause()
+                except ValueError:
+                    pass
+
+    # ------------------------------------------------------------------
+    # Maintenance
+    # ------------------------------------------------------------------
+
+    async def _maintenance_menu(self) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr,
+            table_header, table_row as trow, table_footer,
+            paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.maintenance import MaintenanceTask, MaintenanceCompletion
+        from tangible.models.item import Item
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+        from tangible.models.base import ulid_str
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        page = 0
+
+        while True:
+            with Session() as db:
+                user = db.scalar(select(User).where(User.username == self.username))
+                if user is None:
+                    return
+                coll_ids = [c.id for c in db.scalars(
+                    select(Collection).where(
+                        (Collection.owner_id == user.id) |
+                        Collection.memberships.any(user_id=user.id)
+                    )
+                ).all()]
+                all_tasks = db.scalars(
+                    select(MaintenanceTask)
+                    .join(Item, MaintenanceTask.item_id == Item.id)
+                    .where(Item.collection_id.in_(coll_ids))
+                    .order_by(MaintenanceTask.next_due_at.nullslast(), MaintenanceTask.name)
+                ).all()
+
+            page_items, total_pages = paginate(list(all_tasks), page, 16)
+            cols = [("  #", 3), ("TASK", 26), ("ITEM", 22), ("INT", 4), ("LAST", 10), ("DUE", 10)]
+
+            lines = [
+                clear_screen(),
+                box_top("MAINTENANCE", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, t in enumerate(page_items, page * 16 + 1):
+                item_title = (t.item.title[:22] if t.item else t.item_id[:22])
+                last = str(t.last_completed_at.date()) if t.last_completed_at else "NEVER"
+                due = str(t.next_due_at.date()) if t.next_due_at else ""
+                lines.append(trow(
+                    (str(i), 3), (t.name[:26], 26), (item_title, 22),
+                    (str(t.interval_days or ""), 4), (last, 10), (due, 10),
+                ))
+            lines.append(table_footer(*cols))
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  "
+                + pagination_prompt(page, total_pages)
+                + "  ENTER # TO COMPLETE: ",
+            ]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            else:
+                try:
+                    idx = int(sel) - 1 - (page * 16)
+                    if 0 <= idx < len(page_items):
+                        task = page_items[idx]
+                        await self._write(f"\r\n   MARK '{task.name[:40]}' COMPLETE? (Y/N): ")
+                        if (await self._readline()).strip().upper() == "Y":
+                            with Session() as db:
+                                t = db.get(MaintenanceTask, task.id)
+                                if t:
+                                    now = datetime.utcnow()
+                                    db.add(MaintenanceCompletion(
+                                        id=ulid_str(), task_id=t.id, completed_at=now
+                                    ))
+                                    t.last_completed_at = now
+                                    if t.interval_days:
+                                        from datetime import timedelta
+                                        t.next_due_at = now + timedelta(days=t.interval_days)
+                                    db.commit()
+                            await self._writeln("   MAINTENANCE LOGGED.")
+                            await self._pause()
+                except ValueError:
+                    pass
+
+    # ------------------------------------------------------------------
+    # Locations
+    # ------------------------------------------------------------------
+
+    async def _locations_menu(self) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr,
+            table_header, table_row as trow, table_footer,
+            paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.location import Location
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        page = 0
+
+        while True:
+            with Session() as db:
+                user = db.scalar(select(User).where(User.username == self.username))
+                if user is None:
+                    return
+                coll_ids = [c.id for c in db.scalars(
+                    select(Collection).where(
+                        (Collection.owner_id == user.id) |
+                        Collection.memberships.any(user_id=user.id)
+                    )
+                ).all()]
+                all_locs = db.scalars(
+                    select(Location)
+                    .where(Location.collection_id.in_(coll_ids))
+                    .order_by(Location.collection_id, Location.name)
+                ).all()
+
+            page_items, total_pages = paginate(list(all_locs), page, 20)
+            cols = [("  #", 3), ("LOCATION", 36), ("KIND", 10), ("COLLECTION", 22)]
+
+            lines = [
+                clear_screen(),
+                box_top("LOCATIONS", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, loc in enumerate(page_items, page * 20 + 1):
+                coll_name = (loc.collection.name[:22] if loc.collection else "")
+                lines.append(trow(
+                    (str(i), 3), (loc.name[:36], 36), ((loc.kind or "")[:10], 10), (coll_name, 22)
+                ))
+            lines.append(table_footer(*cols))
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages),
+            ]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            else:
+                try:
+                    idx = int(sel) - 1 - (page * 20)
+                    if 0 <= idx < len(page_items):
+                        await self._location_items(page_items[idx].id, page_items[idx].name)
+                except ValueError:
+                    pass
+
+    async def _location_items(self, location_id: str, location_name: str) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr,
+            table_header, table_row as trow, table_footer,
+            paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.item import Item
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        page = 0
+
+        while True:
+            with Session() as db:
+                all_items = db.scalars(
+                    select(Item).where(
+                        Item.location_id == location_id,
+                        Item.archived_at.is_(None),
+                    ).order_by(Item.title)
+                ).all()
+
+            page_items, total_pages = paginate(list(all_items), page, 20)
+            cols = [("  #", 3), ("TITLE", 44), ("COND", 8), ("QTY", 4)]
+
+            lines = [
+                clear_screen(),
+                box_top(f"LOCATION: {location_name[:30]}", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, item in enumerate(page_items, page * 20 + 1):
+                lines.append(trow(
+                    (str(i), 3), ((item.title or "")[:44], 44),
+                    ((item.condition or "")[:8], 8), (str(item.quantity or 1), 4),
+                ))
+            lines.append(table_footer(*cols))
+            lines += ["", hr(), f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            else:
+                try:
+                    idx = int(sel) - 1 - (page * 20)
+                    if 0 <= idx < len(page_items):
+                        await self._item_detail(page_items[idx].id)
+                except ValueError:
+                    pass
+
+    # ------------------------------------------------------------------
+    # Loans
+    # ------------------------------------------------------------------
+
+    async def _loans_menu(self) -> None:
+        from tangible.retro.terminal import (
+            clear_screen, box_top, box_bottom, hr,
+            table_header, table_row as trow, table_footer,
+            paginate, pagination_prompt, WIDTH,
+        )
+        from tangible.models.loan import Loan
+        from tangible.models.item import Item
+        from tangible.models.collection import Collection
+        from tangible.models.user import User
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        page = 0
+
+        while True:
+            with Session() as db:
+                user = db.scalar(select(User).where(User.username == self.username))
+                if user is None:
+                    return
+                coll_ids = [c.id for c in db.scalars(
+                    select(Collection).where(
+                        (Collection.owner_id == user.id) |
+                        Collection.memberships.any(user_id=user.id)
+                    )
+                ).all()]
+                all_loans = db.scalars(
+                    select(Loan)
+                    .join(Item, Loan.item_id == Item.id)
+                    .where(
+                        Item.collection_id.in_(coll_ids),
+                        Loan.returned_at.is_(None),
+                    )
+                    .order_by(Loan.loaned_at.desc())
+                ).all()
+                # Eagerly resolve item titles and contact names within the session
+                from tangible.models.contact import Contact as _Contact
+                loan_display: list[tuple] = []
+                for ln in all_loans:
+                    _it = db.get(Item, ln.item_id)
+                    _ct = db.get(_Contact, ln.contact_id) if ln.contact_id else None
+                    loan_display.append((
+                        ln.id,
+                        (_it.title[:30] if _it else ln.item_id[:30]),
+                        ((_ct.name or _ct.email or "")[:22] if _ct else ""),
+                        str(ln.loaned_at.date()) if ln.loaned_at else "",
+                        str(ln.due_at.date()) if ln.due_at else "",
+                        ln.item_id,
+                    ))
+
+            page_disp, total_pages = paginate(loan_display, page, 18)
+            cols = [("  #", 3), ("ITEM", 30), ("LOANED TO", 22), ("LOANED", 10), ("DUE", 10)]
+
+            lines = [
+                clear_screen(),
+                box_top("ACTIVE LOANS", WIDTH),
+                box_bottom(WIDTH),
+                "",
+                table_header(*cols),
+            ]
+            for i, (lid, item_title, contact, loaned, due, item_id) in enumerate(page_disp, page * 18 + 1):
+                lines.append(trow(
+                    (str(i), 3), (item_title, 30), (contact, 22), (loaned, 10), (due, 10)
+                ))
+            lines.append(table_footer(*cols))
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)
+                + "  ENTER # TO VIEW ITEM: ",
+            ]
+            await self._write("\r\n".join(lines))
+
+            sel = (await self._readline()).strip().upper()
+            if sel == "B":
+                return
+            elif sel == "N" and page < total_pages - 1:
+                page += 1
+            elif sel == "P" and page > 0:
+                page -= 1
+            else:
+                try:
+                    idx = int(sel) - 1 - (page * 18)
+                    if 0 <= idx < len(page_disp):
+                        await self._item_detail(page_disp[idx][5])  # item_id
+                except ValueError:
+                    pass
 
     # ------------------------------------------------------------------
     # Low-level I/O helpers

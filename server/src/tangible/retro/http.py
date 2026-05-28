@@ -278,6 +278,158 @@ async def _dispatch(
         # Send 401 so the browser forgets stored Basic Auth credentials
         _send_auth_challenge(writer, force_logout=True)
 
+    # ------------------------------------------------------------------
+    # Shopping lists
+    # ------------------------------------------------------------------
+
+    elif path == "/lists":
+        with Session() as db:
+            body = _page_lists(db, username)
+        _send_html(writer, body)
+
+    elif path.startswith("/lists/") and path.endswith("/new"):
+        list_type = path.split("/")[2]
+        coll_id = q("collection_id")
+        if method == "POST":
+            with Session() as db:
+                result = _action_create_shopping_item(db, username, p)
+            if isinstance(result, str) and result.startswith("REDIRECT:"):
+                _send_redirect(writer, result[9:])
+            else:
+                _send_html(writer, result)
+        else:
+            with Session() as db:
+                body = _page_new_shopping_item(db, username, list_type, coll_id)
+            _send_html(writer, body)
+
+    elif path.startswith("/lists/") and path.endswith("/buy"):
+        parts = path.split("/")
+        list_type = parts[2] if len(parts) > 3 else ""
+        item_id = parts[3] if len(parts) > 3 else ""
+        if method == "POST":
+            with Session() as db:
+                result = _action_buy_shopping_item(db, username, item_id, list_type)
+            if isinstance(result, str) and result.startswith("REDIRECT:"):
+                _send_redirect(writer, result[9:])
+            else:
+                _send_html(writer, result)
+        else:
+            _send_redirect(writer, f"/lists/{list_type}")
+
+    elif path.startswith("/lists/"):
+        list_type = path.split("/")[2] if len(path.split("/")) > 2 else ""
+        coll_id = q("collection_id")
+        show_done = q("done") == "1"
+        with Session() as db:
+            body = _page_list(db, username, list_type, coll_id, show_done)
+        _send_html(writer, body)
+
+    # ------------------------------------------------------------------
+    # Tasks
+    # ------------------------------------------------------------------
+
+    elif path == "/tasks" and method == "POST":
+        with Session() as db:
+            result = _action_create_task(db, username, p)
+        if isinstance(result, str) and result.startswith("REDIRECT:"):
+            _send_redirect(writer, result[9:])
+        else:
+            _send_html(writer, result)
+
+    elif path.startswith("/tasks/") and path.endswith("/complete"):
+        task_id = path.split("/")[2]
+        if method == "POST":
+            with Session() as db:
+                result = _action_complete_task(db, username, task_id)
+            if isinstance(result, str) and result.startswith("REDIRECT:"):
+                _send_redirect(writer, result[9:])
+            else:
+                _send_html(writer, result)
+        else:
+            _send_redirect(writer, "/tasks")
+
+    elif path == "/tasks":
+        show_done = q("done") == "1"
+        coll_id = q("collection_id")
+        with Session() as db:
+            body = _page_tasks(db, username, show_done, coll_id)
+        _send_html(writer, body)
+
+    # ------------------------------------------------------------------
+    # Chores
+    # ------------------------------------------------------------------
+
+    elif path.startswith("/chores/") and path.endswith("/complete"):
+        chore_id = path.split("/")[2]
+        if method == "POST":
+            with Session() as db:
+                result = _action_complete_chore(db, username, chore_id)
+            if isinstance(result, str) and result.startswith("REDIRECT:"):
+                _send_redirect(writer, result[9:])
+            else:
+                _send_html(writer, result)
+        else:
+            _send_redirect(writer, "/chores")
+
+    elif path == "/chores":
+        with Session() as db:
+            body = _page_chores(db, username)
+        _send_html(writer, body)
+
+    # ------------------------------------------------------------------
+    # Maintenance
+    # ------------------------------------------------------------------
+
+    elif path.startswith("/maintenance/") and path.endswith("/complete"):
+        task_id = path.split("/")[2]
+        if method == "POST":
+            with Session() as db:
+                result = _action_complete_maintenance(db, username, task_id)
+            if isinstance(result, str) and result.startswith("REDIRECT:"):
+                _send_redirect(writer, result[9:])
+            else:
+                _send_html(writer, result)
+        else:
+            _send_redirect(writer, "/maintenance")
+
+    elif path == "/maintenance":
+        with Session() as db:
+            body = _page_maintenance(db, username)
+        _send_html(writer, body)
+
+    # ------------------------------------------------------------------
+    # Locations
+    # ------------------------------------------------------------------
+
+    elif path.startswith("/locations/"):
+        loc_id = path.split("/")[2] if len(path.split("/")) > 2 else ""
+        with Session() as db:
+            body = _page_location(db, username, loc_id)
+        _send_html(writer, body)
+
+    elif path == "/locations":
+        with Session() as db:
+            body = _page_locations(db, username)
+        _send_html(writer, body)
+
+    # ------------------------------------------------------------------
+    # Loans
+    # ------------------------------------------------------------------
+
+    elif path == "/loans":
+        with Session() as db:
+            body = _page_loans(db, username)
+        _send_html(writer, body)
+
+    # ------------------------------------------------------------------
+    # Stores
+    # ------------------------------------------------------------------
+
+    elif path == "/stores":
+        with Session() as db:
+            body = _page_stores(db, username)
+        _send_html(writer, body)
+
     else:
         from tangible.retro.html_gen import error_page
         _send_html(writer, error_page("Not Found", "The requested page was not found."), status=404)
@@ -647,6 +799,639 @@ def _action_edit_item(
     item.category_id = cat_id
     db.commit()
     return f"REDIRECT:/items/{item_id}"
+
+
+# ---------------------------------------------------------------------------
+# Shopping list page handlers
+# ---------------------------------------------------------------------------
+
+_LIST_TYPE_LABELS = {
+    "groceries": "Groceries",
+    "hardware": "Hardware",
+    "home_goods": "Home Goods",
+    "wish_list": "Wish List",
+}
+
+
+def _page_lists(db: DBSession, username: str) -> bytes:
+    from tangible.retro.html_gen import page
+    body = "<P>Select a list type:</P>\n<UL>\n"
+    for lt, label in _LIST_TYPE_LABELS.items():
+        body += f'<LI><A HREF="/lists/{lt}">{label}</A></LI>\n'
+    body += "</UL>\n"
+    return page("Shopping Lists", body, nav_user=username)
+
+
+def _page_list(
+    db: DBSession, username: str, list_type: str, coll_id: str, show_done: bool
+) -> bytes:
+    from tangible.retro.html_gen import (
+        page, table_start, table_row, table_end,
+        form_start, form_end, input_hidden, input_submit
+    )
+    from tangible.models.shopping import ShoppingItem
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    label = _LIST_TYPE_LABELS.get(list_type, list_type)
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    coll_ids = [c.id for c in db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        )
+    ).all()]
+
+    stmt = select(ShoppingItem).where(
+        ShoppingItem.list_type == list_type,
+        ShoppingItem.collection_id.in_(coll_ids),
+    )
+    if coll_id:
+        stmt = stmt.where(ShoppingItem.collection_id == coll_id)
+    if show_done:
+        stmt = stmt.where(ShoppingItem.purchased_at.isnot(None))
+    else:
+        stmt = stmt.where(ShoppingItem.purchased_at.is_(None))
+    stmt = stmt.order_by(ShoppingItem.name)
+
+    items = db.scalars(stmt).all()
+
+    toggle_url = f"/lists/{list_type}?done={'0' if show_done else '1'}"
+    toggle_label = "Show Active" if show_done else "Show Purchased"
+    body = f'<P><A HREF="/lists/{list_type}/new">[ + Add Item ]</A> &nbsp; <A HREF="{toggle_url}">[{toggle_label}]</A></P>\n'
+
+    if items:
+        if list_type == "wish_list":
+            body += table_start(["Name", "Priority", "URL", "Notes", "Action"])
+        else:
+            body += table_start(["Name", "Qty", "Brand", "Notes", "Action"])
+        for it in items:
+            if list_type == "wish_list":
+                pri = {1: "Low", 2: "Medium", 3: "High"}.get(it.wish_priority or 0, "")
+                url_cell = f'<A HREF="{_e(it.wish_url)}">[link]</A>' if it.wish_url else ""
+                action = ""
+                if not it.purchased_at:
+                    action = (
+                        form_start(f"/lists/{list_type}/{it.id}/buy", "POST")
+                        + input_hidden("list_type", list_type)
+                        + input_submit("Buy")
+                        + form_end()
+                    )
+                body += table_row([it.name, pri, url_cell, it.notes or "", action])
+            else:
+                qty = f"{it.quantity} {it.unit or ''}".strip()
+                action = ""
+                if not it.purchased_at:
+                    action = (
+                        form_start(f"/lists/{list_type}/{it.id}/buy", "POST")
+                        + input_hidden("list_type", list_type)
+                        + input_submit("&#10003; Got It")
+                        + form_end()
+                    )
+                body += table_row([it.name, qty, it.brand or "", it.notes or "", action])
+        body += table_end()
+    else:
+        body += f"<P>No {'purchased' if show_done else 'active'} items.</P>\n"
+
+    return page(label, body, nav_user=username)
+
+
+def _page_new_shopping_item(
+    db: DBSession, username: str, list_type: str, coll_id: str
+) -> bytes:
+    from tangible.retro.html_gen import (
+        page, form_start, form_end, input_text, input_textarea,
+        input_hidden, input_submit, select_field
+    )
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    label = _LIST_TYPE_LABELS.get(list_type, list_type)
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    colls = db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        ).order_by(Collection.name)
+    ).all()
+    coll_options = [("", "-- Select --")] + [(c.id, c.name) for c in colls]
+
+    body = form_start(f"/lists/{list_type}/new", "POST")
+    body += input_hidden("list_type", list_type)
+    body += input_text("name", "Name *", size=50)
+    body += input_text("quantity", "Quantity", value="1", size=5)
+    body += input_text("unit", "Unit (e.g. lbs, oz, pcs)", size=15)
+    body += input_text("brand", "Brand", size=30)
+    if list_type == "wish_list":
+        body += input_text("wish_url", "URL", size=60)
+        body += select_field("wish_priority", "Priority",
+                             [("", "-- None --"), ("1", "Low"), ("2", "Medium"), ("3", "High")])
+    body += input_textarea("notes", "Notes")
+    body += select_field("collection_id", "Collection", coll_options, selected=coll_id)
+    body += input_submit(f"Add to {label}")
+    body += form_end()
+    body += f'<P><A HREF="/lists/{list_type}">[Back to {label}]</A></P>\n'
+
+    return page(f"Add to {label}", body, nav_user=username)
+
+
+def _action_create_shopping_item(db: DBSession, username: str, p) -> bytes | str:
+    from tangible.models.shopping import ShoppingItem
+    from tangible.models.base import ulid_str
+
+    name = p("name").strip()
+    if not name:
+        from tangible.retro.html_gen import error_page
+        return error_page("Validation Error", "Name is required.")
+
+    list_type = p("list_type") or "groceries"
+    coll_id = p("collection_id") or None
+    try:
+        qty = int(p("quantity") or "1")
+    except ValueError:
+        qty = 1
+    try:
+        priority = int(p("wish_priority")) if p("wish_priority") else None
+    except ValueError:
+        priority = None
+
+    item = ShoppingItem(
+        id=ulid_str(),
+        name=name,
+        quantity=qty,
+        unit=p("unit").strip() or None,
+        brand=p("brand").strip() or None,
+        notes=p("notes").strip() or None,
+        list_type=list_type,
+        collection_id=coll_id,
+        wish_url=p("wish_url").strip() or None,
+        wish_priority=priority,
+    )
+    db.add(item)
+    db.commit()
+    return f"REDIRECT:/lists/{list_type}"
+
+
+def _action_buy_shopping_item(db: DBSession, username: str, item_id: str, list_type: str) -> bytes | str:
+    from tangible.models.shopping import ShoppingItem
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    item = db.get(ShoppingItem, item_id)
+    if item is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Not Found", "Item not found")
+    item.purchased_at = datetime.utcnow()
+    if user:
+        item.purchased_by_user_id = user.id
+    db.commit()
+    lt = item.list_type or list_type
+    return f"REDIRECT:/lists/{lt}"
+
+
+# ---------------------------------------------------------------------------
+# Task page handlers
+# ---------------------------------------------------------------------------
+
+def _page_tasks(db: DBSession, username: str, show_done: bool, coll_id: str) -> bytes:
+    from tangible.retro.html_gen import (
+        page, table_start, table_row, table_end,
+        form_start, form_end, input_text, input_textarea,
+        input_hidden, input_submit, select_field
+    )
+    from tangible.models.maintenance import StandaloneTask
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    coll_ids = [c.id for c in db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        )
+    ).all()]
+
+    stmt = select(StandaloneTask).where(StandaloneTask.collection_id.in_(coll_ids))
+    if coll_id:
+        stmt = stmt.where(StandaloneTask.collection_id == coll_id)
+    if show_done:
+        stmt = stmt.where(StandaloneTask.completed_at.isnot(None))
+    else:
+        stmt = stmt.where(StandaloneTask.completed_at.is_(None))
+    stmt = stmt.order_by(StandaloneTask.due_at.nullslast(), StandaloneTask.created_at)
+    tasks = db.scalars(stmt).all()
+
+    toggle_url = f"/tasks?done={'0' if show_done else '1'}"
+    toggle_label = "Show Active" if show_done else "Show Completed"
+    body = f'<P><A HREF="{toggle_url}">[{toggle_label}]</A></P>\n'
+
+    if tasks:
+        body += table_start(["Title", "Collection", "Due", "Action"])
+        for t in tasks:
+            due = str(t.due_at.date()) if t.due_at else ""
+            coll_name = t.collection.name if t.collection else ""
+            action = ""
+            if not t.completed_at:
+                action = (
+                    form_start(f"/tasks/{t.id}/complete", "POST")
+                    + input_submit("&#10003; Done")
+                    + form_end()
+                )
+            else:
+                action = str(t.completed_at.date()) if t.completed_at else ""
+            body += table_row([t.title, coll_name, due, action])
+        body += table_end()
+    else:
+        body += f"<P>No {'completed' if show_done else 'open'} tasks.</P>\n"
+
+    # Add-task form
+    colls = db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        ).order_by(Collection.name)
+    ).all()
+    coll_options = [("", "-- Select --")] + [(c.id, c.name) for c in colls]
+
+    body += "<HR>\n<H3>Add Task</H3>\n"
+    body += form_start("/tasks", "POST")
+    body += input_text("title", "Title *", size=50)
+    body += input_text("due_at", "Due Date (YYYY-MM-DD)", size=12)
+    body += input_textarea("notes", "Notes")
+    body += select_field("collection_id", "Collection", coll_options, selected=coll_id)
+    body += input_submit("Add Task")
+    body += form_end()
+
+    return page("Tasks", body, nav_user=username)
+
+
+def _action_create_task(db: DBSession, username: str, p) -> bytes | str:
+    from tangible.models.maintenance import StandaloneTask
+    from tangible.models.user import User
+    from tangible.models.base import ulid_str
+
+    user = db.scalar(select(User).where(User.username == username))
+    title = p("title").strip()
+    if not title:
+        from tangible.retro.html_gen import error_page
+        return error_page("Validation Error", "Title is required.")
+
+    due_at = None
+    raw_due = p("due_at").strip()
+    if raw_due:
+        try:
+            from datetime import date
+            due_at = datetime.combine(date.fromisoformat(raw_due), datetime.min.time())
+        except ValueError:
+            pass
+
+    task = StandaloneTask(
+        id=ulid_str(),
+        title=title,
+        notes=p("notes").strip() or None,
+        due_at=due_at,
+        collection_id=p("collection_id") or None,
+        created_by_user_id=user.id if user else None,
+    )
+    db.add(task)
+    db.commit()
+    return "REDIRECT:/tasks"
+
+
+def _action_complete_task(db: DBSession, username: str, task_id: str) -> bytes | str:
+    from tangible.models.maintenance import StandaloneTask
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    task = db.get(StandaloneTask, task_id)
+    if task is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Not Found", "Task not found")
+    task.completed_at = datetime.utcnow()
+    if user:
+        task.completed_by_user_id = user.id
+    db.commit()
+    return "REDIRECT:/tasks"
+
+
+# ---------------------------------------------------------------------------
+# Chore page handlers
+# ---------------------------------------------------------------------------
+
+def _page_chores(db: DBSession, username: str) -> bytes:
+    from tangible.retro.html_gen import (
+        page, table_start, table_row, table_end,
+        form_start, form_end, input_submit
+    )
+    from tangible.models.maintenance import Chore
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    coll_ids = [c.id for c in db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        )
+    ).all()]
+
+    chores = db.scalars(
+        select(Chore).where(
+            (Chore.collection_id.in_(coll_ids)) | (Chore.owner_user_id == user.id)
+        ).order_by(Chore.next_due_at.nullslast(), Chore.name)
+    ).all()
+
+    body = ""
+    if chores:
+        body += table_start(["Chore", "Interval (days)", "Last Done", "Next Due", "Action"])
+        for c in chores:
+            last = str(c.last_completed_at.date()) if c.last_completed_at else "Never"
+            due = str(c.next_due_at.date()) if c.next_due_at else ""
+            action = (
+                form_start(f"/chores/{c.id}/complete", "POST")
+                + input_submit("&#10003; Done")
+                + form_end()
+            )
+            body += table_row([c.name, str(c.interval_days or ""), last, due, action])
+        body += table_end()
+    else:
+        body += "<P>No chores found.</P>\n"
+
+    return page("Chores", body, nav_user=username)
+
+
+def _action_complete_chore(db: DBSession, username: str, chore_id: str) -> bytes | str:
+    from tangible.models.maintenance import Chore, ChoreCompletion
+    from tangible.models.base import ulid_str
+
+    chore = db.get(Chore, chore_id)
+    if chore is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Not Found", "Chore not found")
+
+    now = datetime.utcnow()
+    completion = ChoreCompletion(id=ulid_str(), chore_id=chore_id, completed_at=now)
+    db.add(completion)
+    chore.last_completed_at = now
+    if chore.interval_days:
+        from datetime import timedelta
+        chore.next_due_at = now + timedelta(days=chore.interval_days)
+    db.commit()
+    return "REDIRECT:/chores"
+
+
+# ---------------------------------------------------------------------------
+# Maintenance page handlers
+# ---------------------------------------------------------------------------
+
+def _page_maintenance(db: DBSession, username: str) -> bytes:
+    from tangible.retro.html_gen import (
+        page, table_start, table_row, table_end,
+        form_start, form_end, input_submit
+    )
+    from tangible.models.maintenance import MaintenanceTask
+    from tangible.models.item import Item
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    coll_ids = [c.id for c in db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        )
+    ).all()]
+
+    tasks = db.scalars(
+        select(MaintenanceTask)
+        .join(Item, MaintenanceTask.item_id == Item.id)
+        .where(Item.collection_id.in_(coll_ids))
+        .order_by(MaintenanceTask.next_due_at.nullslast(), MaintenanceTask.name)
+    ).all()
+
+    body = ""
+    if tasks:
+        body += table_start(["Task", "Item", "Interval (days)", "Last Done", "Next Due", "Action"])
+        for t in tasks:
+            item_link = f'<A HREF="/items/{t.item_id}">{t.item.title if t.item else t.item_id}</A>'
+            last = str(t.last_completed_at.date()) if t.last_completed_at else "Never"
+            due = str(t.next_due_at.date()) if t.next_due_at else ""
+            action = (
+                form_start(f"/maintenance/{t.id}/complete", "POST")
+                + input_submit("&#10003; Done")
+                + form_end()
+            )
+            body += table_row([t.name, item_link, str(t.interval_days or ""), last, due, action])
+        body += table_end()
+    else:
+        body += "<P>No maintenance tasks found.</P>\n"
+
+    return page("Maintenance", body, nav_user=username)
+
+
+def _action_complete_maintenance(db: DBSession, username: str, task_id: str) -> bytes | str:
+    from tangible.models.maintenance import MaintenanceTask, MaintenanceCompletion
+    from tangible.models.base import ulid_str
+
+    task = db.get(MaintenanceTask, task_id)
+    if task is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Not Found", "Maintenance task not found")
+
+    now = datetime.utcnow()
+    completion = MaintenanceCompletion(id=ulid_str(), task_id=task_id, completed_at=now)
+    db.add(completion)
+    task.last_completed_at = now
+    if task.interval_days:
+        from datetime import timedelta
+        task.next_due_at = now + timedelta(days=task.interval_days)
+    db.commit()
+    return "REDIRECT:/maintenance"
+
+
+# ---------------------------------------------------------------------------
+# Location page handlers
+# ---------------------------------------------------------------------------
+
+def _page_locations(db: DBSession, username: str) -> bytes:
+    from tangible.retro.html_gen import page, table_start, table_row, table_end
+    from tangible.models.location import Location
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    coll_ids = [c.id for c in db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        )
+    ).all()]
+
+    locations = db.scalars(
+        select(Location)
+        .where(Location.collection_id.in_(coll_ids))
+        .order_by(Location.collection_id, Location.name)
+    ).all()
+
+    body = ""
+    if locations:
+        body += table_start(["Location", "Kind", "Collection"])
+        for loc in locations:
+            coll_name = loc.collection.name if loc.collection else ""
+            link = f'<A HREF="/locations/{loc.id}">{loc.name}</A>'
+            body += table_row([link, loc.kind or "", coll_name])
+        body += table_end()
+    else:
+        body += "<P>No locations defined.</P>\n"
+
+    return page("Locations", body, nav_user=username)
+
+
+def _page_location(db: DBSession, username: str, location_id: str) -> bytes:
+    from tangible.retro.html_gen import page, table_start, table_row, table_end
+    from tangible.models.location import Location
+    from tangible.models.item import Item
+
+    loc = db.get(Location, location_id)
+    if loc is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Not Found", "Location not found")
+
+    items = db.scalars(
+        select(Item).where(Item.location_id == location_id, Item.archived_at.is_(None))
+        .order_by(Item.title)
+    ).all()
+
+    body = f"<P>Kind: <B>{loc.kind or 'unspecified'}</B></P>\n"
+    if items:
+        body += table_start(["Title", "Condition", "Qty"])
+        for it in items:
+            link = f'<A HREF="/items/{it.id}">{it.title}</A>'
+            body += table_row([link, it.condition or "", str(it.quantity or 1)])
+        body += table_end()
+    else:
+        body += "<P>No items at this location.</P>\n"
+    body += '<P><A HREF="/locations">[Back to Locations]</A></P>\n'
+
+    return page(loc.name, body, nav_user=username)
+
+
+# ---------------------------------------------------------------------------
+# Loans page handler
+# ---------------------------------------------------------------------------
+
+def _page_loans(db: DBSession, username: str) -> bytes:
+    from tangible.retro.html_gen import page, table_start, table_row, table_end
+    from tangible.models.loan import Loan
+    from tangible.models.item import Item
+    from tangible.models.contact import Contact
+    from tangible.models.collection import Collection
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    coll_ids = [c.id for c in db.scalars(
+        select(Collection).where(
+            (Collection.owner_id == user.id) |
+            Collection.memberships.any(user_id=user.id)
+        )
+    ).all()]
+
+    loans = db.scalars(
+        select(Loan)
+        .join(Item, Loan.item_id == Item.id)
+        .where(
+            Item.collection_id.in_(coll_ids),
+            Loan.returned_at.is_(None),
+        )
+        .order_by(Loan.loaned_at.desc())
+    ).all()
+
+    body = ""
+    if loans:
+        body += table_start(["Item", "Loaned To", "Loaned", "Due", "Notes"])
+        for ln in loans:
+            item = db.get(Item, ln.item_id)
+            item_link = f'<A HREF="/items/{ln.item_id}">{item.title if item else ln.item_id}</A>'
+            contact_name = ""
+            contact = db.get(Contact, ln.contact_id) if ln.contact_id else None
+            if contact:
+                contact_name = contact.name or contact.email or str(ln.contact_id)
+            loaned = str(ln.loaned_at.date()) if ln.loaned_at else ""
+            due = str(ln.due_at.date()) if ln.due_at else ""
+            body += table_row([item_link, contact_name, loaned, due, ln.notes or ""])
+        body += table_end()
+    else:
+        body += "<P>No active loans.</P>\n"
+
+    return page("Active Loans", body, nav_user=username)
+
+
+# ---------------------------------------------------------------------------
+# Stores page handler
+# ---------------------------------------------------------------------------
+
+def _page_stores(db: DBSession, username: str) -> bytes:
+    from tangible.retro.html_gen import page, table_start, table_row, table_end, _e
+    from tangible.models.shopping import ShoppingStore, ShoppingStoreAisle
+    from tangible.models.user import User
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        from tangible.retro.html_gen import error_page
+        return error_page("Error", "User not found")
+
+    stores = db.scalars(
+        select(ShoppingStore).where(ShoppingStore.owner_user_id == user.id).order_by(ShoppingStore.name)
+    ).all()
+
+    body = ""
+    if stores:
+        for store in stores:
+            body += f"<H3>{_e(store.name)}</H3>\n"
+            aisles = db.scalars(
+                select(ShoppingStoreAisle)
+                .where(ShoppingStoreAisle.store_id == store.id)
+                .order_by(ShoppingStoreAisle.position)
+            ).all()
+            if aisles:
+                body += table_start(["#", "Aisle", "Category"])
+                for a in aisles:
+                    body += table_row([str(a.position), a.name, a.category_slug or ""])
+                body += table_end()
+            else:
+                body += "<P>No aisles defined.</P>\n"
+    else:
+        body += "<P>No stores configured.</P>\n"
+
+    return page("Stores", body, nav_user=username)
 
 
 def _serve_photo(db: DBSession, item_id: str, fmt: str, settings: "Settings") -> bytes | None:

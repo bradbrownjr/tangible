@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.87] — 2026-05-28
+
+### Changed
+- Retro HTTP and Telnet interfaces now expose all sections available in the
+  modern web UI: Shopping Lists (groceries, hardware, home goods, wish list),
+  Tasks, Chores, Maintenance, Locations, Loans, and Stores.
+- HTTP nav bar updated with links to every new section.
+- Telnet main menu expanded from 7 to 13 items (sign-out moved to [0]).
+- Shopping lists support add and mark-purchased on both interfaces.
+- Tasks support add and complete. Chores and Maintenance log completions and
+  advance next-due dates. Loans and Locations are read-only browse screens.
+
 ## [0.25.86] — 2026-05-28
 
 ### Fixed

@@ -46,6 +46,13 @@ def _nav_bar(user: str | None) -> str:
         '<A HREF="/">Home</A>',
         '<A HREF="/collections">Collections</A>',
         '<A HREF="/search">Search</A>',
+        '<A HREF="/lists">Lists</A>',
+        '<A HREF="/tasks">Tasks</A>',
+        '<A HREF="/chores">Chores</A>',
+        '<A HREF="/maintenance">Maintenance</A>',
+        '<A HREF="/locations">Locations</A>',
+        '<A HREF="/loans">Loans</A>',
+        '<A HREF="/stores">Stores</A>',
     ]
     if user:
         parts.append(f"[{_e(user)}]")
