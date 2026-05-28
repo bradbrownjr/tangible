@@ -56,11 +56,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
 
-    # Trusted hosts (from settings)
+    # Trusted hosts (from settings) — always allow loopback for healthchecks
     if settings.allowed_hosts:
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=[*settings.allowed_hosts, "testserver"],
+            allowed_hosts=[*settings.allowed_hosts, "testserver", "127.0.0.1", "localhost"],
         )
 
     # CORS

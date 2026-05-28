@@ -4,6 +4,11 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.86] — 2026-05-28
+
+### Fixed
+- Healthcheck (and any loopback request) now always passes the trusted-host check — `127.0.0.1` and `localhost` are unconditionally added to `allowed_hosts` so Docker's `curl http://127.0.0.1:8000/api/healthz` probe no longer returns 400 when `TANGIBLE_ALLOWED_HOSTS` is set to a public hostname.
+
 ## [0.25.85] — 2026-05-28
 
 ### Added
