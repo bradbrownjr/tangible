@@ -38,6 +38,14 @@ _MAX_LINE = 512
 _LOGIN_ATTEMPTS = 3
 
 
+class _BackToMain(Exception):
+    """Raised by any sub-menu when the user chooses [M]ain."""
+
+
+class _IdleTimeout(Exception):
+    """Raised by _readline() when the session has been idle too long."""
+
+
 async def create_telnet_server(settings: "Settings") -> asyncio.Server:
     handler = _make_handler(settings)
     return await asyncio.start_server(
@@ -109,11 +117,17 @@ class TelnetSession:
             await self.writer.drain()
             return
 
-        authenticated = await self._login()
-        if not authenticated:
-            return
-
-        await self._main_loop()
+        while True:
+            authenticated = await self._login()
+            if not authenticated:
+                return
+            try:
+                await self._main_loop()
+                return  # normal sign-out
+            except _IdleTimeout:
+                await self._writeln(
+                    "\r\n\r\n   SESSION TIMED OUT — PLEASE LOG IN AGAIN."
+                )
 
     # ------------------------------------------------------------------
     # Login
@@ -182,35 +196,38 @@ class TelnetSession:
             await self._write(main_menu_screen(self.username or ""))
             choice = (await self._readline()).strip()
 
-            if choice == "1":
-                await self._browse_collections()
-            elif choice == "2":
-                await self._search_items()
-            elif choice == "3":
-                await self._item_lookup()
-            elif choice == "4":
-                await self._add_item()
-            elif choice == "5":
-                await self._edit_item_lookup()
-            elif choice == "6":
-                await self._list_collections()
-            elif choice == "7":
-                await self._shopping_lists()
-            elif choice == "8":
-                await self._tasks_menu()
-            elif choice == "9":
-                await self._chores_menu()
-            elif choice == "10":
-                await self._maintenance_menu()
-            elif choice == "11":
-                await self._locations_menu()
-            elif choice == "12":
-                await self._loans_menu()
-            elif choice == "0":
-                await self._writeln("\r\n   SIGNING OUT. THANK YOU.\r\n")
-                return
-            else:
-                await self._writeln("\r\n   INVALID SELECTION. PLEASE TRY AGAIN.")
+            try:
+                if choice == "1":
+                    await self._browse_collections()
+                elif choice == "2":
+                    await self._search_items()
+                elif choice == "3":
+                    await self._item_lookup()
+                elif choice == "4":
+                    await self._add_item()
+                elif choice == "5":
+                    await self._edit_item_lookup()
+                elif choice == "6":
+                    await self._list_collections()
+                elif choice == "7":
+                    await self._shopping_lists()
+                elif choice == "8":
+                    await self._tasks_menu()
+                elif choice == "9":
+                    await self._chores_menu()
+                elif choice == "10":
+                    await self._maintenance_menu()
+                elif choice == "11":
+                    await self._locations_menu()
+                elif choice == "12":
+                    await self._loans_menu()
+                elif choice == "0":
+                    await self._writeln("\r\n   SIGNING OUT. THANK YOU.\r\n")
+                    return
+                else:
+                    await self._writeln("\r\n   INVALID SELECTION. PLEASE TRY AGAIN.")
+            except _BackToMain:
+                pass  # user pressed [M]ain from a sub-screen — redraw main menu
 
     # ------------------------------------------------------------------
     # Browse collections
@@ -248,11 +265,15 @@ class TelnetSession:
                 lines.append(f"   {i:2}. {c.name[:50]}")
             lines.append("")
             lines.append(hr())
-            lines.append("   ENTER NUMBER OR [B]ack: ")
+            lines.append("   [B]ack  [M]ain")
+            lines.append("")
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER NUMBER: ")
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            if sel == "M":
+                raise _BackToMain()
             try:
                 idx = int(sel) - 1
                 if 0 <= idx < len(colls):
@@ -279,7 +300,7 @@ class TelnetSession:
                     ).order_by(Item.title)
                 ).all()
 
-            page_items, total_pages = paginate(list(all_items), page, 20)
+            page_items, total_pages = paginate(list(all_items), page, 12)
             cols = [("  #", 3), ("TITLE", 38), ("COND", 8), ("QTY", 4)]
 
             lines = [
@@ -289,7 +310,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, item in enumerate(page_items, page * 20 + 1):
+            for i, item in enumerate(page_items, page * 12 + 1):
                 lines.append(trow(
                     (str(i), 3),
                     (item.title[:38] if item.title else "", 38),
@@ -299,12 +320,16 @@ class TelnetSession:
             lines.append(table_footer(*cols))
             lines.append("")
             lines.append(hr())
-            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages))
+            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain")
+            lines.append("")
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
@@ -312,7 +337,7 @@ class TelnetSession:
             else:
                 # Try numeric selection
                 try:
-                    idx = int(sel) - 1 - (page * 20)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._item_detail(page_items[idx].id)
                 except ValueError:
@@ -359,7 +384,7 @@ class TelnetSession:
                     ).order_by(Item.title)
                 ).all()
 
-            page_items, total_pages = paginate(list(all_items), page, 20)
+            page_items, total_pages = paginate(list(all_items), page, 12)
             cols = [("  #", 3), ("TITLE", 34), ("COLLECTION", 20), ("COND", 8)]
 
             lines = [
@@ -370,7 +395,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, item in enumerate(page_items, page * 20 + 1):
+            for i, item in enumerate(page_items, page * 12 + 1):
                 coll_name = (item.collection.name[:20] if item.collection else "")
                 lines.append(trow(
                     (str(i), 3),
@@ -381,19 +406,23 @@ class TelnetSession:
             lines.append(table_footer(*cols))
             lines.append("")
             lines.append(hr())
-            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages))
+            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain")
+            lines.append("")
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
                 page -= 1
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 20)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._item_detail(page_items[idx].id)
                 except ValueError:
@@ -473,18 +502,22 @@ class TelnetSession:
             if item.notes:
                 lines.append("")
                 lines.append("   NOTES:")
-                for ln in item.notes[:200].split("\n")[:5]:
+                for ln in item.notes[:200].split("\n")[:3]:
                     lines.append(f"   {ln[:74]}")
             lines += [
                 "",
                 hr(),
-                "   [E]dit  [A]rchive  [B]ack  ENTER SELECTION: ",
+                "   [E]dit  [A]rchive  [M]ain  [B]ack",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "E":
                 await self._edit_item(item_id)
             elif sel == "A":
@@ -752,12 +785,15 @@ class TelnetSession:
         for i, (cid, name, count) in enumerate(coll_data, 1):
             lines.append(trow((str(i), 3), (name[:40], 40), (str(count), 5)))
         lines.append(table_footer(*cols))
-        lines += ["", hr(), "   ENTER NUMBER TO BROWSE OR [B]ack: "]
+        lines += ["", hr(), "   [B]ack  [M]ain", ""]
         await self._write("\r\n".join(lines))
+        await self._write("   ENTER NUMBER TO BROWSE: ")
 
         sel = (await self._readline()).strip().upper()
         if sel == "B":
             return
+        if sel == "M":
+            raise _BackToMain()
         try:
             idx = int(sel) - 1
             if 0 <= idx < len(coll_data):
@@ -791,12 +827,16 @@ class TelnetSession:
                 "   4. WISH LIST",
                 "",
                 hr(),
-                "   ENTER NUMBER OR [B]ack: ",
+                "   [B]ack  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER NUMBER: ")
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            if sel == "M":
+                raise _BackToMain()
             lt_map = {"1": "groceries", "2": "hardware", "3": "home_goods", "4": "wish_list"}
             if sel in lt_map:
                 await self._shopping_list(lt_map[sel])
@@ -837,7 +877,7 @@ class TelnetSession:
                     stmt = stmt.where(ShoppingItem.purchased_at.is_(None))
                 all_items = db.scalars(stmt.order_by(ShoppingItem.name)).all()
 
-            page_items, total_pages = paginate(list(all_items), page, 18)
+            page_items, total_pages = paginate(list(all_items), page, 12)
 
             if list_type == "wish_list":
                 cols = [("  #", 3), ("NAME", 35), ("PRI", 6), ("NOTES", 26)]
@@ -851,7 +891,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, it in enumerate(page_items, page * 18 + 1):
+            for i, it in enumerate(page_items, page * 12 + 1):
                 if list_type == "wish_list":
                     pri = {1: "LOW", 2: "MED", 3: "HIGH"}.get(it.wish_priority or 0, "")
                     lines.append(trow(
@@ -868,13 +908,17 @@ class TelnetSession:
                 "",
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)
-                + "  [A]dd  [M]ark#  [T]oggle",
+                + "  [A]dd  [M]ark#  [T]oggle  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M" and not sel[1:]:
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
@@ -888,17 +932,17 @@ class TelnetSession:
                 # Mark purchased: "M3" or just enter number after prompt
                 rest = sel[1:].strip()
                 if not rest:
-                    await self._write("   ENTER ITEM NUMBER: ")
+                    await self._write("\r\n   ENTER ITEM NUMBER: ")
                     rest = (await self._readline()).strip()
                 try:
-                    idx = int(rest) - 1 - (page * 18)
+                    idx = int(rest) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._mark_purchased(page_items[idx].id, label)
                 except ValueError:
                     pass
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 18)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._mark_purchased(page_items[idx].id, label)
                 except ValueError:
@@ -1050,7 +1094,7 @@ class TelnetSession:
                 stmt = stmt.order_by(StandaloneTask.due_at.nullslast())
                 all_tasks = db.scalars(stmt).all()
 
-            page_items, total_pages = paginate(list(all_tasks), page, 18)
+            page_items, total_pages = paginate(list(all_tasks), page, 12)
             cols = [("  #", 3), ("TITLE", 38), ("DUE", 10), ("COLLECTION", 18)]
 
             lines = [
@@ -1060,7 +1104,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, t in enumerate(page_items, page * 18 + 1):
+            for i, t in enumerate(page_items, page * 12 + 1):
                 due = str(t.due_at.date()) if t.due_at else ""
                 coll_name = (t.collection.name[:18] if t.collection else "")
                 lines.append(trow(
@@ -1072,13 +1116,17 @@ class TelnetSession:
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  "
                 + pagination_prompt(page, total_pages)
-                + "  [A]dd  [C]omplete#  [T]oggle",
+                + "  [A]dd  [C]omplete#  [T]oggle  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M" and not sel[1:]:
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
@@ -1091,10 +1139,10 @@ class TelnetSession:
             elif sel.startswith("C"):
                 rest = sel[1:].strip()
                 if not rest:
-                    await self._write("   ENTER TASK NUMBER: ")
+                    await self._write("\r\n   ENTER TASK NUMBER: ")
                     rest = (await self._readline()).strip()
                 try:
-                    idx = int(rest) - 1 - (page * 18)
+                    idx = int(rest) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._complete_task(page_items[idx].id)
                 except ValueError:
@@ -1223,7 +1271,7 @@ class TelnetSession:
                     ).order_by(Chore.next_due_at.nullslast(), Chore.name)
                 ).all()
 
-            page_items, total_pages = paginate(list(all_chores), page, 18)
+            page_items, total_pages = paginate(list(all_chores), page, 12)
             cols = [("  #", 3), ("CHORE", 32), ("INTERVAL", 8), ("LAST DONE", 10), ("NEXT DUE", 10)]
 
             lines = [
@@ -1233,7 +1281,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, c in enumerate(page_items, page * 18 + 1):
+            for i, c in enumerate(page_items, page * 12 + 1):
                 last = str(c.last_completed_at.date()) if c.last_completed_at else "NEVER"
                 due = str(c.next_due_at.date()) if c.next_due_at else ""
                 lines.append(trow(
@@ -1246,20 +1294,24 @@ class TelnetSession:
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  "
                 + pagination_prompt(page, total_pages)
-                + "  ENTER # TO COMPLETE: ",
+                + "  ENTER # TO COMPLETE  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
                 page -= 1
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 18)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         chore = page_items[idx]
                         await self._write(f"\r\n   MARK '{chore.name[:40]}' COMPLETE? (Y/N): ")
@@ -1319,7 +1371,7 @@ class TelnetSession:
                     .order_by(MaintenanceTask.next_due_at.nullslast(), MaintenanceTask.name)
                 ).all()
 
-            page_items, total_pages = paginate(list(all_tasks), page, 16)
+            page_items, total_pages = paginate(list(all_tasks), page, 12)
             cols = [("  #", 3), ("TASK", 26), ("ITEM", 22), ("INT", 4), ("LAST", 10), ("DUE", 10)]
 
             lines = [
@@ -1329,7 +1381,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, t in enumerate(page_items, page * 16 + 1):
+            for i, t in enumerate(page_items, page * 12 + 1):
                 item_title = (t.item.title[:22] if t.item else t.item_id[:22])
                 last = str(t.last_completed_at.date()) if t.last_completed_at else "NEVER"
                 due = str(t.next_due_at.date()) if t.next_due_at else ""
@@ -1343,20 +1395,24 @@ class TelnetSession:
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  "
                 + pagination_prompt(page, total_pages)
-                + "  ENTER # TO COMPLETE: ",
+                + "  ENTER # TO COMPLETE  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
                 page -= 1
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 16)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         task = page_items[idx]
                         await self._write(f"\r\n   MARK '{task.name[:40]}' COMPLETE? (Y/N): ")
@@ -1413,7 +1469,7 @@ class TelnetSession:
                     .order_by(Location.collection_id, Location.name)
                 ).all()
 
-            page_items, total_pages = paginate(list(all_locs), page, 20)
+            page_items, total_pages = paginate(list(all_locs), page, 12)
             cols = [("  #", 3), ("LOCATION", 36), ("KIND", 10), ("COLLECTION", 22)]
 
             lines = [
@@ -1423,7 +1479,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, loc in enumerate(page_items, page * 20 + 1):
+            for i, loc in enumerate(page_items, page * 12 + 1):
                 coll_name = (loc.collection.name[:22] if loc.collection else "")
                 lines.append(trow(
                     (str(i), 3), (loc.name[:36], 36), ((loc.kind or "")[:10], 10), (coll_name, 22)
@@ -1432,20 +1488,24 @@ class TelnetSession:
             lines += [
                 "",
                 hr(),
-                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages),
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
                 page -= 1
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 20)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._location_items(page_items[idx].id, page_items[idx].name)
                 except ValueError:
@@ -1472,7 +1532,7 @@ class TelnetSession:
                     ).order_by(Item.title)
                 ).all()
 
-            page_items, total_pages = paginate(list(all_items), page, 20)
+            page_items, total_pages = paginate(list(all_items), page, 12)
             cols = [("  #", 3), ("TITLE", 44), ("COND", 8), ("QTY", 4)]
 
             lines = [
@@ -1482,25 +1542,33 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, item in enumerate(page_items, page * 20 + 1):
+            for i, item in enumerate(page_items, page * 12 + 1):
                 lines.append(trow(
                     (str(i), 3), ((item.title or "")[:44], 44),
                     ((item.condition or "")[:8], 8), (str(item.quantity or 1), 4),
                 ))
             lines.append(table_footer(*cols))
-            lines += ["", hr(), f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)]
+            lines += [
+                "",
+                hr(),
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain",
+                "",
+            ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
                 page -= 1
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 20)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_items):
                         await self._item_detail(page_items[idx].id)
                 except ValueError:
@@ -1560,7 +1628,7 @@ class TelnetSession:
                         ln.item_id,
                     ))
 
-            page_disp, total_pages = paginate(loan_display, page, 18)
+            page_disp, total_pages = paginate(loan_display, page, 12)
             cols = [("  #", 3), ("ITEM", 30), ("LOANED TO", 22), ("LOANED", 10), ("DUE", 10)]
 
             lines = [
@@ -1570,7 +1638,7 @@ class TelnetSession:
                 "",
                 table_header(*cols),
             ]
-            for i, (lid, item_title, contact, loaned, due, item_id) in enumerate(page_disp, page * 18 + 1):
+            for i, (lid, item_title, contact, loaned, due, item_id) in enumerate(page_disp, page * 12 + 1):
                 lines.append(trow(
                     (str(i), 3), (item_title, 30), (contact, 22), (loaned, 10), (due, 10)
                 ))
@@ -1579,20 +1647,24 @@ class TelnetSession:
                 "",
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)
-                + "  ENTER # TO VIEW ITEM: ",
+                + "  ENTER # TO VIEW ITEM  [M]ain",
+                "",
             ]
             await self._write("\r\n".join(lines))
+            await self._write("   ENTER SELECTION: ")
 
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
+            elif sel == "M":
+                raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
             elif sel == "P" and page > 0:
                 page -= 1
             else:
                 try:
-                    idx = int(sel) - 1 - (page * 18)
+                    idx = int(sel) - 1 - (page * 12)
                     if 0 <= idx < len(page_disp):
                         await self._item_detail(page_disp[idx][5])  # item_id
                 except ValueError:
@@ -1632,7 +1704,7 @@ class TelnetSession:
             try:
                 byte = await asyncio.wait_for(self.reader.read(1), timeout=300)
             except asyncio.TimeoutError:
-                raise ConnectionResetError("Telnet session timeout")
+                raise _IdleTimeout()
             if not byte:
                 raise ConnectionResetError("Client disconnected")
 

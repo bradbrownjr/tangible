@@ -4,6 +4,21 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.89] — 2026-05-28
+
+### Fixed
+- Telnet: idle-timeout now returns to the login screen rather than dropping the
+  connection (session stays alive; user can log back in without reconnecting).
+- Telnet: user-input prompt is always on its own line, separated from the
+  navigation-hints line, preventing typed characters from appending to menu text.
+- Telnet: all paginated list screens capped at 12 data rows so content fits a
+  24-line terminal without requiring a scrollback buffer.
+- Telnet: every sub-menu now accepts `[M]ain` to jump directly back to the main
+  menu from any depth without pressing `[B]ack` multiple times.
+- Telnet: item-detail notes section capped at 3 lines (was 5) to stay within
+  the 24-row screen budget.
+- terminal.py: `HEIGHT = 24` and `PAGE_ROWS = 12` constants added.
+
 ## [0.25.88] — 2026-05-28
 
 ### Fixed

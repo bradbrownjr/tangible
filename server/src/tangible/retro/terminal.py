@@ -10,6 +10,8 @@ import math
 from datetime import datetime
 
 WIDTH = 80
+HEIGHT = 24        # visible rows on a VT100/3270-era terminal
+PAGE_ROWS = 12     # data rows per paginated screen (leaves room for header/footer)
 
 
 def clear_screen() -> str:
