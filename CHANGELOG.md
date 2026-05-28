@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.90] — 2026-05-28
+
+### Fixed
+- Telnet: `[M]ain` shortcut renamed to `[H]ome` to eliminate ambiguity with
+  `[M]ark#` (mark purchased) on shopping list screens.
+- Telnet: idle-timeout extended from 5 minutes to 30 minutes.
+
 ## [0.25.89] — 2026-05-28
 
 ### Fixed

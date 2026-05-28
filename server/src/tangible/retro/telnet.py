@@ -39,7 +39,7 @@ _LOGIN_ATTEMPTS = 3
 
 
 class _BackToMain(Exception):
-    """Raised by any sub-menu when the user chooses [M]ain."""
+    """Raised by any sub-menu when the user chooses [H]ome."""
 
 
 class _IdleTimeout(Exception):
@@ -227,7 +227,7 @@ class TelnetSession:
                 else:
                     await self._writeln("\r\n   INVALID SELECTION. PLEASE TRY AGAIN.")
             except _BackToMain:
-                pass  # user pressed [M]ain from a sub-screen — redraw main menu
+                pass  # user pressed [H]ome from a sub-screen — redraw main menu
 
     # ------------------------------------------------------------------
     # Browse collections
@@ -265,14 +265,14 @@ class TelnetSession:
                 lines.append(f"   {i:2}. {c.name[:50]}")
             lines.append("")
             lines.append(hr())
-            lines.append("   [B]ack  [M]ain")
+            lines.append("   [B]ack  [H]ome")
             lines.append("")
             await self._write("\r\n".join(lines))
             await self._write("   ENTER NUMBER: ")
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            if sel == "M":
+            if sel == "H":
                 raise _BackToMain()
             try:
                 idx = int(sel) - 1
@@ -320,7 +320,7 @@ class TelnetSession:
             lines.append(table_footer(*cols))
             lines.append("")
             lines.append(hr())
-            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain")
+            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [H]ome")
             lines.append("")
             await self._write("\r\n".join(lines))
             await self._write("   ENTER SELECTION: ")
@@ -328,7 +328,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -406,7 +406,7 @@ class TelnetSession:
             lines.append(table_footer(*cols))
             lines.append("")
             lines.append(hr())
-            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain")
+            lines.append(f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [H]ome")
             lines.append("")
             await self._write("\r\n".join(lines))
             await self._write("   ENTER SELECTION: ")
@@ -414,7 +414,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -507,7 +507,7 @@ class TelnetSession:
             lines += [
                 "",
                 hr(),
-                "   [E]dit  [A]rchive  [M]ain  [B]ack",
+                "   [E]dit  [A]rchive  [H]ome  [B]ack",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -516,7 +516,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "E":
                 await self._edit_item(item_id)
@@ -785,14 +785,14 @@ class TelnetSession:
         for i, (cid, name, count) in enumerate(coll_data, 1):
             lines.append(trow((str(i), 3), (name[:40], 40), (str(count), 5)))
         lines.append(table_footer(*cols))
-        lines += ["", hr(), "   [B]ack  [M]ain", ""]
+        lines += ["", hr(), "   [B]ack  [H]ome", ""]
         await self._write("\r\n".join(lines))
         await self._write("   ENTER NUMBER TO BROWSE: ")
 
         sel = (await self._readline()).strip().upper()
         if sel == "B":
             return
-        if sel == "M":
+        if sel == "H":
             raise _BackToMain()
         try:
             idx = int(sel) - 1
@@ -827,7 +827,7 @@ class TelnetSession:
                 "   4. WISH LIST",
                 "",
                 hr(),
-                "   [B]ack  [M]ain",
+                "   [B]ack  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -835,7 +835,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            if sel == "M":
+            if sel == "H":
                 raise _BackToMain()
             lt_map = {"1": "groceries", "2": "hardware", "3": "home_goods", "4": "wish_list"}
             if sel in lt_map:
@@ -908,7 +908,7 @@ class TelnetSession:
                 "",
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)
-                + "  [A]dd  [M]ark#  [T]oggle  [M]ain",
+                + "  [A]dd  [M]ark#  [T]oggle  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -917,7 +917,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M" and not sel[1:]:
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1116,7 +1116,7 @@ class TelnetSession:
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  "
                 + pagination_prompt(page, total_pages)
-                + "  [A]dd  [C]omplete#  [T]oggle  [M]ain",
+                + "  [A]dd  [C]omplete#  [T]oggle  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -1125,7 +1125,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M" and not sel[1:]:
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1294,7 +1294,7 @@ class TelnetSession:
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  "
                 + pagination_prompt(page, total_pages)
-                + "  ENTER # TO COMPLETE  [M]ain",
+                + "  ENTER # TO COMPLETE  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -1303,7 +1303,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1395,7 +1395,7 @@ class TelnetSession:
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  "
                 + pagination_prompt(page, total_pages)
-                + "  ENTER # TO COMPLETE  [M]ain",
+                + "  ENTER # TO COMPLETE  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -1404,7 +1404,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1488,7 +1488,7 @@ class TelnetSession:
             lines += [
                 "",
                 hr(),
-                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain",
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -1497,7 +1497,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1551,7 +1551,7 @@ class TelnetSession:
             lines += [
                 "",
                 hr(),
-                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [M]ain",
+                f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages) + "  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -1560,7 +1560,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1647,7 +1647,7 @@ class TelnetSession:
                 "",
                 hr(),
                 f"   PAGE {page + 1}/{total_pages}  " + pagination_prompt(page, total_pages)
-                + "  ENTER # TO VIEW ITEM  [M]ain",
+                + "  ENTER # TO VIEW ITEM  [H]ome",
                 "",
             ]
             await self._write("\r\n".join(lines))
@@ -1656,7 +1656,7 @@ class TelnetSession:
             sel = (await self._readline()).strip().upper()
             if sel == "B":
                 return
-            elif sel == "M":
+            elif sel == "H":
                 raise _BackToMain()
             elif sel == "N" and page < total_pages - 1:
                 page += 1
@@ -1702,7 +1702,7 @@ class TelnetSession:
         buf = bytearray()
         while True:
             try:
-                byte = await asyncio.wait_for(self.reader.read(1), timeout=300)
+                byte = await asyncio.wait_for(self.reader.read(1), timeout=1800)
             except asyncio.TimeoutError:
                 raise _IdleTimeout()
             if not byte:
