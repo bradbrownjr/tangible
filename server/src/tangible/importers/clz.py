@@ -57,6 +57,19 @@ def _float(node, name: str) -> float | None:  # type: ignore[no-untyped-def]
         return None
 
 
+def _displayname(node, tag: str) -> str | None:  # type: ignore[no-untyped-def]
+    """Read a CLZ single-value wrapped node: <tag><displayname>text</displayname></tag>.
+    Falls back to direct text content for flat nodes.
+    """
+    child = node.find(tag)
+    if child is None:
+        return None
+    dn = (child.findtext("displayname") or "").strip()
+    if dn:
+        return dn
+    return (child.text or "").strip() or None
+
+
 def _list_displaynames(node, container: str) -> list[str]:  # type: ignore[no-untyped-def]
     """CLZ multi-value fields commonly look like::
 
@@ -224,12 +237,77 @@ class CLZGameImporter(CLZImporter):
     record_tag = "game"
     name = "clz-game"
 
-    def _extra_attrs(self, node):  # type: ignore[no-untyped-def]
+    def _record_to_item(self, node) -> ImportItem | None:  # type: ignore[no-untyped-def]
+        title = _text(node, "title") or _text(node, "name")
+        if title is None:
+            return None
+
+        attrs: dict[str, object] = {}
+
+        # Year is nested: <releasedate><year><displayname>YYYY</displayname></year>
+        year = (node.findtext("releasedate/year/displayname") or "").strip()
+        if year:
+            attrs["year"] = year
+
+        # Genres — direct child container, already handled by _list_displaynames
+        genres = _list_displaynames(node, "genres")
+        if genres:
+            attrs["genres"] = genres
+
+        attrs.update(self._extra_attrs(node))
+
+        return ImportItem(
+            category_slug=self.category_slug,
+            title=title,
+            subtitle=_text(node, "subtitle") or _text(node, "originaltitle"),
+            # CLZ Games exports description in <description> (sometimes CDATA)
+            notes=_text(node, "description") or _text(node, "notes") or _text(node, "plot"),
+            condition=_text(node, "condition"),
+            quantity=_int(node, "quantity") or 1,
+            purchase_price=_float(node, "purchaseprice"),
+            current_value=_float(node, "currentvalue"),
+            currency=_text(node, "currency"),
+            location=_text(node, "location"),
+            identifiers=_common_identifiers(node),
+            attrs=attrs,
+        )
+
+    def _extra_attrs(self, node) -> dict[str, object]:  # type: ignore[no-untyped-def]
         extras: dict[str, object] = {}
-        for tag in ("platform", "publisher", "developer", "region", "completion"):
-            v = _text(node, tag)
-            if v is not None:
-                extras[tag] = v
+
+        # Single-value displayname-wrapped fields
+        for clz_tag, attr_key in (
+            ("platform", "platform"),
+            ("format", "format"),
+            ("series", "series"),
+        ):
+            v = _displayname(node, clz_tag)
+            if v:
+                extras[attr_key] = v
+
+        # Plural displayname containers — join to comma-separated string
+        developers = _list_displaynames(node, "developers")
+        if developers:
+            extras["developer"] = ", ".join(developers)
+
+        publishers = _list_displaynames(node, "publishers")
+        if publishers:
+            extras["publisher_name"] = ", ".join(publishers)
+
+        # Flat fields with CLZ-specific tag names
+        for clz_tag, attr_key in (
+            ("coreregion", "region"),
+            ("completeness", "completeness"),
+            ("completed", "completed"),
+            ("collectionstatus", "collection_status"),
+            ("myrating", "my_rating"),
+            ("hasbox", "box_included"),
+            ("hasmanual", "manual_included"),
+        ):
+            v = _text(node, clz_tag)
+            if v:
+                extras[attr_key] = v
+
         return extras
 
 
