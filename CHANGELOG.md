@@ -4,7 +4,43 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
-## [0.25.91] — 2026-05-28
+## [0.25.92] — 2026-05-30
+
+### Added
+- Telnet: full modular refactor — monolithic `telnet.py` (1 718 lines) replaced
+  with clean separated modules under `server/src/tangible/retro/`:
+  `telnet.py` (entry point), `session.py` (lifecycle + auth + main menu),
+  `telnet_transport.py` (RFC 854/857/858 I/O), `command_router.py` (dispatch),
+  `layout.py` (24-row `Screen` builder).
+- Telnet `workflows/inventory.py`: `ITEM` (ID/barcode lookup), `FIND` (keyword
+  search, paginated), `ADJ` (qty / location / condition adjustment).
+- Telnet `workflows/receiving.py`: `ADD` flow with template auto-selection —
+  0 templates = generic item; 1 template = applied silently; 2+ templates =
+  short curated picker. Prompts for all template fields by type (`select`,
+  `boolean`, `number`, `date`, `text`). Loops to add another item without menu
+  bouncing.
+- Telnet `workflows/circulation.py`: `LOAN` (checkout with contact picker + due
+  date), `RET` (return with confirm), `HOLD` (active-loans list with OVR flag).
+- Telnet `workflows/service.py`: `CHORE` and `MAINT` — browse due/overdue tasks,
+  mark complete with notes/cost/currency; maintenance completions additionally
+  capture technician, odometer, and hours readings.
+- Telnet `workflows/shopping.py`: `LIST` — browse unpurchased shopping items
+  across all accessible collections; `BUY` marks an item purchased.
+- Telnet `workflows/locations.py`: `BROWSE` — flat list of all locations with
+  parent breadcrumb; select a location to see all items stored there.
+- Telnet `workflows/reports.py`: `CHORE` and `MAINT` — 60-record history of
+  completions (newest first), paginated, showing date / name / cost.
+- Repository memory: `tangible-product-philosophy.md` — anti-option-paralysis
+  principle documented; template auto-selection rule applies to all surfaces.
+
+### Changed
+- Telnet: all navigation uses `CommandExit("menu"/"back"/"quit")` exception
+  pattern; `0` always returns to the parent menu from any depth.
+- Telnet: IDs passed as strings (not ORM objects) across all async session
+  boundaries to prevent `DetachedInstanceError`.
+- Original `telnet.py` preserved as `telnet_legacy.py` for reference.
+
+
 
 ### Changed
 - Telnet: navigation key `[H]ome` replaced with `0` (zero) = main menu, matching
