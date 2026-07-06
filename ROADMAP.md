@@ -7,6 +7,11 @@ For shipped work see [CHANGELOG.md](CHANGELOG.md). For agent rules see
 Each phase groups changes that ship together as a coherent user story.
 Within a phase, items are roughly ordered by leverage.
 
+**Current priority (July 2026 audit):** Phase 20 (restore CI and fix
+latent bugs) comes before resuming the planned feature phases 15-18.
+Phases 20-23 near the bottom of this file carry per-step agent model
+tags; see the "Agent model guide" section.
+
 ---
 
 ## Phase 8 — Make it shareable ✅
@@ -1694,6 +1699,208 @@ Steps for Android bump:
 Python 3.12 is in active maintenance until 2028 — no urgent action.
 All deps use `>=` floors and resolve to latest at install time via uv.
 Re-audit when Python 3.13 support stabilises across the dep tree.
+
+---
+
+## Agent model guide
+
+Every step in Phases 20-23 below carries a model tag. The tags encode how
+much judgment the step needs, so work can be dispatched to the cheapest
+model that will do it correctly.
+
+| Tag | Model | Use for |
+|---|---|---|
+| `[haiku]` | Claude Haiku | Mechanical, fully specified changes with a clear done-check: lint autofixes, deleting confirmed-dead files, token/radius sweeps, adding locale strings, version bumps, doc updates that mirror code. |
+| `[sonnet]` | Claude Sonnet | Standard multi-file feature work that follows an established pattern in the repo: adopting an existing shared component on a page, adding a cache fallback that mirrors a sibling repository, writing endpoints/tests shaped like existing ones, targeted bug fixes with a reproduction. |
+| `[opus]` | Claude Opus (or stronger) | Architecture and cross-cutting refactors, decisions with tradeoffs (which nav paradigm, what the service-layer boundary is), performance redesigns, consolidating code paths whose behavior has drifted, and writing the plan/review for any wave that touches 10+ files or changes an API contract. |
+
+Working pattern: plan and review with `[opus]`, implement with `[sonnet]`,
+sweep with `[haiku]`. A `[haiku]` step whose scope turns out fuzzy mid-flight
+should be escalated, not pushed through.
+
+---
+
+## Phase 20: Restore the safety net (proposed, do before anything else)
+
+A July 2026 audit found the quality gates are not actually running.
+Commit `0792904` (2026-05-01, "Disable automatic CI workflow triggers")
+switched `ci.yml` to `workflow_dispatch` only, so no push since then has
+been linted or tested in CI, and the last CI runs that did fire (May 1)
+were failures. The drift this allowed is now measurable: 204 ruff errors
+in live server code, a shipped `NameError`, dead modules, and a silent
+data-loss bug in the Android mutation queue. Everything else in this
+roadmap is unsafe to build until the net is back.
+
+- **Re-enable CI on push and PR** `[haiku]` : restore `push`/`pull_request`
+  triggers in `.github/workflows/ci.yml` (keep the concurrency group).
+  Expect the first run to be red; that is the point.
+- **Fix the retro HTTP `NameError`** `[sonnet]` : `retro/http.py:875` uses
+  `_e(...)` which is defined in `retro/html_gen.py` but never imported, so
+  rendering a wish list containing any item with a `wish_url` crashes.
+  Add the import and a regression test that renders that page.
+- **Fix the offline-chore data-loss bug** `[sonnet]` : a standalone chore
+  created offline is queued with `collection_id = null`, but
+  `MutationDrainerWorker.kt:65-80` only ever calls
+  `api.createChore(collectionId, ...)`, so the drained request 404s and the
+  chore is silently dropped (`MutationDrainerWorker.kt:91-93`). Branch to
+  `createStandaloneChore` when `collection_id` is null.
+- **Delete dead code** `[haiku]` : `retro/telnet_legacy.py` (1,718 lines,
+  zero imports anywhere; superseded by `retro/telnet.py` + `retro/session.py`
+  + `retro/workflows/`) and `retro/terminal.py` (referenced only by the
+  legacy file). Also unused schemas `MembershipRead`
+  (`schemas/collection.py:47`), `OIDCProviderInfo` (`schemas/auth.py:88`),
+  `UserUpdate` (`schemas/user.py:21`). Follow the Regression Check Policy
+  in AGENTS.md: written justification in the commit body.
+- **Ruff cleanup to zero** `[haiku]` : `ruff check . --fix` then resolve the
+  remainder by hand (unused imports in `retro/workflows/*`, `retro/session.py`,
+  `api/tasks.py`, `models/retro_security.py`; unused locals in
+  `retro/http.py:517` and `retro/telnet_transport.py:115`).
+- **Get the server test suite green locally and in CI** `[sonnet]` : run
+  `uv run pytest -q`, fix failures, and only then tag the next release.
+- **True up AGENTS.md** `[haiku]` : the "CI Gates (must stay green)" section
+  describes gates that have not run since May. Update it to match whatever
+  Phase 20 restores, including the retro interfaces (telnet/gopher/http)
+  which currently have no CI coverage at all.
+
+---
+
+## Phase 21: Server modularization and performance (proposed)
+
+The API layer is monolithic: routers hold query building, permission
+checks, and serialization inline, and the same business flows are
+implemented three times (modern API, retro HTTP, retro telnet workflows).
+`services/` exists but holds only cross-cutting helpers; `audit.py` is the
+one router-facing service done right. Extract shared code first, then fix
+the hot-path performance problems the duplication has been hiding.
+
+- **One `require_collection_role` dependency** `[sonnet]` : the identical
+  `_require_role(db, auth, collection_id, allowed)` helper is redefined in
+  12 routers, and `_EDITOR_ROLES` / `_VIEWER_ROLES` constants are
+  re-declared in 13 files. Move both into `auth/deps.py` next to the
+  existing `collection_role()` and delete every local copy.
+- **One `readable_collection_ids` helper** `[opus]` plan, `[sonnet]`
+  implement: five copies exist with drifted semantics (admin returns all
+  ids in `shopping.py:68`, a `None` sentinel in `tasks.py:42`, role-filtered
+  in `mcp_server.py:114`, and two inlined variants inside `items.py`).
+  Opus decides the single correct contract (including admin behavior);
+  Sonnet consolidates and adds tests pinning it.
+- **Extract an item service** `[opus]` : move list/search query building,
+  `_to_item_read` serialization, and `_compute_rollup_values` out of
+  `api/items.py` (1,437 lines) into `services/items.py` so the retro layer
+  and MCP server can reuse them instead of re-implementing. Same treatment
+  for `api/item_templates.py` (1,112 lines, which also writes no audit
+  entries today) and `api/shopping.py`.
+- **Retro layer calls services, not its own SQL** `[opus]` plan, `[sonnet]`
+  implement: `retro/http.py` (1,526 lines) re-implements item and shopping
+  mutations that exist in both `api/` and `retro/workflows/`. Split it the
+  way the telnet rewrite split `telnet_legacy.py` (router + workflows), and
+  route all three surfaces through the Phase 21 services so a business-rule
+  change lands once.
+- **Kill the `GET /items` full-collection scan** `[opus]` :
+  `_compute_rollup_values` (`items.py:157-196`) loads every item id/value in
+  the collection and builds the parent tree in Python on every list request,
+  regardless of `limit`. Compute rollups in SQL (recursive CTE) or cache per
+  collection and invalidate on write.
+- **Fix the `location_path` N+1** `[sonnet]` : `schemas/item.py:123-128`
+  walks lazy `Location.parent` per item (about one query per ancestor per
+  row). Eager-load the location tree per collection once per request.
+- **Move search into SQL** `[opus]` : `search_items` (`items.py:503-568`)
+  loads all accessible items into Python, scores substrings, then slices to
+  `limit`, and re-runs `_compute_rollup_values` per collection while doing
+  it. Push filtering into the query (SQLite FTS5 / Postgres trigram), keep
+  accent-folding as a stored normalized column.
+
+---
+
+## Phase 22: Web UI unification (proposed)
+
+A conformance audit against `docs/DESIGN.md` found the spec itself is
+sound; the problem is enforcement. The shared components exist but the
+canonical `Tabs.svelte` is used by zero pages, seven routes hand-roll
+`<table>`, and peer sections use three different navigation paradigms.
+This phase is the "uniformity between sections and tabs" fix.
+
+- **Pick one navigation paradigm** `[opus]` decision, then `[sonnet]`
+  implement: Collections and Lists use near-identical hand-rolled tab
+  strips (`collections/+layout.svelte:106-211`,
+  `lists/+layout.svelte:105-227`), Tasks hand-rolls a third in-page tab row
+  (`tasks/+page.svelte:871`), Settings uses a sidebar. Decide the pattern
+  per page class, extend `Tabs.svelte` with the add/close affordances the
+  layouts need, and migrate all four. Record the decision in
+  `docs/DESIGN.md` in the same PR.
+- **Shared `AlertList` component** `[sonnet]` : `/alerts`, `/maintenance`,
+  and `/tasks` carry near-verbatim copies of the `.alert-card` /
+  `.due-badge` / `daysLabel` / grouping logic. One component under
+  `lib/components/`, built on `Badge.svelte`, replaces all three; the
+  `within_days` filter row moves into `FiltersPanel.svelte`.
+- **Give collection detail its H1** `[haiku]` : `/collections/[id]` shows
+  the collection name only in the browser title
+  (`[id]/+layout.svelte:107`); the spec requires a visible H1 like every
+  sibling page.
+- **DataTable and FormField adoption sweep** `[sonnet]` per page: replace
+  hand-rolled `<table>` and raw `<input>`/`<label>` blocks in
+  `collections/[id]/members` (four tables), `collections/[id]/templates`,
+  `settings/notifications`, `settings/security`, `settings/admin`,
+  `share/[slug]`, and the create wizards on `/collections` and `/lists`.
+  `/lists/[type]` is the reference implementation; each page is an
+  independent, verifiable unit of work.
+- **One create affordance** `[sonnet]` : the dashed New card is canonical,
+  but Tasks uses `.new-card-li`, Members uses a top-of-page form, and the
+  tab strips add a `+` tab. Extract the New card into a shared component
+  and use it everywhere an index-level create exists.
+- **Token sweep** `[haiku]` : replace hardcoded radii and pixel values
+  (`6px`/`8px`/`3px`/`999px` across home, collections, lists, tasks,
+  import, settings) with `--radius-*` / `--space-*` tokens. Add a
+  check-script (like `check-icons`) that greps `.svelte` style blocks for
+  raw `px` radii so the class of bug stays fixed.
+- **Govern `ShoppingStoreManager`** `[haiku]` : it is a 561-line page-level
+  component living outside `lib/components/`; move it under the governed
+  tree and give `/stores` the standard H1 anatomy.
+- **Android counterpart** `[sonnet]` : after the web waves land, apply the
+  parity table in `docs/DESIGN.md`; the existing Phase 17 `ItemRowCard`
+  item belongs to this effort.
+
+---
+
+## Phase 23: Android true offline (proposed)
+
+The offline architecture is half-wired: Room caches collections, items,
+categories, locations, and the shopping feed, and the repositories expose
+`observe()` Flows, but **no screen consumes them**, and the imperative
+`list()`/`get()` calls screens actually use throw on network error. Net
+effect today: opening the app offline shows error states almost
+everywhere; the only reliable offline actions are purchase/restock on an
+already-loaded shopping list and queuing a chore. The fix is mostly
+plumbing, not new architecture.
+
+- **Design: cache-first read policy** `[opus]` : one decision applied
+  everywhere, either screens collect the existing Room `observe()` Flows
+  with network refresh as a side effect (preferred, enables live updates),
+  or every repository `list()`/`get()` gains a cache fallback on
+  `IOException`. Document the chosen pattern in `docs/DESIGN.md`.
+- **Wire the four core screens to cache** `[sonnet]` : Collections tabs
+  (`CollectionsTabsScreen.kt:126-175`), collection list
+  (`CollectionListScreen.kt:66`), item detail (`ItemDetailScreen.kt:98-111`
+  plus a fallback in `ItemRepository.get()`, `Repositories.kt:192-196`),
+  and locations (`Repositories.kt:340-388`).
+- **Fix shopping cold-start offline** `[sonnet]` : `ShoppingListScreen.load()`
+  (`ShoppingListScreen.kt:161-182`) already gets a cached feed, then
+  discards it because sibling `collectionRepo.list()` / `listStores()`
+  calls throw. Wrap the non-essential calls in their own try/catch as is
+  already done for `listCategories`.
+- **Cache chores, tasks, and maintenance** `[sonnet]` : add Room entities
+  plus repository read-through for the three screens that currently have
+  no offline path at all (`MaintenanceScreen.kt:127-141`,
+  `ChoresScreen.kt:104-115`), and extend `PendingMutationEntity` coverage
+  beyond the current three mutation types (complete-chore, complete-task,
+  and shopping add/delete are the next most valuable).
+- **Explicit image caching** `[sonnet]` : the Coil `ImageLoader`
+  (`NetworkModule.kt:67-68`) relies on implicit defaults; configure an
+  explicit `DiskCache` with a size budget and pre-warm item thumbnails
+  during `SyncWorker` refresh so item lists have art offline.
+- **Consistent offline indicator** `[haiku]` : the shopping list's offline
+  banner (`ShoppingListUi.isOnline`) becomes a shared composable shown on
+  every cached screen, so stale-but-usable data is visibly labeled.
 
 ---
 
