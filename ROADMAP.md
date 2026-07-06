@@ -1234,7 +1234,13 @@ Tracked separately so they don't bloat this phase:
 
 ---
 
-## Phase 15 — Navigation & discoverability (planned)
+## Phase 15 — Navigation & discoverability (Waves 1-3 ✅; Wave 4 in progress)
+
+**Status (July 2026 audit):** Waves 1-3 verified shipped in code
+(slug-keyed preset icons, Tasks nav dropdown with `?tab=` deep links,
+`nav.new_list` shortcut, standalone `/alerts` route with bell wiring).
+Wave 4 is partially done: `AlertsScreen.kt` exists and the Android picker
+is slug-keyed; the chores-first Tasks entry point is unverified.
 
 Six confirmed issues surfaced during post-v0.25.2 QA. All are visible
 on the web client; Wave 4 mirrors the fixes in Android.
@@ -1250,7 +1256,7 @@ on the web client; Wave 4 mirrors the fixes in Android.
 | 5 | Tasks is a plain link — no tab shortcuts in the nav menu | All four tabs are only reachable after navigating to `/tasks` |
 | 6 | No direct path to Alerts except through `/tasks` | Bell dropdown footer links to `/tasks`; no standalone `/alerts` route exists |
 
-### Wave 1 — Preset picker icon fix + tile alignment (Web)
+### Wave 1 — Preset picker icon fix + tile alignment (Web) ✅
 
 **Files:** `web/src/routes/collections/+page.svelte`,
 `web/src/routes/lists/+page.svelte`
@@ -1265,7 +1271,7 @@ on the web client; Wave 4 mirrors the fixes in Android.
 **Acceptance:** both picker dialogs show correct category icons;
 all tiles within a row are equal height; `npm run check` clean.
 
-### Wave 2 — Nav alignment + Lists "New list" shortcut + Tasks dropdown (Web)
+### Wave 2 — Nav alignment + Lists "New list" shortcut + Tasks dropdown (Web) ✅
 
 **Files:** `web/src/routes/+layout.svelte`,
 `web/src/routes/lists/+page.svelte`, all 7 locale JSON files
@@ -1293,7 +1299,7 @@ Tasks / Scoreboard; Lists dropdown has a "+ New list" link that opens
 the picker; all desktop nav items sit on the same visual baseline;
 `npm run check` clean.
 
-### Wave 3 — Alerts → `/alerts` + bell wiring (Web)
+### Wave 3 — Alerts → `/alerts` + bell wiring (Web) ✅
 
 **Files:** new `web/src/routes/alerts/+page.svelte`,
 `web/src/lib/AlertsDropdown.svelte`,
@@ -1325,10 +1331,11 @@ Tasks page opens with Chores tab active by default; URLs like
 `/tasks?tab=my-tasks` and `/tasks?tab=scoreboard` deep-link to the
 correct tab; `npm run check` and `npm run build` clean.
 
-### Wave 4 — Android counterpart (Android)
+### Wave 4 — Android counterpart (Android) (in progress)
 
-Mirror the web changes in the Android app. Details to be fleshed out
-once Web Waves 1–3 are reviewed and merged; at minimum:
+Mirror the web changes in the Android app. Partially shipped:
+`AlertsScreen.kt` exists and the collection picker is slug-keyed. At
+minimum, still verify:
 
 - **Category picker icons** — verify the Android collection/list
   creation flow uses slug-keyed icon lookups; fix any equivalent of
@@ -1342,7 +1349,11 @@ once Web Waves 1–3 are reviewed and merged; at minimum:
 
 ---
 
+## Platform & ecosystem
 
+(Heading restored July 2026: this section lost its title when the phase
+numbers were reshuffled; it was originally numbered Phase 14 before the
+Web UI redesign took that slot. All items below are shipped.)
 
 Long-term work that makes Tangible a foundation other things build on.
 
@@ -1399,7 +1410,17 @@ Long-term work that makes Tangible a foundation other things build on.
 
 ---
 
-## Phase 16 — Shopping Lists expansion (planned)
+## Phase 16 — Shopping Lists expansion ✅ COMPLETE
+
+**Status (July 2026 audit):** Steps 0-8 all verified shipped in code:
+`ShoppingItem`/`list_type` model with `wish_url`/`wish_priority`,
+`/lists` router with `/grocery` redirect shim, `shoppingCategories.ts` +
+`ShoppingCategories.kt` presets, backing-collection restock flow,
+`/lists/[type]` web routes, Android `ShoppingListScreen` parameterized by
+`listType` with a wish-list variant, `list_shopping_items` MCP tool, and
+lists i18n keys. One deliberate deviation from the draft below: wish-list
+items organize into collections (picker or create-with-template) instead
+of the drafted "gifted/received" action.
 
 The Grocery List feature becomes a general-purpose shopping and want-tracking
 hub. A new **Lists** menu in the nav replaces the single "Grocery List" link
@@ -1526,10 +1547,16 @@ behaviour so the codebase stays coherent:
 
 ---
 
-## Phase 17 — Polish, themes & real-time (planned)
+## Phase 17 — Polish, themes & real-time (in progress)
 
 Quality-of-life improvements that make existing features shine plus
 the first steps toward live collaboration.
+
+**Status (July 2026 audit):** more shipped than this section suggested.
+Template editing/cloning is done on server and web; the SSE endpoint and
+web subscription are live; `Collection.theme` exists and the web layout
+reads it. Remaining work is mostly the Android half of each item, as
+annotated per bullet below.
 
 - **Android: unified item-row design language** — the Collections tabs item
   rows and the Shopping List rows use different visual styles today (Collections
@@ -1557,14 +1584,16 @@ the first steps toward live collaboration.
   dropped before this fix. Applies to every collection type (the action is
   already present on every Collections tab row).
 
-- **Real-time / live updates** — the app currently polls (15-min Android
-  SyncWorker, manual web refresh). Add a `GET /collections/{id}/events`
-  SSE (Server-Sent Events) stream that pushes `item-added`,
-  `item-updated`, `item-deleted`, and `comment-added` events. The web
-  client subscribes while the collection page is open and reconciles
-  diffs without a full reload. Android subscribes in the foreground
-  (OkHttp EventSource) and cancels when backgrounded.
-- **Collection themes** — visual skins for the collection detail view
+- **Real-time / live updates** (server + web ✅; Android pending) — the
+  `GET /collections/{id}/events` SSE stream is shipped
+  (`api/collections.py:410`) and the web collection page subscribes
+  (`collections/[id]/+page.svelte`). Remaining: Android subscribes in the
+  foreground (OkHttp EventSource) and cancels when backgrounded.
+- **Collection themes** (plumbing ✅; visuals pending) — the `theme`
+  column, the settings picker, and the `data-collection-theme` attribute
+  on the web detail layout are shipped; the per-theme CSS, background
+  imagery, and Android token switching below are not. Visual skins for
+  the collection detail view
   inspired by the physical environment of each category. Three built-in
   themes to start:
   - *Bookshelf* — wood-grain shelf texture behind cover tiles; books
@@ -1586,14 +1615,10 @@ the first steps toward live collaboration.
   reflections, photoreal high-detail, harsh shadows, vignettes". Land
   the imagery in `web/static/themes/{name}/{mode}.webp` (and
   `android/app/src/main/res/drawable-nodpi/...`).
-- **Template editing & cloning** — the server already has `ItemTemplate`
-  model and CRUD API (`api/item_templates.py`); items have an optional
-  `template_id` FK. Remaining work:
-  - Role-based access: enforce `editor`+ for create/edit/clone, any
-    member for read, using the existing `Membership` `viewer/editor/owner`
-    roles.
-  - `POST /item-templates/{id}/clone` endpoint.
-  - Web: template management page (list, create, edit, delete, clone).
+- **Template editing & cloning** (server + web ✅; Android pending) —
+  role-based access checks, the clone endpoint
+  (`api/item_templates.py:851`), and the web template management page
+  (`collections/[id]/templates/+page.svelte`) are all shipped. Remaining:
   - Android: template picker in the add-item flow.
 - **Full i18n rollout** — the i18n scaffold (svelte-i18n + catalogs for
   EN/FR/DE/ES/JA) is in place. Wire the remaining web pages — collection
@@ -1601,8 +1626,10 @@ the first steps toward live collaboration.
   maintenance, bundles, locations — into `$_()` calls and extend all
   five catalogs. Accept community pull requests to add more locales via
   `web/src/lib/locales/`.
-- **Android AI-prefill from barcode scanner** — the scanner screen today
-  navigates to add-item after a scan. Wire the scanned barcode into
+- **Android AI-prefill from barcode scanner** (endpoint ✅; Android
+  wiring pending) — the server endpoint exists (`api/items.py:370`), but
+  the scanner screen today navigates to add-item after a scan without
+  calling it. Wire the scanned barcode into
   `POST /api/items/ai-prefill` so the new-item form pre-populates title,
   subtitle, category, and custom fields from Open Library / MusicBrainz /
   Open Food Facts before the user sees it. Falls back gracefully if no
@@ -1621,7 +1648,9 @@ quick-add path when the answer is no.
 
 Remaining work:
 
-- **Search by tag** — extend the "Search in" dropdown with a `Tag` option.
+- **Search by tag** ✅ — shipped: `tag` is in `_SEARCH_FIELDS` and
+  handled in `api/items.py:438`. Original scope: extend the "Search in"
+  dropdown with a `Tag` option.
   Server: when `field=tag`, match `Tag.name` (case-insensitive substring)
   via the existing `ItemTag` join and return items carrying that tag. UI:
   in the Home empty-state result panel, when results carry tags, render

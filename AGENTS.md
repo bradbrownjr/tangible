@@ -590,33 +590,25 @@ When implementing any of these: create the screen file, add a
 `NavDestination`, wire it into the navigation graph, add string resources,
 and update the parity table row in `docs/DESIGN.md`.
 
-### Template editing & cloning
-- Server has `ItemTemplate` model + CRUD API (`api/item_templates.py`); items
-  have an optional `template_id` foreign key.
-- Missing: role-based access check (currently no permission guard on template
-  endpoints), a `POST /item-templates/{id}/clone` endpoint, and all UI (web
-  template management page, Android template picker).
-- The `Membership` model has `viewer/editor/owner` roles — enforce
-  `editor`+ for create/edit/clone, any member for read.
+### Template editing & cloning (server + web shipped; Android pending)
+- Shipped: role-based access checks, `POST /item-templates/{id}/clone`
+  (`api/item_templates.py:851`), and the web template management page
+  (`collections/[id]/templates/+page.svelte`).
+- Remaining: Android template picker in the add-item flow (part of the
+  Android parity screens above).
 
-### Real-time / live updates
-- The app currently polls (15-min Android SyncWorker, manual web refresh).
-- No WebSocket or SSE endpoint exists.
-- Future: add `GET /collections/{id}/events` SSE stream; push item-added /
-  item-updated / item-deleted events; web auto-refreshes item list;
-  Android subscribes while the app is in the foreground.
+### Real-time / live updates (server + web shipped; Android pending)
+- Shipped: `GET /collections/{id}/events` SSE stream
+  (`api/collections.py:410`); the web collection detail page subscribes
+  while open.
+- Remaining: Android subscribes in the foreground (OkHttp EventSource)
+  and cancels when backgrounded; the 15-min SyncWorker stays as the
+  background path.
 
-### Collection themes
-- Visual skins for the collection detail view, inspired by the physical
-  environment of each category.
-- **Bookshelf** — wood-grain shelf texture behind box art tiles; books stand
-  upright as spine thumbnails.
-- **Game room** — dark ambient background with neon-accent category badges;
-  cartridge / box art prominently shown.
-- **Movie room** — cinematic widescreen header; poster-style grid with rating
-  stars.
-- Implementation plan (future): add a `theme` field to `Collection` model;
-  web collection detail page reads `collection.theme` and applies a
-  `data-theme` attribute or CSS class to the root; per-theme CSS modules;
-  Android collection detail screen switches background/color tokens.
-  Requires photo thumbnails to be exposed in the items list API response.
+### Collection themes (plumbing shipped; visuals pending)
+- Shipped: `Collection.theme` column, settings picker, and the
+  `data-collection-theme` attribute on the web detail layout.
+- Remaining: per-theme CSS modules and background imagery (Bookshelf,
+  Game room, Movie room; see ROADMAP Phase 17 for imagery prompts), and
+  Android background/color token switching. Requires photo thumbnails to
+  be exposed in the items list API response.
