@@ -1933,6 +1933,85 @@ plumbing, not new architecture.
 
 ---
 
+## Phase 24: Home records parity with HomeCenter (proposed)
+
+Source: the YouTube video "HomeCenter: The Self-Hosted Home Manager You
+Didn't Know You Needed" (https://www.youtube.com/watch?v=24WwrRmu8kI),
+which reviews HomeCenter (https://github.com/yatzin/home-center, MIT,
+TypeScript). This list comes from the HomeCenter README and AlternativeTo
+listing, not the video's transcript, which could not be retrieved.
+
+Tangible already covers much of what HomeCenter does: document
+attachments with warranty expiry, image OCR and PDF/DOCX text search,
+maintenance with cost/odometer/hours on each completion, snooze, email
+digest, JSON backup and restore through the CLI, and an MCP server.
+Only the gaps are listed here.
+
+- **Usage-based maintenance intervals** `[sonnet]` : `MaintenanceTask`
+  has only `interval_days`. Add `interval_miles` and `interval_hours`;
+  the task is due when whichever comes first is reached, using the
+  latest `odometer_reading` / `hours_reading` from completions. Add a
+  "log reading" action so mileage can be updated without a service
+  record.
+- **Advance warning and pause per reminder** `[sonnet]` : configurable
+  lead time per task (today it is per alert kind only) and a pause
+  state, alongside the existing snooze.
+- **Warranty overview** `[sonnet]` : a cross-collection page listing
+  every warranty as active / expiring / expired, sortable and
+  filterable, linked from the maintenance agenda.
+- **Receipt intake** `[opus]` plan, `[sonnet]` build : drop a receipt
+  photo, PDF, or forwarded email (`.eml`, `.msg`) anywhere in the web
+  app. Extract date, vendor, and total (OCR plus heuristics, optional
+  local LLM fallback), suggest the matching item, and file it as a new
+  or existing maintenance completion with the receipt attached. Filing
+  can mark the matching task complete. Android: share-sheet target.
+- **Vendors as first-class records** `[sonnet]` : completions carry a
+  free-text `technician`. Add an optional vendor link (reuse `contacts`
+  with a vendor flag rather than a new table) so costs roll up by vendor.
+- **Spending dashboard** `[sonnet]` : costs by item, collection,
+  category, and vendor; monthly / quarterly / yearly trend with rolling
+  average; year-to-date total; largest expenses. Built from existing
+  completion `cost` plus item purchase price. Follow the `dataviz`
+  conventions in `docs/DESIGN.md` (extend the doc first).
+- **Wider document extraction** `[sonnet]` : `services/document_search.py`
+  handles text, PDF, DOCX, and image OCR. Add XLSX, PPTX, ODF, RTF, and
+  OCR on scanned PDFs with no text layer. Move extraction to a background
+  job so uploads return immediately.
+- **Semantic search** `[opus]` : optional local embedding model
+  (sentence-transformers, downloaded on first enable) indexing items and
+  document text. Hybrid ranking: exact matches first, then semantic,
+  then fuzzy. Off by default; must stay usable on a Raspberry Pi.
+- **Built-in AI assistant** `[opus]` : a chat panel that answers
+  plain-language questions using the same tools as the MCP server
+  (`api/mcp_server.py`), with links back to the source items and
+  documents. Any OpenAI-compatible endpoint (Ollama, LM Studio,
+  OpenRouter, OpenAI) is configured in admin settings. Admins decide
+  whether it can read document text. Chat history stays in the browser.
+- **Scheduled backups** `[sonnet]` : daily / weekly schedule with
+  retention (keep newest N, default 14), manual "Back up now" with
+  verification, one archive holding the database and all uploads,
+  optional password protection, and restore from the admin UI (the
+  existing `tangible restore` CLI stays as the fallback when the app
+  won't start).
+- **Digest frequency per user** `[haiku]` : email digest as soon as
+  possible / daily / weekly, plus an SMTP "send test" button in admin
+  settings if not already present.
+- **Printable item report** `[sonnet]` : a print-optimised view (and
+  PDF) of one item: details, photos, documents list, full service
+  history, and cost total. Useful for insurance claims and selling a
+  vehicle or house.
+- **Download all files for an item** `[haiku]` : zip of an item's
+  photos and documents (reuse the bundle zip code in
+  `api/manual_bundles.py`).
+- **Health records module (evaluate fit first)** `[opus]` : HomeCenter
+  has an optional family health module (people, providers, insurance,
+  visits, medications, immunizations, refill and vaccine reminders,
+  printable medical summary). It is outside Tangible's "things you own"
+  scope; decide whether it belongs as an optional collection type built
+  on templates and maintenance, or not at all, before any work.
+
+---
+
 ## Done
 
 See [CHANGELOG.md](CHANGELOG.md) for what has shipped (auth, items,
